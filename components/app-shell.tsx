@@ -198,6 +198,7 @@ export function AppShell(props: AppShellProps) {
           appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
+          today={today}
         />
       )}
       {tab === "rewards" && (
