@@ -25,8 +25,8 @@ export function SoloScreen({
         <p>Ask a Connect Group leader for their group code and join in. Your coins come with you.</p>
       </section>
       <p className="onboarding-note">
-        You can join a Connect Group later. Your personal chapter progress stays with you either
-        way.
+        You can join a Connect Group anytime this October. Chapters you&apos;ve already read stay
+        counted.
       </p>
       {!entering ? (
         <button className="primary-button" onClick={() => setEntering(true)}>

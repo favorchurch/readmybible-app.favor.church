@@ -28,3 +28,12 @@
 | Q24 | Everything ships by Sunday |
 | Q25 | Q4's "connect.favor.church linked where natural" narrowed (2026-09-03): that portal is internal to Connect Group leaders only, never members or the public. Removed from the not-found screen, auth-error screen, and solo mode; kept only inside the leader-gated Connect tools box |
 | Misc | Missing assets may be generated with codex imagegen (luna). Rico adds the REST key to `.env` himself |
+
+## Issue 32 UI/UX audit (2026-09-03, plan `docs/plans/issue-32-ui-ux-implementation.md`)
+
+| # | Decision |
+|---|---|
+| D2 | Palette may evolve in tones, accents, and neutrals only. The eight named color tokens (`--navy`, `--coral`, `--gold`, `--sage`, `--cream`, `--paper`, `--blue`, `--violet`) keep their hues for the life of the product; new tones of those hues are allowed (for example `--coral-soft`, `--ink-muted`), never a new hue family, dark mode, or a replacement for a primary token. `--ink-muted` was darkened from `#6e716d` to `#646765` during this run to clear the 4.5:1 body-text contrast floor |
+| D5 | Dev-only clock override `DEV_MOCK_TODAY` (a `YYYY-MM-DD` date), honored only when `NODE_ENV !== "production"`, the same guard `DEV_MOCK_PERSON_ID` already used. `lib/dev-clock.ts` is the only reader; production behavior is unchanged and a two-sided test proves the guard. Added so active, grace, and closed states could be QA'd before the real October 1 launch |
+| D-favicon | Favicon redesigned: an open book with a small tent silhouette, `--navy` on `--cream` with a coral accent, replacing the leftover Next.js starter grid asset. Regenerated at 16px and 32px; no other icon or font asset changed |
+| D-location | The reading-location picker (the catch-up flow's "Where did you read?" question, `LOCATIONS` state) was removed. It captured a location that was never sent anywhere and added a step to an honor-based check-in for no product purpose |

@@ -31,12 +31,12 @@ reads it: `PORT=3100 DEV_MOCK_TODAY=2026-10-08 pnpm dev`.
 
 ## Scripts
 
-- `pnpm dev` — local dev server
-- `pnpm build` — production build (required gate before merging)
-- `pnpm lint` — ESLint
-- `pnpm test` — Vitest
-- `pnpm db:generate` — generate a Drizzle migration from `db/schema.ts`
-- `pnpm db:migrate` — apply migrations to `DATABASE_URL_DIRECT`
+- `pnpm dev`: local dev server
+- `pnpm build`: production build (required gate before merging)
+- `pnpm lint`: ESLint
+- `pnpm test`: Vitest
+- `pnpm db:generate`: generate a Drizzle migration from `db/schema.ts`
+- `pnpm db:migrate`: apply migrations to `DATABASE_URL_DIRECT`
 
 ## Stack
 
