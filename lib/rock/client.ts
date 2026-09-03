@@ -17,6 +17,8 @@ import {
 } from "@/lib/rock/constants";
 import {
   fixtureCampusGroups,
+  fixtureCampusName,
+  fixtureGroupBasic,
   fixtureMemberships,
   fixturePerson,
   fixtureRoster,
@@ -107,16 +109,29 @@ export async function getPerson(personId: number): Promise<RockPerson | null> {
   });
 }
 
+/**
+ * Rock's GroupMember entity has no navigable "Group" property over REST v1
+ * ($expand=Group 400s with "Could not find a property named 'Group'") --
+ * only Person, GroupRole, etc. are expandable. So group data is fetched
+ * separately (one Groups/{id} call per distinct GroupId, itself cached 15
+ * minutes via getGroupBasic) and attached here.
+ */
+async function attachGroupData(rows: RockGroupMember[]): Promise<RockGroupMember[]> {
+  const uniqueGroupIds = Array.from(new Set(rows.map((r) => r.GroupId)));
+  const groups = await Promise.all(uniqueGroupIds.map((id) => getGroupBasic(id)));
+  const groupById = new Map(uniqueGroupIds.map((id, index) => [id, groups[index]]));
+  return rows.map((row) => ({ ...row, Group: groupById.get(row.GroupId) ?? undefined }));
+}
+
 /** Active Connect Group (GT25) memberships for a person, roles Member/Leader/Assistant Leader. Cached 5 minutes. */
 export async function getMemberships(personId: number): Promise<RockGroupMember[]> {
   if (isFixtureMode()) return fixtureMemberships(personId);
   return cached(`rock:memberships:${personId}`, 300, async () => {
     const roleFilter = GT25_ACTIVE_ROLE_IDS.map((id) => `GroupRoleId eq ${id}`).join(" or ");
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active' and (${roleFilter})`;
-    const rows = await rockFetch<RockGroupMember[]>(
-      `GroupMembers?$filter=${encodeURIComponent(filter)}&$expand=Group`,
-    );
-    return rows.filter(
+    const rows = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
+    const enriched = await attachGroupData(rows);
+    return enriched.filter(
       (m) =>
         m.Group?.GroupTypeId === GROUP_TYPE_CONNECT_GROUP &&
         m.Group.IsActive &&
@@ -127,13 +142,12 @@ export async function getMemberships(personId: number): Promise<RockGroupMember[
 
 /** Active Connect section (GT24) memberships for a person. Cached 5 minutes. */
 export async function getSectionMemberships(personId: number): Promise<RockGroupMember[]> {
-  if (isFixtureMode()) return fixtureSectionMemberships(personId);
+  if (isFixtureMode()) return fixtureSectionMemberships();
   return cached(`rock:sections:${personId}`, 300, async () => {
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active'`;
-    const rows = await rockFetch<RockGroupMember[]>(
-      `GroupMembers?$filter=${encodeURIComponent(filter)}&$expand=Group`,
-    );
-    return rows.filter((m) => m.Group?.GroupTypeId === GROUP_TYPE_SECTION);
+    const rows = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
+    const enriched = await attachGroupData(rows);
+    return enriched.filter((m) => m.Group?.GroupTypeId === GROUP_TYPE_SECTION);
   });
 }
 
@@ -145,6 +159,21 @@ export async function getRoster(groupId: number): Promise<RockGroupMember[]> {
     return rockFetch<RockGroupMember[]>(
       `GroupMembers?$filter=${encodeURIComponent(filter)}&$expand=Person`,
     );
+  });
+}
+
+/** A single Connect Group's basic fields (name, campus). Cached 15 minutes. */
+export async function getGroupBasic(groupId: number): Promise<RockGroup | null> {
+  if (isFixtureMode()) return fixtureGroupBasic(groupId);
+  return cached(`rock:group:${groupId}`, 900, async () => {
+    try {
+      return await rockFetch<RockGroup>(
+        `Groups/${groupId}?$select=Id,Name,GroupTypeId,CampusId,ParentGroupId,IsActive,IsArchived`,
+      );
+    } catch (error) {
+      if (error instanceof RockApiError && error.status === 404) return null;
+      throw error;
+    }
   });
 }
 
@@ -175,6 +204,22 @@ export async function getSectionSubtree(sectionGroupId: number): Promise<RockGro
     }
     await walk(sectionGroupId);
     return result;
+  });
+}
+
+type RockCampus = { Id: number; Name: string };
+
+/** Campuses/{id} -- just the display name. Cached 15 minutes (campuses rarely change). */
+export async function getCampusName(campusId: number): Promise<string | null> {
+  if (isFixtureMode()) return fixtureCampusName(campusId);
+  return cached(`rock:campus:${campusId}`, 900, async () => {
+    try {
+      const campus = await rockFetch<RockCampus>(`Campuses/${campusId}?$select=Id,Name`);
+      return campus.Name;
+    } catch (error) {
+      if (error instanceof RockApiError && error.status === 404) return null;
+      throw error;
+    }
   });
 }
 
