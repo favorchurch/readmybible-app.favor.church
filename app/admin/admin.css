@@ -1,0 +1,72 @@
+/* Admin dashboard styling. Reuses tokens/classes from app/globals.css
+   (--navy, --coral, --cream, --paper, --line, .screen, .hero-copy,
+   .primary-button, .eyebrow) without editing that file. */
+
+.admin-screen { max-width: 1120px; margin: 0 auto; }
+
+.admin-scope-line { color: var(--ink-muted); font-size: 13px; margin: -8px 0 24px; }
+
+.admin-section-block {
+  margin-top: 32px;
+}
+
+.admin-chart-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 16px;
+  margin-bottom: 28px;
+}
+.admin-chart-card h2 { font-family: Georgia, serif; font-size: 18px; margin: 0 0 12px; font-weight: 500; }
+.admin-chart { position: relative; height: 320px; width: 100%; }
+.admin-chart-empty { color: var(--ink-muted); font-size: 13px; }
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.admin-csv-link {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: underline;
+  color: var(--navy);
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 13px; }
+.admin-table th, .admin-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.admin-table th { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 800; }
+.admin-table tr:last-child td { border-bottom: 0; }
+.admin-table .admin-row-group td:first-child { padding-left: 30px; }
+.admin-table .admin-row-section td { background: rgba(23,41,67,.04); font-weight: 800; }
+
+.admin-section-toggle { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; cursor: pointer; color: var(--navy); display: flex; align-items: center; gap: 6px; }
+.admin-section-toggle::before { content: "▸"; font-size: 10px; }
+details[open] > summary .admin-section-toggle::before { content: "▾"; }
+summary { list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+.admin-section-summary { padding: 10px 12px; background: rgba(23,41,67,.04); border-bottom: 1px solid var(--line); font-weight: 800; }
+.admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 11px; }
+.admin-nested { margin: 0; padding: 0 0 0 16px; }
+
+.admin-stage-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; background: var(--sage); color: #fffaf0; }
+
+.admin-no-access { max-width: 560px; margin: 60px auto; text-align: center; }
+.admin-no-access h1 { font-family: Georgia, serif; font-weight: 500; }
+.admin-no-access p { color: var(--ink-muted); }
+
+@media (min-width: 768px) {
+  .admin-chart { height: 380px; }
+}
