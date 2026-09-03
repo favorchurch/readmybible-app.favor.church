@@ -57,6 +57,20 @@ async function onCallback(
  */
 export const auth0 = new Auth0Client({
   domain: process.env.AUTH0_DOMAIN,
+  /**
+   * The tenant sets a default audience of the Rock MCP API, and the shared
+   * "Rock Web Apps" client has no grant for it, so any /authorize request that
+   * omits an audience is rejected with invalid_request before the user ever
+   * sees a login form. Naming the tenant's own /userinfo audience overrides
+   * that default and needs no client grant -- this is what runsheet's v3 SDK
+   * did implicitly, and what v4 stopped doing. offline_access is dropped with
+   * it: sessions ride the SDK's own cookie and Rock is called with a server
+   * REST key, so no refresh token is needed.
+   */
+  authorizationParameters: {
+    scope: "openid profile email",
+    audience: process.env.AUTH0_AUDIENCE ?? "https://favorchurch.au.auth0.com/userinfo",
+  },
   clientId: process.env.AUTH0_CLIENT_ID,
   clientSecret: process.env.AUTH0_CLIENT_SECRET,
   appBaseUrl: process.env.APP_BASE_URL,
