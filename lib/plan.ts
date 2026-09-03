@@ -62,3 +62,41 @@ export function planEntryForChapter(chapter: number): PlanEntry | undefined {
 export function planEntryForDate(date: string): PlanEntry | undefined {
   return PLAN.find((entry) => entry.date === date);
 }
+
+export const PLAN_START = "2026-10-01";
+export const PLAN_END = "2026-10-31";
+/** October 29-31: no new chapter assigned, catch-up still allowed. */
+export const GRACE_DAY_START = 29;
+
+export type PlanPhase = "pre-launch" | "active" | "closed";
+
+/** Which phase the plan is in for a given local YYYY-MM-DD date. */
+export function planPhase(todayLocal: string): PlanPhase {
+  if (todayLocal < PLAN_START) return "pre-launch";
+  if (todayLocal > PLAN_END) return "closed";
+  return "active";
+}
+
+/** Day-of-October number (1-31) for a local YYYY-MM-DD date inside October 2026. */
+export function dayOfOctober(todayLocal: string): number {
+  return Number(todayLocal.slice(8, 10));
+}
+
+/**
+ * Today's plan entry, if any -- null before Oct 1, and during the Oct 29-31
+ * grace days once all 28 chapters have already been assigned (day 28 is the
+ * last new chapter; those grace days surface via the catch-up flow instead).
+ */
+export function todaysEntry(todayLocal: string): PlanEntry | null {
+  if (planPhase(todayLocal) !== "active") return null;
+  const day = dayOfOctober(todayLocal);
+  if (day > TOTAL_CHAPTERS_IN_PLAN) return null;
+  return planEntryForChapter(day) ?? null;
+}
+
+const TOTAL_CHAPTERS_IN_PLAN = PLAN.length;
+
+/** The current "Day n of 28" label value, clamped to the plan's chapter count. */
+export function dayLabelNumber(todayLocal: string): number {
+  return Math.min(dayOfOctober(todayLocal), TOTAL_CHAPTERS_IN_PLAN);
+}
