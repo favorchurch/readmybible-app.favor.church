@@ -4,10 +4,16 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { AppShell, type AppShellProps } from "@/components/app-shell";
-import { defaultAvatarConfig, isAvatarConfig, type Translation } from "@/components/avatar";
+import { defaultAvatarConfig, isAvatarConfig, type Gender, type Translation } from "@/components/avatar";
 import { getCampusBoard, getGroupStats, getPersonReadingState } from "@/lib/data/stats";
 import { getCampusName, getRoster } from "@/lib/rock/client";
 import { getSessionContext } from "@/lib/session";
+
+function rosterGender(value: number | undefined): Gender | null {
+  if (value === 1) return "male";
+  if (value === 2) return "female";
+  return null;
+}
 
 export default async function Page() {
   const session = await getSessionContext();
@@ -41,12 +47,16 @@ export default async function Page() {
     needsGroupChoice: session.needsGroupChoice,
     isLeader: session.isLeader,
     campusName,
-    roster: roster.map((m) => ({
-      personId: m.PersonId,
-      name: m.Person?.NickName || m.Person?.FirstName || `Reader ${m.PersonId}`,
-      isLeader: m.GroupRoleId !== undefined && m.GroupRoleId !== null && [24, 81].includes(m.GroupRoleId),
-      readToday: groupStats?.readersTodayIds.includes(m.PersonId) ?? false,
-    })),
+    roster: roster.map((m) => {
+      const rockGender = (m.Person as (typeof m.Person & { Gender?: number }) | undefined)?.Gender;
+      return {
+        personId: m.PersonId,
+        name: m.Person?.NickName || m.Person?.FirstName || `Reader ${m.PersonId}`,
+        gender: rosterGender(rockGender),
+        isLeader: m.GroupRoleId !== undefined && m.GroupRoleId !== null && [24, 81].includes(m.GroupRoleId),
+        readToday: groupStats?.readersTodayIds.includes(m.PersonId) ?? false,
+      };
+    }),
     chapters: readingState.chapters,
     readingDates: readingState.dates,
     groupStats,

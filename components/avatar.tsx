@@ -141,17 +141,22 @@ export function Avatar({
 const SEED_COLORS: AvatarColor[] = ["coral", "blue", "gold", "sage", "violet"];
 const SEED_SKINS: SkinTone[] = ["light", "golden", "warm", "deep"];
 const SEED_HAIR: HairStyle[] = ["crop", "bob", "curls", "waves", "bun", "graybun", "pixie", "ponytail"];
+const MALE_SEED_HAIR: HairStyle[] = ["crop", "curls", "waves", "extra-short", "short-curly", "short-straight", "short-wavy", "bald"];
+const FEMALE_SEED_HAIR: HairStyle[] = ["bob", "bun", "graybun", "pixie", "ponytail", "long-curly", "long-straight", "long-wavy"];
 
 /**
  * A deterministic, cosmetics-only avatar look for roster members other than
- * the signed-in reader -- Read My Bible doesn't store custom avatars for
- * people who haven't opened the app, so this gives visual variety without
- * inventing data.
+ * the signed-in reader. When Rock has a gender value, keep randomized hair
+ * within that gender's avatar pool instead of mixing styles across genders.
  */
-export function avatarSeedFor(personId: number): { color: AvatarColor; skin: SkinTone; hair: HairStyle } {
+export function avatarSeedFor(
+  personId: number,
+  gender?: Gender | null,
+): { color: AvatarColor; skin: SkinTone; hair: HairStyle } {
+  const hairPool = gender === "male" ? MALE_SEED_HAIR : gender === "female" ? FEMALE_SEED_HAIR : SEED_HAIR;
   return {
     color: SEED_COLORS[personId % SEED_COLORS.length],
     skin: SEED_SKINS[(personId * 7) % SEED_SKINS.length],
-    hair: SEED_HAIR[(personId * 13) % SEED_HAIR.length],
+    hair: hairPool[(personId * 13) % hairPool.length],
   };
 }
