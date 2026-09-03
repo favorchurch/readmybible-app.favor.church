@@ -8,7 +8,7 @@
  */
 import "server-only";
 
-import { cached } from "@/lib/cache/redis";
+import { cached, redisGet, redisSetEx } from "@/lib/cache/redis";
 import {
   GROUP_MEMBER_STATUS_ACTIVE,
   GROUP_TYPE_CONNECT_GROUP,
@@ -46,6 +46,32 @@ function requireApiKey(): string {
     );
   }
   return key;
+}
+
+/** Rock REST v1 doesn't cap page size by default, but paging defensively
+ * avoids ever pulling an unbounded result set for a busy group/section. */
+const PAGE_SIZE = 100;
+
+/** Groups?$filter batch size for attachGroupData -- keeps the filter string well under Rock's URL length limits. */
+const GROUP_BATCH_SIZE = 15;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+}
+
+/** Fetches every page of a $filter query via $top/$skip until a short page signals the end. */
+async function rockFetchAllPages<T>(entity: string, filter: string, extraQuery = ""): Promise<T[]> {
+  const results: T[] = [];
+  for (let skip = 0; ; skip += PAGE_SIZE) {
+    const page = await rockFetch<T[]>(
+      `${entity}?$filter=${encodeURIComponent(filter)}${extraQuery}&$top=${PAGE_SIZE}&$skip=${skip}`,
+    );
+    results.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return results;
 }
 
 async function rockFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -111,16 +137,54 @@ export async function getPerson(personId: number): Promise<RockPerson | null> {
 
 /**
  * Rock's GroupMember entity has no navigable "Group" property over REST v1
- * ($expand=Group 400s with "Could not find a property named 'Group'") --
- * only Person, GroupRole, etc. are expandable. So group data is fetched
- * separately (one Groups/{id} call per distinct GroupId, itself cached 15
- * minutes via getGroupBasic) and attached here.
+ * ($expand=Group and a `Group/GroupTypeId eq ...` $filter both 400 with
+ * "Could not find a property named 'Group'", verified live against
+ * rock.favor.church) -- only Person, GroupRole, etc. are expandable. So
+ * group data is fetched separately and attached here: cache-hit groups are
+ * read individually, and every cache-miss group is fetched in one batched
+ * `Groups?$filter=Id eq a or Id eq b` call per chunk of 15 (instead of one
+ * Groups/{id} call per distinct GroupId), sharing the same 15-minute cache
+ * key (`rock:group:{id}`) that getGroupBasic reads and writes.
  */
 async function attachGroupData(rows: RockGroupMember[]): Promise<RockGroupMember[]> {
   const uniqueGroupIds = Array.from(new Set(rows.map((r) => r.GroupId)));
-  const groups = await Promise.all(uniqueGroupIds.map((id) => getGroupBasic(id)));
-  const groupById = new Map(uniqueGroupIds.map((id, index) => [id, groups[index]]));
+  const groupById = await getGroupsBasicBatch(uniqueGroupIds);
   return rows.map((row) => ({ ...row, Group: groupById.get(row.GroupId) ?? undefined }));
+}
+
+async function getGroupsBasicBatch(groupIds: number[]): Promise<Map<number, RockGroup | undefined>> {
+  const result = new Map<number, RockGroup | undefined>();
+  const uncached: number[] = [];
+
+  await Promise.all(
+    groupIds.map(async (id) => {
+      const hit = await redisGet(`rock:group:${id}`);
+      if (hit === null) {
+        uncached.push(id);
+        return;
+      }
+      try {
+        result.set(id, (JSON.parse(hit) as RockGroup | null) ?? undefined);
+      } catch {
+        uncached.push(id);
+      }
+    }),
+  );
+
+  for (const batch of chunk(uncached, GROUP_BATCH_SIZE)) {
+    const filter = batch.map((id) => `Id eq ${id}`).join(" or ");
+    const groups = await rockFetch<RockGroup[]>(
+      `Groups?$filter=${encodeURIComponent(filter)}&$select=Id,Name,GroupTypeId,CampusId,ParentGroupId,IsActive,IsArchived`,
+    );
+    const foundById = new Map(groups.map((g) => [g.Id, g]));
+    for (const id of batch) {
+      const group = foundById.get(id) ?? null;
+      result.set(id, group ?? undefined);
+      void redisSetEx(`rock:group:${id}`, 900, JSON.stringify(group));
+    }
+  }
+
+  return result;
 }
 
 /** Active Connect Group (GT25) memberships for a person, roles Member/Leader/Assistant Leader. Cached 5 minutes. */
@@ -129,7 +193,7 @@ export async function getMemberships(personId: number): Promise<RockGroupMember[
   return cached(`rock:memberships:${personId}`, 300, async () => {
     const roleFilter = GT25_ACTIVE_ROLE_IDS.map((id) => `GroupRoleId eq ${id}`).join(" or ");
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active' and (${roleFilter})`;
-    const rows = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
+    const rows = await rockFetchAllPages<RockGroupMember>("GroupMembers", filter);
     const enriched = await attachGroupData(rows);
     return enriched.filter(
       (m) =>
@@ -140,12 +204,17 @@ export async function getMemberships(personId: number): Promise<RockGroupMember[
   });
 }
 
-/** Active Connect section (GT24) memberships for a person. Cached 5 minutes. */
+/**
+ * Active Connect section (GT24) memberships for a person. GroupTypeId isn't
+ * filterable on GroupMembers over REST v1 (see attachGroupData), so this
+ * still filters client-side after fetching every active membership row.
+ * Cached 5 minutes.
+ */
 export async function getSectionMemberships(personId: number): Promise<RockGroupMember[]> {
   if (isFixtureMode()) return fixtureSectionMemberships();
   return cached(`rock:sections:${personId}`, 300, async () => {
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active'`;
-    const rows = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
+    const rows = await rockFetchAllPages<RockGroupMember>("GroupMembers", filter);
     const enriched = await attachGroupData(rows);
     return enriched.filter((m) => m.Group?.GroupTypeId === GROUP_TYPE_SECTION);
   });
@@ -156,9 +225,7 @@ export async function getRoster(groupId: number): Promise<RockGroupMember[]> {
   if (isFixtureMode()) return fixtureRoster(groupId);
   return cached(`rock:roster:${groupId}`, 300, async () => {
     const filter = `GroupId eq ${groupId} and GroupMemberStatus eq 'Active'`;
-    return rockFetch<RockGroupMember[]>(
-      `GroupMembers?$filter=${encodeURIComponent(filter)}&$expand=Person`,
-    );
+    return rockFetchAllPages<RockGroupMember>("GroupMembers", filter, "&$expand=Person");
   });
 }
 
