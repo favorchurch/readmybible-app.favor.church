@@ -9,3 +9,26 @@
 .join-confirm-card { max-width: 420px; margin: 24px auto 0; border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 22px; }
 .join-confirm-card h2 { font-family: Georgia, serif; font-weight: 500; margin: 0 0 12px; }
 .join-success { text-align: center; font-family: Georgia, serif; font-size: 18px; color: var(--sage); margin-top: 18px; }
+
+/* Low-emphasis explanatory line reused by the group picker, solo, and join
+   confirmation screens (Task 11). */
+.onboarding-note { max-width: 420px; margin: 0 auto 18px; font-size: 12px; color: var(--ink-muted); line-height: 1.5; }
+
+.reading-data-note {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  padding: 12px 14px;
+}
+.reading-data-note summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--navy);
+  list-style: none;
+}
+.reading-data-note summary::-webkit-details-marker { display: none; }
+.reading-data-note summary::before { content: "▸ "; } /* decorative */
+.reading-data-note[open] summary::before { content: "▾ "; } /* decorative */
+.reading-data-note p { margin: 10px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
