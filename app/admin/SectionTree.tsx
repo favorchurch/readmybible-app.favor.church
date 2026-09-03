@@ -8,7 +8,7 @@ import type { SectionWithStats } from "@/lib/admin/stats";
 import { CAMPUS_NAMES } from "@/lib/admin/campuses";
 
 function campusLabel(campusId: number | null): string {
-  if (campusId === null) return "—";
+  if (campusId === null) return "Unknown";
   return CAMPUS_NAMES[campusId] ?? `Campus ${campusId}`;
 }
 

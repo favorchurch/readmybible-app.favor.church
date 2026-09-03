@@ -28,7 +28,7 @@ export function flattenStatsRows(sections: SectionWithStats[]): GroupRow[] {
       rows.push({
         groupId: group.id,
         groupName: group.name,
-        campus: CAMPUS_NAMES[group.campusId ?? -1] ?? (group.campusId != null ? `Campus ${group.campusId}` : "—"),
+        campus: CAMPUS_NAMES[group.campusId ?? -1] ?? (group.campusId != null ? `Campus ${group.campusId}` : ""),
         sectionPath: nextPath.join(" / "),
         members: group.memberCount,
         readersToday: group.readersToday,
@@ -47,7 +47,9 @@ export function flattenStatsRows(sections: SectionWithStats[]): GroupRow[] {
 
 /** Quotes a CSV field only when it needs it (contains comma, quote, or newline). */
 export function csvField(value: string | number): string {
-  const str = String(value);
+  let str = String(value);
+  // Neutralize spreadsheet formula injection from Rock-sourced names.
+  if (typeof value === "string" && /^[=+@\t\r-]/.test(str)) str = `'${str}`;
   if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
 }
