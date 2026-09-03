@@ -23,7 +23,7 @@ export default async function Page() {
     db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
     getPersonReadingState(session.rockPersonId),
     session.activeGroup ? getRoster(session.activeGroup.groupId) : Promise.resolve([]),
-    session.activeGroup ? getGroupStats(session.activeGroup.groupId) : Promise.resolve(null),
+    session.activeGroup ? getGroupStats(session.activeGroup.groupId, session.activeGroup.campusId) : Promise.resolve(null),
     session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
     session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
   ]);

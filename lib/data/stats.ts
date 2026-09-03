@@ -4,10 +4,11 @@
  * are cached in Redis with the same key names app/actions/checkIn.ts busts
  * on write (group:{id}:stats, campus:{id}:board).
  *
- * "Today" for group/campus aggregates uses Asia/Manila (Favor Church's home
- * timezone) as a single reference point -- individual check-ins already
- * store the reader's own local reading_date, so this is an approximation
- * for cross-member comparison, not a per-row timezone conversion.
+ * "Today" for group/campus aggregates uses that campus's own IANA timezone
+ * (lib/campus-timezones.ts) as a single reference point per campus --
+ * individual check-ins already store the reader's own local reading_date,
+ * so this is an approximation for cross-member comparison within a campus,
+ * not a per-row timezone conversion.
  */
 import "server-only";
 
@@ -16,11 +17,12 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { checkins } from "@/db/schema";
 import { cached } from "@/lib/cache/redis";
+import { timezoneForCampus } from "@/lib/campus-timezones";
 import { getCampusGroups, getRoster } from "@/lib/rock/client";
 import { groupRatio, rankGroups, type GroupStanding } from "@/lib/game";
 
-export function todayInChurchTimezone(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
+export function todayInTimezone(timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date());
 }
 
 export type PersonReadingState = {
@@ -48,11 +50,11 @@ export type GroupStats = {
 };
 
 /** A group's total check-ins, member count, ratio, and who has read today. Cached 5 minutes. */
-export async function getGroupStats(groupId: number): Promise<GroupStats> {
+export async function getGroupStats(groupId: number, campusId: number | null): Promise<GroupStats> {
   return cached(`group:${groupId}:stats`, 300, async () => {
     const roster = await getRoster(groupId);
     const memberCount = roster.length;
-    const today = todayInChurchTimezone();
+    const today = todayInTimezone(timezoneForCampus(campusId));
 
     const [countRow] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -81,7 +83,7 @@ export async function getCampusBoard(campusId: number): Promise<GroupStanding[]>
     if (groups.length === 0) return [];
 
     const groupIds = groups.map((g) => g.Id);
-    const today = todayInChurchTimezone();
+    const today = todayInTimezone(timezoneForCampus(campusId));
 
     // One grouped query for totals, one for today's distinct readers --
     // both across every group on the campus at once.
