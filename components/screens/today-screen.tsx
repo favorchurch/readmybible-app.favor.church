@@ -10,7 +10,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
 import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
-import { longDate, planEntryForChapter } from "@/lib/plan";
+import { GRACE_DATES, longDate, planEntryForChapter } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
 
 const AVATAR_KEYS = [
@@ -186,12 +186,16 @@ export function TodayScreen({
       (chapter) => !chapters.includes(chapter),
     );
     const allRead = chaptersRead === TOTAL_CHAPTERS;
+    const graceDayIndex = GRACE_DATES.indexOf(today.todayLocal);
+    const graceDaysLeft = graceDayIndex === -1 ? GRACE_DATES.length : GRACE_DATES.length - graceDayIndex;
+    const graceDayWord = { 1: "One", 2: "Two", 3: "Three" }[graceDaysLeft] ?? String(graceDaysLeft);
+    const graceHero = `${graceDayWord} catch-up day${graceDaysLeft === 1 ? "" : "s"}.`;
 
     return (
       <main className="screen today-screen frame">
         <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
         <section className="hero-copy">
-          <h1>Three catch-up days.</h1>
+          <h1>{graceHero}</h1>
           <p>
             {allRead
               ? "You've read every chapter. Well done."

@@ -149,7 +149,7 @@
   animation: stageUpReveal var(--dur-slow) var(--ease-out);
 }
 .stage-up .home3d-wrap { margin: 0 auto; }
-.stage-up p { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+.stage-up p { margin: 8px 0 0; font-size: 13px; color: var(--ink); }
 .stage-up strong { color: var(--navy); }
 @keyframes stageUpReveal {
   from { opacity: 0; transform: translateY(6px); }

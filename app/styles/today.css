@@ -134,7 +134,7 @@
   padding: 18px;
   box-shadow: var(--shadow-sm);
 }
-.day1-preview-card .reading-topline { color: var(--coral); }
+.day1-preview-card .reading-topline { color: var(--coral-deep); }
 .day1-preview-card .reading-main { min-height: auto; }
 .day1-preview-card .reading-main h2 { color: var(--ink); }
 .day1-preview-card .reading-main p { color: var(--ink-muted); opacity: 1; }
@@ -144,7 +144,7 @@
   background: var(--surface-1);
   color: var(--ink);
 }
-.day1-preview-card .quick-verse-button .eyebrow { color: var(--coral); opacity: 1; }
+.day1-preview-card .quick-verse-button .eyebrow { color: var(--coral-deep); opacity: 1; }
 
 .readiness-card,
 .home-preview-card,
@@ -157,7 +157,7 @@
 }
 .frame__rail > *:first-child { margin-top: 0; }
 
-.readiness-card h2 { margin: 0 0 var(--space-3); font-family: Georgia, serif; font-size: 18px; font-weight: 500; }
+.readiness-card h2 { margin: 0 0 var(--space-3); font-size: 18px; font-weight: 500; }
 .readiness-row {
   width: 100%;
   display: grid;
@@ -218,7 +218,7 @@
   padding: var(--space-6);
 }
 .grace-stat { display: flex; align-items: baseline; gap: var(--space-2); }
-.grace-stat strong { font-family: Georgia, serif; font-size: 32px; color: var(--navy); }
+.grace-stat strong { font-size: 32px; color: var(--navy); }
 .grace-stat span { font-size: 13px; color: var(--ink-muted); }
 .grace-complete-note { margin: var(--space-4) 0 0; font-size: 14px; color: var(--sage); font-weight: 700; }
 .grace-chip-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
@@ -238,6 +238,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: var(--space-3);
   margin-top: var(--space-5);
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
@@ -261,7 +262,7 @@
   border-radius: var(--radius-md);
   padding: var(--space-6);
 }
-.closed-summary-stat { display: flex; justify-content: space-between; align-items: baseline; }
-.closed-summary-stat strong { font-family: Georgia, serif; font-size: 20px; color: var(--navy); }
+.closed-summary-stat { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); }
+.closed-summary-stat strong { font-size: 20px; color: var(--navy); }
 .closed-summary-stat span { font-size: 13px; color: var(--ink-muted); }
 .closed-summary .secondary-link { margin: var(--space-2) 0 0; }
