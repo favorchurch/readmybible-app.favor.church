@@ -2045,6 +2045,34 @@ body { letter-spacing: .008em; line-height: 1.4; }
   border-radius: 26px 26px 0 0;
 }
 
+.quick-verse-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,250,240,.5);
+  border-radius: 5px;
+  background: rgba(255,250,240,.14);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.quick-verse-button .eyebrow { color: #fffaf0; opacity: .78; margin-bottom: 3px; }
+.quick-verse-button strong { display: block; font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
+
+.translation-badge {
+  display: inline-block;
+  margin: 8px 0 14px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.scripture-sheet .secondary-link { display: inline-block; margin-top: 18px; }
+
 @media (min-width: 760px) {
   .modal-sheet { border-radius: 20px; }
   .bottom-nav { border-radius: 16px; }

@@ -34,6 +34,7 @@ import {
 } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
 import { PLAN, planEntryForChapter } from "@/lib/plan";
+import { ScripturePopup } from "@/components/scripture-popup";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
 
@@ -342,6 +343,9 @@ function TodayScreen({
   onStart: (chapter: number) => void;
   onEditProfile: () => void;
 }) {
+  const [quickVerseOpen, setQuickVerseOpen] = useState(false);
+  const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
+
   if (today.phase === "pre-launch") {
     return (
       <main className="screen today-screen">
@@ -399,11 +403,31 @@ function TodayScreen({
             </div>
             <div className="chapter-mark">{String(entry.chapter).padStart(2, "0")}</div>
           </div>
+          <button
+            type="button"
+            className="quick-verse-button"
+            ref={quickVerseTriggerRef}
+            onClick={() => setQuickVerseOpen(true)}
+          >
+            <span className="eyebrow">QUICK VERSE</span>
+            <strong>{entry.keyPassage}</strong>
+          </button>
           <button className="primary-button today-reading-button" onClick={() => onStart(entry.chapter)}>
             <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
             <span className="button-arrow" aria-hidden="true">→</span>
           </button>
         </section>
+      )}
+
+      {quickVerseOpen && entry && (
+        <ScripturePopup
+          passageRef={entry.keyPassage}
+          translation={profile.translation}
+          onClose={() => {
+            setQuickVerseOpen(false);
+            quickVerseTriggerRef.current?.focus();
+          }}
+        />
       )}
 
       {catchUpChapter && catchUpEntry && (
