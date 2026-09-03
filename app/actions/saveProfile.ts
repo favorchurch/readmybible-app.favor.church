@@ -8,9 +8,52 @@ import { getSessionContext } from "@/lib/session";
 
 const translations = ["NET", "ESV", "CSB", "NIV", "NLT"] as const;
 
+// Mirrors the type unions in components/avatar.tsx -- keep in sync with those.
+const genders = ["male", "female"] as const;
+const faces = ["narrow", "normal", "round"] as const;
+const hairStyles = [
+  "crop",
+  "curls",
+  "bob",
+  "bun",
+  "bald",
+  "waves",
+  "graybun",
+  "pixie",
+  "long-curly",
+  "medium-curly",
+  "short-curly",
+  "long-straight",
+  "medium-straight",
+  "short-straight",
+  "long-wavy",
+  "medium-wavy",
+  "short-wavy",
+  "extra-short",
+  "ponytail",
+] as const;
+const glassesStyles = ["none", "round", "wayfarer"] as const;
+const facialHairStyles = ["none", "mustache", "stubble", "beard"] as const;
+
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "Must be a #rrggbb color");
+
+const avatarSchema = z
+  .object({
+    gender: z.enum(genders),
+    face: z.enum(faces),
+    hair: z.enum(hairStyles),
+    glasses: z.enum(glassesStyles),
+    facialHair: z.enum(facialHairStyles),
+    hairColor: hexColor,
+    skinColor: hexColor,
+    shirtColor: hexColor,
+    backgroundColor: hexColor,
+  })
+  .strict();
+
 const inputSchema = z.object({
   displayName: z.string().trim().min(1).max(24),
-  avatar: z.record(z.string(), z.unknown()),
+  avatar: avatarSchema,
   translation: z.enum(translations),
 });
 
