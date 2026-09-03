@@ -49,7 +49,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .face-normal .avatar-face { width: 52%; left: 24%; }
 .face-round .avatar-face { width: 61%; height: 49%; left: 19.5%; top: 20%; border-radius: 50%; }
 .avatar-preview { width: 112px; height: 112px; box-shadow: inset 0 0 0 3px rgba(23,41,67,.1), 0 10px 24px rgba(23,41,67,.12); }
-.eyebrow { margin: 0 0 8px; letter-spacing: .18em; font-size: 10px; font-weight: 900; color: var(--coral); } /* decorative */
+.eyebrow { margin: 0 0 8px; letter-spacing: .18em; font-size: 11px; font-weight: 900; color: var(--coral); } /* decorative */
+.hero-copy .eyebrow { font-size: 12px; }
 .hero-copy, .page-title, .connect-title { max-width: 720px; margin: 44px auto 22px; }
 .hero-copy h1, .page-title h1, .connect-title h1 { font-family: Georgia, serif; margin: 0; font-size: clamp(38px, 9vw, 64px); line-height: .98; font-weight: 500; letter-spacing: -.045em; }
 .hero-copy > p:last-child, .page-title > p:last-child, .connect-title > p:last-child { color: var(--ink-muted); font-size: 15px; line-height: 1.55; margin: 16px 0 0; }
@@ -104,107 +105,3 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .secondary-link { display: block; text-align: center; margin: 22px auto 0; max-width: 720px; color: var(--navy); font-size: 12px; font-weight: 700; text-decoration: underline; }
 .error-note { color: var(--coral); font-size: 12px; font-weight: 700; margin: 10px 0 0; }
-
-/* Minimal sans-serif type system */
-.hero-copy h1,
-.page-title h1,
-.connect-title h1,
-.reading-main h2,
-.section-heading h2,
-.stage-row,
-.big-home-info h2,
-.reward > strong,
-.next-reward h2,
-.chapter-ring b,
-.stat-copy h2,
-.modal-sheet h2,
-.passage-note {
-  font-family: var(--font-display);
-}
-
-.hero-copy h1,
-.page-title h1,
-.connect-title h1 {
-  font-weight: 700;
-  letter-spacing: -.055em;
-}
-
-.reading-main h2,
-.section-heading h2,
-.big-home-info h2,
-.next-reward h2,
-.stat-copy h2,
-.modal-sheet h2 {
-  font-weight: 700;
-  letter-spacing: -.025em;
-}
-
-.daily-note,
-.gentle-note {
-  font-family: var(--font-sans);
-  font-style: normal;
-  font-weight: 600;
-  letter-spacing: .01em;
-}
-
-/* Agharti is a lowercase-only display treatment. */
-.hero-copy h1,
-.page-title h1,
-.connect-title h1,
-.reading-main h2,
-.section-heading h2,
-.big-home-info h2,
-.next-reward h2,
-.stat-copy h2,
-.modal-sheet h2,
-.journey-heading h2 {
-  text-transform: lowercase;
-}
-
-.brand,
-.chapter-mark,
-.reading-prompt > span {
-  font-family: var(--font-display);
-}
-
-.brand { text-transform: lowercase; letter-spacing: 0; }
-
-
-/* Typography refinement: Agharti is reserved for large display moments. */
-body { letter-spacing: .008em; line-height: 1.4; }
-
-.hero-copy h1,
-.page-title h1,
-.connect-title h1 {
-  font-family: var(--font-display);
-  text-transform: lowercase;
-  line-height: 1.08;
-  letter-spacing: .012em;
-  word-spacing: .06em;
-}
-
-.reading-main h2,
-.section-heading h2,
-.stage-row,
-.big-home-info h2,
-.reward > strong,
-.next-reward h2,
-.chapter-ring b,
-.stat-copy h2,
-.modal-sheet h2,
-.passage-note,
-.journey-heading h2 {
-  font-family: var(--font-sans);
-  text-transform: none;
-  letter-spacing: -.018em;
-  line-height: 1.2;
-}
-
-.section-heading h2 { max-width: 270px; font-size: 21px; }
-.reading-main h2 { letter-spacing: -.03em; }
-.stage-row { align-items: baseline; gap: 20px; font-size: 13px; line-height: 1.25; }
-.stage-row > span { white-space: nowrap; }
-.stage-row span + span:before { letter-spacing: .08em; margin-right: 5px; }
-.home-info { padding-top: 17px; }
-.home-info .progress-track { margin-top: 11px; }
-.stage-row.detail { margin-top: 10px; letter-spacing: .01em; }

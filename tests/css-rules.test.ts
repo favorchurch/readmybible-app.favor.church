@@ -17,6 +17,7 @@ const CSS_FILES = [
   "app/styles/motion.css",
   "app/styles/completion.css",
   "app/styles/misc.css",
+  "app/styles/typography.css",
   "app/admin/admin.css",
 ];
 
@@ -194,10 +195,19 @@ describe("css-rules", () => {
       for (let lineNo = 0; lineNo < lines.length; lineNo++) {
         const line = lines[lineNo];
         const isDecorative = /\/\*\s*decorative\s*\*\//.test(line);
-        if (isDecorative) continue;
         const re = /font-size\s*:\s*([\d.]+)(px|rem)/g;
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(line))) {
+        const matches = [...line.matchAll(re)];
+        if (isDecorative) {
+          // A decorative tag exempts the whole line, so a line with more than one
+          // font-size declaration would silently exempt an unrelated one too.
+          if (matches.length > 1) {
+            violations.push(
+              `${path}:${lineNo + 1}: decorative tag covers ${matches.length} font-size declarations (ambiguous exemption)`,
+            );
+          }
+          continue;
+        }
+        for (const m of matches) {
           const value = parseFloat(m[1]);
           const unit = m[2];
           const px = unit === "rem" ? value * 16 : value;
