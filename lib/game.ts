@@ -99,6 +99,12 @@ export function groupRatio(checkins: number, members: number): number {
   return Math.min(1, Math.max(0, ratio));
 }
 
+/** Ratio and stage together for a checkin/member count, the shape a completion screen shows. */
+export function groupStateFor(checkins: number, members: number): { ratio: number; stage: Stage } {
+  const ratio = groupRatio(checkins, members);
+  return { ratio, stage: stageFor(ratio) };
+}
+
 /** Home stage for a given ratio (highest threshold met, at or below 1). */
 export function stageFor(ratio: number): Stage {
   const clamped = Math.min(1, Math.max(0, ratio));

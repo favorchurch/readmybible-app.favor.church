@@ -50,31 +50,43 @@ export type GroupStats = {
   readersTodayIds: number[];
 };
 
+async function loadGroupStats(groupId: number, campusId: number | null): Promise<GroupStats> {
+  const roster = await getRoster(groupId);
+  const memberCount = roster.length;
+  const today = todayInTimezone(timezoneForCampus(campusId));
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(checkins)
+    .where(eq(checkins.groupId, groupId));
+
+  const todayRows = await db
+    .select({ rockPersonId: checkins.rockPersonId })
+    .from(checkins)
+    .where(and(eq(checkins.groupId, groupId), eq(checkins.readingDate, today)));
+
+  const checkinCount = countRow?.count ?? 0;
+  return {
+    checkinCount,
+    memberCount,
+    ratio: groupRatio(checkinCount, memberCount),
+    readersTodayIds: Array.from(new Set(todayRows.map((r) => r.rockPersonId))),
+  };
+}
+
 /** A group's total check-ins, member count, ratio, and who has read today. Cached 5 minutes. */
 export async function getGroupStats(groupId: number, campusId: number | null): Promise<GroupStats> {
-  return cached(`group:${groupId}:stats`, 300, async () => {
-    const roster = await getRoster(groupId);
-    const memberCount = roster.length;
-    const today = todayInTimezone(timezoneForCampus(campusId));
+  return cached(`group:${groupId}:stats`, 300, () => loadGroupStats(groupId, campusId));
+}
 
-    const [countRow] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(checkins)
-      .where(eq(checkins.groupId, groupId));
-
-    const todayRows = await db
-      .select({ rockPersonId: checkins.rockPersonId })
-      .from(checkins)
-      .where(and(eq(checkins.groupId, groupId), eq(checkins.readingDate, today)));
-
-    const checkinCount = countRow?.count ?? 0;
-    return {
-      checkinCount,
-      memberCount,
-      ratio: groupRatio(checkinCount, memberCount),
-      readersTodayIds: Array.from(new Set(todayRows.map((r) => r.rockPersonId))),
-    };
-  });
+/**
+ * Same as getGroupStats but bypasses the Redis cache, for the instant a
+ * check-in needs a true "before" count uncontaminated by up to 5 minutes of
+ * cache staleness (D8: the completion flow's stage-up compares real
+ * before/after state, never a cached page snapshot).
+ */
+export async function getGroupStatsFresh(groupId: number, campusId: number | null): Promise<GroupStats> {
+  return loadGroupStats(groupId, campusId);
 }
 
 /** Ranked Connect Groups on a campus, by ratio then readers-today then name. Cached 5 minutes. */
