@@ -13,6 +13,7 @@ import {
   avatarSeedFor,
   defaultAvatarConfig,
   type AvatarConfig,
+  type Gender,
   type Translation,
   type UserProfile,
 } from "@/components/avatar";
@@ -43,6 +44,7 @@ type Tab = "today" | "connect" | "rewards" | "progress";
 export type RosterMemberView = {
   personId: number;
   name: string;
+  gender: Gender | null;
   isLeader: boolean;
   readToday: boolean;
 };
@@ -478,8 +480,8 @@ function TodayScreen({
         <section className="people-today">
           <div className="avatar-stack">
             {roster.slice(0, 5).map((m) => {
-              const seed = avatarSeedFor(m.personId);
-              return <Avatar key={m.personId} color={seed.color} skin={seed.skin} hair={seed.hair} small />;
+              const seed = avatarSeedFor(m.personId, m.gender);
+              return <Avatar key={m.personId} color={seed.color} gender={m.gender ?? undefined} skin={seed.skin} hair={seed.hair} small />;
             })}
           </div>
           <div>
@@ -629,11 +631,11 @@ function ConnectScreen({
         ) : (
           <div className="member-grid">
             {sorted.map((m) => {
-              const seed = avatarSeedFor(m.personId);
+              const seed = avatarSeedFor(m.personId, m.gender);
               return (
                 <article className={`member-card ${m.readToday ? "read" : "waiting"}`} key={m.personId}>
                   <div className="member-avatar">
-                    <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
+                    <Avatar color={seed.color} gender={m.gender ?? undefined} skin={seed.skin} hair={seed.hair} />
                     {m.readToday && <b>✓</b>}
                   </div>
                   <strong>{m.name}</strong>
@@ -918,7 +920,7 @@ function GroupPickerScreen({
             <button
               key={m.groupId}
               type="button"
-              className={`picker-option ${selected === m.groupId ? "selected" : ""}`}
+              className={`picker-option ${selected === m.groupId ? "selected" : ""}`
               onClick={() => setSelected(m.groupId)}
               aria-pressed={selected === m.groupId}
             >
