@@ -22,6 +22,8 @@ export function CompletionFlow({
   chaptersRead,
   groupName,
   streakDays,
+  error,
+  pending,
   onClose,
   onComplete,
 }: {
@@ -31,6 +33,8 @@ export function CompletionFlow({
   chaptersRead: number;
   groupName: string | null;
   streakDays: number;
+  error?: string | null;
+  pending?: boolean;
   onClose: () => void;
   onComplete: () => void;
 }) {
@@ -61,9 +65,10 @@ export function CompletionFlow({
                 <small>Use your Bible or preferred Bible app.</small>
               </div>
             </div>
-            <button className="primary-button" onClick={onComplete}>
+            <button className="primary-button" onClick={onComplete} disabled={pending}>
               I read today <span>✓</span>
             </button>
+            {error && <p className="error-note">{error}</p>}
             <p className="honor-note">This is an honor-based check-in. Take your time.</p>
           </>
         ) : isCatchUp ? (

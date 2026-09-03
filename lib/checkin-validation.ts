@@ -3,10 +3,8 @@
  * app/actions/checkIn.ts so it can be unit tested without a live DB/session.
  * See intent/GAME.md check-in rules.
  */
-import { planEntryForDate } from "@/lib/plan";
+import { planEntryForChapter } from "@/lib/plan";
 
-export const PLAN_START = "2026-10-01";
-export const PLAN_END = "2026-10-31";
 export const CLOCK_SKEW_DAYS = 1;
 
 export function addDays(dateStr: string, days: number): string {
@@ -32,29 +30,33 @@ export function localTodayFor(timezone: string, now: Date = new Date()): string 
   }
 }
 
-export type CheckInValidationResult = { ok: true } | { ok: false; error: string };
+export type CheckInValidationResult =
+  | { ok: true; readingDate: string }
+  | { ok: false; error: string };
 
 /**
- * Validates readingDate against the plan window and the reader's true local
- * "today" (never a future day beyond one day of clock-skew tolerance), and
- * that chapter matches the plan's chapter for that date when the date has
- * an assigned chapter (catch-up days like Oct 29-31 have none, so any
- * already-assigned chapter is allowed there).
+ * A check-in is for a chapter, not a date the client picks: its reading_date
+ * is that chapter's plan date (2026-10-{chapter}), derived server-side so a
+ * caller can't submit an arbitrary date/chapter pair. Accepted whenever that
+ * plan date is at or before the reader's true local "today" (from their
+ * submitted IANA timezone), with one day of tolerance for clock skew --
+ * catch-up on any past chapter is allowed, only a future chapter is
+ * rejected.
  */
 export function validateCheckIn(
-  input: { chapter: number; readingDate: string; timezone: string },
+  input: { chapter: number; timezone: string },
   now: Date = new Date(),
 ): CheckInValidationResult {
-  const localToday = localTodayFor(input.timezone, now);
-  const toleratedMax = addDays(localToday, CLOCK_SKEW_DAYS);
-  if (input.readingDate < PLAN_START || input.readingDate > PLAN_END || input.readingDate > toleratedMax) {
+  const entry = planEntryForChapter(input.chapter);
+  if (!entry) {
     return { ok: false, error: "That date is outside the reading plan window." };
   }
 
-  const entryForDate = planEntryForDate(input.readingDate);
-  if (entryForDate && entryForDate.chapter !== input.chapter) {
-    return { ok: false, error: "That chapter doesn't match that date." };
+  const localToday = localTodayFor(input.timezone, now);
+  const toleratedMax = addDays(localToday, CLOCK_SKEW_DAYS);
+  if (entry.date > toleratedMax) {
+    return { ok: false, error: "That date is outside the reading plan window." };
   }
 
-  return { ok: true };
+  return { ok: true, readingDate: entry.date };
 }

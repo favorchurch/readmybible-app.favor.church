@@ -19,57 +19,40 @@ describe("localTodayFor", () => {
   });
 });
 
-describe("validateCheckIn (F1: future-date guard)", () => {
-  it("rejects a readingDate beyond the reader's true local today plus clock skew", () => {
-    // Server "now" is 2026-10-10 in UTC; client claims a far-future
-    // readingDate. Before the fix, the guard derived its ceiling from
-    // readingDate itself, so this never failed.
+describe("validateCheckIn", () => {
+  it("accepts today's chapter and derives its plan reading_date", () => {
     const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 20, readingDate: "2026-10-20", timezone: "UTC" }, now);
+    const result = validateCheckIn({ chapter: 10, timezone: "UTC" }, now);
+    expect(result).toEqual({ ok: true, readingDate: "2026-10-10" });
+  });
+
+  it("accepts one day of clock skew (tomorrow's chapter, local)", () => {
+    const now = new Date("2026-10-10T12:00:00Z");
+    const result = validateCheckIn({ chapter: 11, timezone: "UTC" }, now);
+    expect(result).toEqual({ ok: true, readingDate: "2026-10-11" });
+  });
+
+  it("rejects a chapter beyond the reader's true local today plus clock skew", () => {
+    const now = new Date("2026-10-10T12:00:00Z");
+    const result = validateCheckIn({ chapter: 20, timezone: "UTC" }, now);
     expect(result).toEqual({ ok: false, error: "That date is outside the reading plan window." });
   });
 
-  it("accepts today in the reader's timezone", () => {
+  it("catch-up for chapter 3 on Oct 10 passes", () => {
     const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 10, readingDate: "2026-10-10", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: true });
+    const result = validateCheckIn({ chapter: 3, timezone: "UTC" }, now);
+    expect(result).toEqual({ ok: true, readingDate: "2026-10-03" });
   });
 
-  it("accepts one day of clock skew (tomorrow, local)", () => {
+  it("chapter 12 on Oct 10 fails", () => {
     const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 11, readingDate: "2026-10-11", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: true });
+    const result = validateCheckIn({ chapter: 12, timezone: "UTC" }, now);
+    expect(result).toEqual({ ok: false, error: "That date is outside the reading plan window." });
   });
 
-  it("rejects a date before the plan starts", () => {
-    const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 1, readingDate: "2026-09-30", timezone: "UTC" }, now);
-    expect(result.ok).toBe(false);
-  });
-});
-
-describe("validateCheckIn (F2: chapter/day pairing)", () => {
-  it("rejects a chapter that doesn't match the plan's chapter for that date", () => {
-    const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 5, readingDate: "2026-10-10", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: false, error: "That chapter doesn't match that date." });
-  });
-
-  it("allows the matching chapter for that date", () => {
-    const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 10, readingDate: "2026-10-10", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: true });
-  });
-
-  it("allows catch-up on a past day whose chapter matches the plan", () => {
-    const now = new Date("2026-10-10T12:00:00Z");
-    const result = validateCheckIn({ chapter: 7, readingDate: "2026-10-07", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: true });
-  });
-
-  it("allows any already-assigned chapter on a grace day with no plan entry", () => {
-    const now = new Date("2026-10-30T12:00:00Z");
-    const result = validateCheckIn({ chapter: 15, readingDate: "2026-10-29", timezone: "UTC" }, now);
-    expect(result).toEqual({ ok: true });
+  it("chapter 28 on Oct 29 passes (grace-day catch-up)", () => {
+    const now = new Date("2026-10-29T12:00:00Z");
+    const result = validateCheckIn({ chapter: 28, timezone: "UTC" }, now);
+    expect(result).toEqual({ ok: true, readingDate: "2026-10-28" });
   });
 });

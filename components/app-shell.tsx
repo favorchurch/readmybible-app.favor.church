@@ -148,6 +148,7 @@ export function AppShell(props: AppShellProps) {
   const [flowStep, setFlowStep] = useState(0);
   const [pending, setPending] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
 
   const chapters = useMemo(() => Array.from(new Set(props.chapters)), [props.chapters]);
   const chaptersRead = chapters.length;
@@ -164,6 +165,7 @@ export function AppShell(props: AppShellProps) {
   }, [chapters, today]);
 
   function startReading(chapter: number) {
+    setCheckInError(null);
     setFlowChapter(chapter);
     setFlowStep(1);
   }
@@ -171,16 +173,14 @@ export function AppShell(props: AppShellProps) {
   async function finishReading() {
     if (flowChapter === null) return;
     setPending(true);
-    const result = await checkIn({ chapter: flowChapter, readingDate: today.todayLocal, timezone: today.timezone });
+    setCheckInError(null);
+    const result = await checkIn({ chapter: flowChapter, timezone: today.timezone });
     setPending(false);
     if (result.ok) {
       setFlowStep(2);
       router.refresh();
     } else {
-      setFlowStep(0);
-      // The honor-based flow rarely errors; a console note is enough for
-      // now since there is no toast system in this app.
-      console.error(result.error);
+      setCheckInError("Something went wrong on our side. Try again in a bit.");
     }
   }
 
@@ -303,9 +303,12 @@ export function AppShell(props: AppShellProps) {
           chaptersRead={chaptersRead}
           groupName={groupName}
           streakDays={currentStreak}
+          error={checkInError}
+          pending={pending}
           onClose={() => {
             setFlowStep(0);
             setFlowChapter(null);
+            setCheckInError(null);
           }}
           onComplete={finishReading}
         />
