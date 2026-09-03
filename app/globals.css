@@ -147,6 +147,72 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
 
+/* Leg B: group picker, solo mode, join flow, leader tools, leaderboard */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.secondary-link { display: block; text-align: center; margin: 22px auto 0; max-width: 720px; color: var(--navy); font-size: 12px; font-weight: 700; text-decoration: underline; }
+.error-note { color: var(--coral); font-size: 12px; font-weight: 700; margin: 10px 0 0; }
+.picker-screen, .solo-screen, .join-screen { max-width: 560px; margin: 0 auto; padding-top: 64px; text-align: center; }
+.picker-list { display: grid; gap: 10px; max-width: 420px; margin: 0 auto 22px; }
+.picker-option { border: 1px solid var(--line); background: var(--paper); padding: 16px; border-radius: 4px; font-weight: 800; font-size: 14px; cursor: pointer; text-align: left; }
+.picker-option.selected { border: 2px solid var(--coral); background: #fff5eb; color: var(--coral); }
+.solo-screen .primary-button, .picker-screen .primary-button, .join-screen .primary-button { max-width: 420px; margin: 0 auto; }
+.join-code-form { max-width: 320px; margin: 0 auto 18px; display: grid; gap: 14px; }
+.join-code-form label { display: grid; gap: 6px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.join-code-form input { border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 14px; font-size: 22px; letter-spacing: .3em; text-align: center; font-weight: 900; text-transform: uppercase; }
+.join-confirm-card { max-width: 420px; margin: 24px auto 0; border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 22px; }
+.join-confirm-card h2 { font-family: Georgia, serif; font-weight: 500; margin: 0 0 12px; }
+.join-success { text-align: center; font-family: Georgia, serif; font-size: 18px; color: var(--sage); margin-top: 18px; }
+.leader-box { max-width: 720px; margin: 30px auto 0; border: 1px solid var(--line); background: var(--paper); padding: 18px; border-radius: 4px; }
+.leader-box > p { font-size: 12px; color: var(--ink-muted); margin: 6px 0 16px; }
+.leader-code-row { display: flex; align-items: center; gap: 16px; justify-content: space-between; }
+.leader-code { display: grid; gap: 4px; }
+.leader-code strong { font-family: Impact, sans-serif; font-size: 32px; letter-spacing: .12em; color: var(--coral); }
+.leader-code-row img { border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+.leader-nudge { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+.leader-nudge span { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+.leaderboard-card { max-width: 720px; margin: 26px auto 0; }
+.leaderboard-card .gentle-note { margin: 4px 0 14px; text-align: left; }
+.leaderboard-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.leaderboard-list li { border: 1px solid var(--line); background: var(--paper); padding: 12px 14px; border-radius: 3px; font-size: 12px; font-weight: 700; }
+.connect-portal-link { margin-top: 30px; }
+.translation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.translation-choices button { border: 1px solid var(--line); background: var(--paper); padding: 8px 14px; border-radius: 3px; font-weight: 800; font-size: 12px; cursor: pointer; }
+.translation-choices button.selected { border-color: var(--coral); color: var(--coral); background: #fff5eb; }
+.profile-field small { display: block; margin-top: 6px; font-size: 10px; color: var(--ink-muted); }
+
+/* Tablet: Connect and Progress become two columns; bottom nav stays usable */
+@media (min-width: 768px) {
+  .connect-screen .big-home-card { grid-template-columns: 1.1fr .9fr; }
+  .connect-screen .leader-box,
+  .connect-screen .member-section { max-width: 920px; }
+  .connect-screen .member-section .member-grid { grid-template-columns: repeat(4, 1fr); }
+  .connect-screen .connect-title,
+  .connect-screen .leader-box,
+  .connect-screen .member-section,
+  .connect-screen .big-home-card {
+    display: grid;
+  }
+  .connect-screen > .connect-title { grid-template-columns: none; }
+  .connect-screen { display: grid; grid-template-columns: 1.15fr .85fr; gap: 24px; align-items: start; max-width: 1040px; margin: 0 auto; padding-bottom: 140px; }
+  .connect-screen .topbar, .connect-screen .connect-title { grid-column: 1 / -1; }
+  .connect-screen .big-home-card { grid-column: 1; }
+  .connect-screen .leader-box { grid-column: 2; grid-row: 2 / span 2; }
+  .connect-screen .member-section { grid-column: 1; }
+  .connect-screen .connect-portal-link { grid-column: 1 / -1; }
+
+  .progress-screen { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; max-width: 1040px; margin: 0 auto; padding-bottom: 140px; }
+  .progress-screen .topbar,
+  .progress-screen .progress-profile-card,
+  .progress-screen .page-title.compact { grid-column: 1 / -1; }
+  .progress-screen .stats-card,
+  .progress-screen .mini-stats,
+  .progress-screen .calendar-card { grid-column: 1; }
+  .progress-screen .next-reward.progress-reward,
+  .progress-screen .leaderboard-card { grid-column: 2; }
+
+  .bottom-nav { width: min(680px, 92%); }
+}
+
 /* Minimal sans-serif type system */
 .hero-copy h1,
 .page-title h1,
