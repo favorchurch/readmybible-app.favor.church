@@ -539,10 +539,13 @@ function ConnectScreen({
   }, [isLeader]);
 
   useEffect(() => {
-    if (!joinCode || !appBaseUrl) return;
+    if (!joinCode) return;
+    // APP_BASE_URL is empty on some preview deploys -- fall back to the
+    // browser's own origin so the QR/join link still resolves.
+    const baseUrl = appBaseUrl || window.location.origin;
     let cancelled = false;
     import("qrcode").then((QRCode) => {
-      QRCode.toDataURL(`${appBaseUrl}/join/${joinCode}`).then((url) => {
+      QRCode.toDataURL(`${baseUrl}/join/${joinCode}`).then((url) => {
         if (!cancelled) setQrDataUrl(url);
       });
     });
