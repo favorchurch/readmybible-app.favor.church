@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type Translation, type UserProfile } from "@/components/avatar";
-import { useEscapeToClose } from "@/components/use-escape-to-close";
+import { Sheet } from "@/components/sheet";
 
 const hairChoices: Array<{ value: HairStyle; label: string }> = [
   { value: "bald", label: "Bald" },
@@ -75,19 +75,16 @@ export function ProfileEditor({
   onSave: (profile: UserProfile) => void;
 }) {
   const [draft, setDraft] = useState(profile);
-  useEscapeToClose(onClose);
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
   return (
-    <div className="modal-wrap profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
-      <button className="modal-backdrop" onClick={onClose} aria-label="Close profile editor" />
-      <section className="modal-sheet profile-sheet">
-        <button className="close-button" onClick={onClose} aria-label="Close">
-          ×
-        </button>
-        <p className="eyebrow">YOUR AVATAR</p>
+    <Sheet open onClose={onClose} labelledBy="profile-title" className="profile-sheet">
+      <button className="close-button" onClick={onClose} aria-label="Close">
+        ×
+      </button>
+      <p className="eyebrow">YOUR AVATAR</p>
         <h2 id="profile-title">Make it feel like you.</h2>
         <p className="profile-intro">Choose a few details for the avatar your Connect will see.</p>
         <div className="profile-preview-wrap">
@@ -287,7 +284,6 @@ export function ProfileEditor({
         >
           {saving ? "Saving…" : "Save"} <span>✓</span>
         </button>
-      </section>
-    </div>
+    </Sheet>
   );
 }

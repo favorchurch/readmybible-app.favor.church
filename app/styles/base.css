@@ -118,8 +118,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .chapter-ring b,
 .stat-copy h2,
 .modal-sheet h2,
-.passage-note,
-.location-question > strong {
+.passage-note {
   font-family: var(--font-display);
 }
 
@@ -135,8 +134,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .big-home-info h2,
 .next-reward h2,
 .stat-copy h2,
-.modal-sheet h2,
-.location-question > strong {
+.modal-sheet h2 {
   font-weight: 700;
   letter-spacing: -.025em;
 }
@@ -159,7 +157,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .next-reward h2,
 .stat-copy h2,
 .modal-sheet h2,
-.location-question > strong,
 .journey-heading h2 {
   text-transform: lowercase;
 }
@@ -196,7 +193,6 @@ body { letter-spacing: .008em; line-height: 1.4; }
 .stat-copy h2,
 .modal-sheet h2,
 .passage-note,
-.location-question > strong,
 .journey-heading h2 {
   font-family: var(--font-sans);
   text-transform: none;
