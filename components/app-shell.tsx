@@ -608,6 +608,9 @@ function ConnectScreen({
               <span>{stillReading.map((m) => m.name).join(", ")} haven&apos;t checked in today. A quick message goes a long way.</span>
             </div>
           )}
+          <a className="secondary-link connect-portal-link" href="https://connect.favor.church">
+            Manage your group on connect.favor.church
+          </a>
         </section>
       )}
 
@@ -642,9 +645,6 @@ function ConnectScreen({
         )}
         <p className="gentle-note">We cheer for groups, not against people.</p>
       </section>
-      <a className="secondary-link connect-portal-link" href="https://connect.favor.church">
-        Manage your group on connect.favor.church
-      </a>
     </main>
   );
 }
@@ -983,9 +983,6 @@ function SoloScreen({
           </button>
         </form>
       )}
-      <a className="secondary-link" href="https://connect.favor.church">
-        Find a Connect Group at connect.favor.church
-      </a>
     </main>
   );
 }

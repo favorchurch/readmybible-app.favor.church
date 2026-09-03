@@ -31,9 +31,6 @@ export default async function AuthErrorPage({
       <a className="primary-button" href="/auth/login">
         Try again
       </a>
-      <a className="secondary-link" href="https://connect.favor.church">
-        Go to connect.favor.church
-      </a>
     </main>
   );
 }

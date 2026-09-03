@@ -8,7 +8,7 @@ flowchart LR
   B -- no --> C[Auth0 login<br/>email OTP / Google / Facebook]
   C --> D[Rock post-login Action<br/>sets rock_person_id claim]
   D --> E{rock_person_found?}
-  E -- no --> F[Not-found screen<br/>link to connect.favor.church]
+  E -- no --> F[Not-found screen<br/>points to Connect Group leader]
   E -- yes --> G[Server: active GT25 memberships<br/>cached 5 min]
   G -- one --> H[Today tab]
   G -- many --> I[Group picker<br/>leader group default]

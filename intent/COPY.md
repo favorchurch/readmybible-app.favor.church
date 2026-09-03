@@ -14,14 +14,12 @@ lowercase pronouns for God and Jesus, `Connect Group` on first mention then `Con
 - Title: **Hey! Let's read together.**
 - Body: Log in with the same account you use for Favor. Your Connect Group is already waiting.
 - Button: **Log in**
-- Footnote: New here? Find a Connect Group at connect.favor.church
 
 ## Not found in Rock
 
 - Title: **We couldn't find you yet.**
-- Body: Your login worked, but we don't have your Favor record connected. Reach out to your
-  Connect Group leader, or visit connect.favor.church and we'll get you sorted.
-- Button: **Go to connect.favor.church**
+- Body: Your login worked, but we don't have your Favor record connected yet. Reach out to your
+  Connect Group leader and they'll get you sorted.
 - Secondary: **Try another account**
 
 ## Today tab
@@ -59,7 +57,7 @@ lowercase pronouns for God and Jesus, `Connect Group` on first mention then `Con
 - Leader nudge title: **Still reading**
 - Leader nudge body: {names} haven't checked in today. A quick message goes a long way.
 - Anti-ranking note: We cheer for groups, not against people.
-- Connect portal link: **Manage your group on connect.favor.church**
+- Connect portal link (leaders only): **Manage your group on connect.favor.church**
 
 ## Group picker
 
@@ -72,7 +70,6 @@ lowercase pronouns for God and Jesus, `Connect Group` on first mention then `Con
 - Title: **You're reading solo for now.**
 - Body: Ask a Connect Group leader for their group code and join in. Your coins come with you.
 - Button: **Enter a group code**
-- Link: Find a Connect Group at connect.favor.church
 
 ## Join by code
 
@@ -129,4 +126,4 @@ lowercase pronouns for God and Jesus, `Connect Group` on first mention then `Con
 - Offline: You're offline. We'll save your check-in when you're back.
 - Rock slow: Favor's records are taking a moment. Hang tight.
 - Logout: **Log out**
-- Footer: Favor Church · connect.favor.church
+- Admin footer: Favor Church · connect.favor.church

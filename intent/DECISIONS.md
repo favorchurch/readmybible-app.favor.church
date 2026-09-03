@@ -26,4 +26,5 @@
 | Q22 | Social share retired |
 | Q23 | Auth0 host mapping, Action redeploy, callback URLs approved. Preview URLs unmapped. Local dev uses a mock session |
 | Q24 | Everything ships by Sunday |
+| Q25 | Q4's "connect.favor.church linked where natural" narrowed (2026-09-03): that portal is internal to Connect Group leaders only, never members or the public. Removed from the not-found screen, auth-error screen, and solo mode; kept only inside the leader-gated Connect tools box |
 | Misc | Missing assets may be generated with codex imagegen (luna). Rico adds the REST key to `.env` himself |
