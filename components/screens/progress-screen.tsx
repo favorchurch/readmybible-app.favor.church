@@ -40,7 +40,7 @@ export function ProgressScreen({
   const next = nextMedal(chaptersRead);
 
   return (
-    <main className="screen progress-screen">
+    <main className="screen progress-screen frame">
       <Header heading="Your progress" profile={profile} onEditProfile={onEditProfile} />
       <section className="progress-profile-card" aria-label={`${profile.displayName}'s profile and reading highlights`}>
         <Avatar

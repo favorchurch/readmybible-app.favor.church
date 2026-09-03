@@ -26,7 +26,7 @@ export default async function AdminPage() {
 
   if (!scope) {
     return (
-      <main className="screen admin-screen">
+      <main className="screen admin-screen frame">
         <section className="admin-no-access">
           <h1>This page is for section leaders.</h1>
           <p>
@@ -47,7 +47,7 @@ export default async function AdminPage() {
       : `Showing ${statsSections.map((s) => s.name).join(", ")} and everything under it.`;
 
   return (
-    <main className="screen admin-screen">
+    <main className="screen admin-screen frame">
       <section className="page-title">
         <h1>Connect Group progress</h1>
         <p className="admin-scope-line">{scopeLine}</p>

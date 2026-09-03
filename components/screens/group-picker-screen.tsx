@@ -18,7 +18,7 @@ export function GroupPickerScreen({
   return (
     <div className="app-shell">
       <div className="paper-noise" />
-      <main className="screen picker-screen">
+      <main className="screen picker-screen frame--focused">
         <Brand />
         <section className="hero-copy">
           <h1>Which group are you reading with?</h1>
@@ -37,7 +37,7 @@ export function GroupPickerScreen({
             </button>
           ))}
         </div>
-        <button className="primary-button" disabled={pending || selected === null} onClick={() => selected !== null && onChoose(selected)}>
+        <button className="primary-button" disabled={pending || selected === null} aria-busy={pending} onClick={() => selected !== null && onChoose(selected)}>
           <strong>Read with this group</strong>
         </button>
       </main>

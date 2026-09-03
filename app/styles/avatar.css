@@ -1,22 +1,22 @@
 .translation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .translation-choices button { border: 1px solid var(--line); background: var(--paper); padding: 8px 14px; border-radius: 3px; font-weight: 800; font-size: 12px; cursor: pointer; }
 .translation-choices button.selected { border-color: var(--coral); color: var(--coral); background: #fff5eb; }
-.profile-field small { display: block; margin-top: 6px; font-size: 10px; color: var(--ink-muted); }
+.profile-field small { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-muted); }
 
 /* Personal avatar builder */
 .profile-sheet { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
 .profile-sheet h2 { font-family: var(--font-sans); font-size: 28px; font-weight: 900; letter-spacing: -.025em; text-transform: none; }
 .profile-intro { margin: 8px 0 18px; color: var(--ink-muted); font-size: 12px; line-height: 1.5; }
 .profile-preview-wrap { min-height: 150px; display: flex; align-items: center; justify-content: center; gap: 18px; margin: 0 -20px 19px; background: var(--paper); border-block: 1px solid var(--line); }
-.profile-preview-wrap strong, .profile-preview-wrap span { display: block; }.profile-preview-wrap strong { font-size: 18px; }.profile-preview-wrap span { margin-top: 3px; color: var(--ink-muted); font-size: 10px; }
+.profile-preview-wrap strong, .profile-preview-wrap span { display: block; }.profile-preview-wrap strong { font-size: 18px; }.profile-preview-wrap span { margin-top: 3px; color: var(--ink-muted); font-size: 12px; }
 .profile-field { margin: 0 0 18px; padding: 0; border: 0; }
-.profile-field legend { margin-bottom: 9px; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--navy); }
+.profile-field legend { margin-bottom: 9px; font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--navy); }
 .segment-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .segment-choices button { min-height: 44px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 12px; font-weight: 800; }
 .segment-choices button.selected { border: 2px solid var(--coral); color: var(--coral); background: #fff4ed; }
 .hair-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .hair-choices button { min-width: 0; min-height: 78px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
-.hair-choices button > span:last-child { font-size: 9px; font-weight: 800; }.hair-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
+.hair-choices button > span:last-child { font-size: 12px; font-weight: 800; }.hair-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
 .color-choices { display: grid; grid-template-columns: repeat(5, 42px); gap: 10px; }
 .color-choices button { width: 42px; height: 42px; padding: 0; border: 3px solid var(--cream); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
 .color-choices button.selected { box-shadow: 0 0 0 3px var(--navy); transform: scale(.92); }
@@ -63,7 +63,7 @@
 
 .face-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .face-choices button { min-width: 0; min-height: 76px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
-.face-choices button > span:last-child { font-size: 9px; font-weight: 800; }.face-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
+.face-choices button > span:last-child { font-size: 12px; font-weight: 800; }.face-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
 .color-choices { grid-template-columns: repeat(auto-fit, 42px); }
 
 /* A reward shelf that grows from small medals into substantial trophies. */
@@ -73,7 +73,7 @@
 .medal-award.medal-small { --award-size: 52px; height: 68px; }.medal-award.medal-medium { --award-size: 66px; height: 82px; }.medal-award.medal-star { --award-size: 84px; height: 94px; }
 .medal-ribbons { position: absolute; width: 62%; height: 47%; left: 19%; top: 0; background: linear-gradient(90deg,var(--award-dark) 0 42%,#f3d798 42% 58%,var(--award) 58%); clip-path: polygon(0 0,100% 0,82% 100%,50% 78%,18% 100%); }
 .medal-face { position: absolute; z-index: 2; width: 72%; aspect-ratio: 1; left: 14%; bottom: 0; display: grid; place-items: center; border-radius: 50%; background: var(--award); border: 4px solid var(--award-dark); box-shadow: inset 0 0 0 3px rgba(255,255,255,.28); font-size: 17px; }
-.medal-award > span { position: absolute; z-index: 3; width: 100%; bottom: 11%; left: 0; text-align: center; font-size: 9px; font-style: normal; font-weight: 900; color: var(--navy); }
+.medal-award > span { position: absolute; z-index: 3; width: 100%; bottom: 11%; left: 0; text-align: center; font-size: 9px; font-style: normal; font-weight: 900; color: var(--navy); } /* decorative */
 .medal-star .medal-face { width: 88%; left: 6%; border-radius: 0; clip-path: polygon(50% 0,62% 34%,98% 36%,69% 57%,79% 94%,50% 73%,21% 94%,31% 57%,2% 36%,38% 34%); border: 0; font-size: 22px; }
 .medal-star > span { bottom: 17%; color: #654612; }
 
@@ -82,7 +82,7 @@
 .trophy-cup:before,.trophy-cup:after { content: ""; position: absolute; width: 31%; height: 48%; top: 8%; border: 4px solid var(--award-dark); border-radius: 50%; z-index: -1; }.trophy-cup:before { left: -27%; }.trophy-cup:after { right: -27%; }
 .trophy-award > i { position: absolute; width: 11%; height: 28%; left: 44.5%; top: 43%; background: var(--award-dark); }
 .trophy-award > b { position: absolute; width: 62%; height: 13%; left: 19%; bottom: 7%; background: var(--award-dark); border-radius: 3px 3px 1px 1px; box-shadow: 0 -7px 0 -2px var(--award); }
-.trophy-award > em { position: absolute; z-index: 4; width: 100%; left: 0; top: 23%; text-align: center; color: #fff7dc; font-size: 10px; font-style: normal; font-weight: 900; }
+.trophy-award > em { position: absolute; z-index: 4; width: 100%; left: 0; top: 23%; text-align: center; color: #fff7dc; font-size: 10px; font-style: normal; font-weight: 900; } /* decorative */
 .trophy-large .trophy-cup { font-size: 25px; }.trophy-large > em { font-size: 12px; }
 
 /* Avatar geometry refinements */
@@ -689,7 +689,7 @@
   color: var(--navy);
   cursor: pointer;
 }
-.avatar-option > span:last-child { font-size: 9px; font-weight: 800; }
+.avatar-option > span:last-child { font-size: 12px; font-weight: 800; }
 .avatar-option.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
 .avatar-option .avatar-small { width: 48px; height: 48px; }
 
@@ -912,7 +912,7 @@
   display: block;
   margin-bottom: 8px;
   color: var(--navy);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -935,5 +935,5 @@
   display: block;
   margin-top: 6px;
   color: var(--ink-muted);
-  font-size: 8px;
+  font-size: 12px;
 }

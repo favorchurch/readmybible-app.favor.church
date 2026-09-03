@@ -47,21 +47,21 @@
 
 .admin-table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 13px; }
 .admin-table th, .admin-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.admin-table th { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 800; }
+.admin-table th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 800; }
 .admin-table tr:last-child td { border-bottom: 0; }
 .admin-table .admin-row-group td:first-child { padding-left: 30px; }
 .admin-table .admin-row-section td { background: rgba(23,41,67,.04); font-weight: 800; }
 
 .admin-section-toggle { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; cursor: pointer; color: var(--navy); display: flex; align-items: center; gap: 6px; }
-.admin-section-toggle::before { content: "▸"; font-size: 10px; }
+.admin-section-toggle::before { content: "▸"; font-size: 10px; } /* decorative */
 details[open] > summary .admin-section-toggle::before { content: "▾"; }
 summary { list-style: none; cursor: pointer; }
 summary::-webkit-details-marker { display: none; }
 .admin-section-summary { padding: 10px 12px; background: rgba(23,41,67,.04); border-bottom: 1px solid var(--line); font-weight: 800; }
-.admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 11px; }
+.admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 12px; }
 .admin-nested { margin: 0; padding: 0 0 0 16px; }
 
-.admin-stage-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; background: var(--sage); color: #fffaf0; }
+.admin-stage-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 800; background: var(--sage); color: #fffaf0; }
 
 .admin-no-access { max-width: 560px; margin: 60px auto; text-align: center; }
 .admin-no-access h1 { font-family: Georgia, serif; font-weight: 500; }

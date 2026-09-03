@@ -18,7 +18,7 @@ export function SoloScreen({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <main className="screen solo-screen">
+    <main className="screen solo-screen frame--focused">
       <Brand />
       <section className="hero-copy">
         <h1>You&apos;re reading solo for now.</h1>
@@ -48,7 +48,7 @@ export function SoloScreen({
             />
           </label>
           {error && <p className="error-note">{error}</p>}
-          <button className="primary-button" type="submit" disabled={pending || code.trim().length !== 4}>
+          <button className="primary-button" type="submit" disabled={pending || code.trim().length !== 4} aria-busy={pending}>
             <strong>Join group</strong>
           </button>
         </form>

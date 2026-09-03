@@ -43,7 +43,7 @@ export function TodayScreen({
 
   if (today.phase === "pre-launch") {
     return (
-      <main className="screen today-screen">
+      <main className="screen today-screen frame">
         <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
         <section className="hero-copy">
           <h1>Starts Wednesday, October 1.</h1>
@@ -55,7 +55,7 @@ export function TodayScreen({
 
   if (today.phase === "closed") {
     return (
-      <main className="screen today-screen">
+      <main className="screen today-screen frame">
         <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
         <section className="hero-copy">
           <h1>That&apos;s Matthew, start to finish.</h1>
@@ -77,7 +77,7 @@ export function TodayScreen({
   const memberCount = groupStats?.memberCount ?? roster.length;
 
   return (
-    <main className="screen today-screen">
+    <main className="screen today-screen frame">
       <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
       <section className="hero-copy">
         <p className="eyebrow">DAY {today.dayLabel} OF {TOTAL_CHAPTERS}</p>

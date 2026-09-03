@@ -24,7 +24,7 @@ export function RewardsScreen({ profile, chapters, onEditProfile }: { profile: U
   const earned = medalsReached(chapters);
   const next = nextMedal(chapters);
   return (
-    <main className="screen rewards-screen">
+    <main className="screen rewards-screen frame">
       <Header heading="Rewards" profile={profile} onEditProfile={onEditProfile} />
       <section className="page-title">
         <h1>Rewards</h1>

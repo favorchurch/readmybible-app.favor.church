@@ -46,12 +46,12 @@
 .home3d-model.apartment { --w: 136px; --h: 170px; --d: 105px; --wall-front: #a28eaf; --wall-side: #796e89; --wall-light: #b4a2bd; top: 53%; }.apartment .roof3d, .apartment .chimney3d { display: none; }.apartment .upper-windows { display: block; }.apartment .window3d { top: 112px; }.apartment .side-window { top: 95px; }.apartment .face-top { background: #776d84; }
 .home3d-model.house3d { --w: 170px; --h: 115px; --d: 118px; --wall-front: #d2ad70; --wall-side: #a57e55; --wall-light: #e1bd80; }.house3d .roof3d > span { width: calc(var(--w) + 30px); }
 .home3d-model.mansion { --w: 212px; --h: 140px; --d: 126px; --wall-front: #d8c89d; --wall-side: #a99b7d; --wall-light: #eadcaf; top: 55%; }.mansion .roof3d > span { width: calc(var(--w) + 34px); background: #7f718c; }.mansion .roof-back { background: #675e73 !important; }.mansion .upper-windows, .mansion .balcony3d { display: block; }.mansion .window3d { top: 88px; }.mansion .side-window { top: 64px; }.mansion .chimney3d { right: 28px; }
-.rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; align-items: center; gap: 7px; color: rgba(23,41,67,.68); font-size: 9px; }.rotate-hint > span { font-size: 17px; }.rotate-hint button { margin-left: auto; border: 0; background: rgba(255,250,240,.55); padding: 5px 8px; font-size: 8px; cursor: pointer; }
-.home3d-complete { position: absolute; z-index: 7; top: 14px; left: 14px; background: var(--gold); color: var(--navy); padding: 7px 10px; font-size: 9px; box-shadow: 4px 4px 0 rgba(23,41,67,.16); animation: pop .5s cubic-bezier(.2,1.5,.4,1); }
-.home-note { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 9px; }
-.journey-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.journey-heading h2 { margin: 0; font-family: var(--font-display); font-size: 25px; line-height: 1; }.journey-heading > span { max-width: 145px; text-align: right; color: var(--ink-muted); font-size: 9px; line-height: 1.35; }
+.rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; align-items: center; gap: 7px; color: rgba(23,41,67,.68); font-size: 12px; }.rotate-hint > span { font-size: 17px; }.rotate-hint button { margin-left: auto; border: 0; background: rgba(255,250,240,.55); padding: 5px 8px; font-size: 12px; cursor: pointer; }
+.home3d-complete { position: absolute; z-index: 7; top: 14px; left: 14px; background: var(--gold); color: var(--navy); padding: 7px 10px; font-size: 12px; box-shadow: 4px 4px 0 rgba(23,41,67,.16); animation: pop .5s cubic-bezier(.2,1.5,.4,1); }
+.home-note { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 12px; }
+.journey-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.journey-heading h2 { margin: 0; font-family: var(--font-display); font-size: 25px; line-height: 1; }.journey-heading > span { max-width: 145px; text-align: right; color: var(--ink-muted); font-size: 12px; line-height: 1.35; }
 .stages button { position: relative; z-index: 1; min-width: 0; padding: 0; border: 0; background: transparent; text-align: center; cursor: pointer; }
-.stages button > span { width: 30px; height: 30px; margin: auto; display: grid; place-items: center; border-radius: 50%; background: #dfd6c7; border: 3px solid var(--cream); font-size: 10px; font-weight: 900; transition: transform .18s, box-shadow .18s; }
+.stages button > span { width: 30px; height: 30px; margin: auto; display: grid; place-items: center; border-radius: 50%; background: #dfd6c7; border: 3px solid var(--cream); font-size: 10px; font-weight: 900; transition: transform .18s, box-shadow .18s; } /* decorative */
 .stages button.done > span { background: var(--sage); color: white; }.stages button.next > span { background: var(--gold); color: var(--navy); }.stages button.selected > span { transform: scale(1.18); box-shadow: 0 0 0 2px var(--navy); }.stages button.selected small { color: var(--navy); font-weight: 900; }
 
 @media (min-width: 760px) {
@@ -68,7 +68,7 @@
 .home3d-wrap.compact .home3d-viewport { bottom: 29px; }
 .home3d-wrap.compact .home3d-model { top: 56%; transform: translate(-50%,-50%) scale(.9); }
 .home3d-wrap.compact .home3d-ground { width: 225px; height: 225px; top: 64%; }
-.home3d-wrap.compact .rotate-hint { font-size: 8px; }
+.home3d-wrap.compact .rotate-hint { font-size: 12px; }
 .home3d-wrap.compact .rotate-hint button { display: none; }
 .home3d-wrap.compact .home3d-complete { top: 12px; left: 12px; }
 
