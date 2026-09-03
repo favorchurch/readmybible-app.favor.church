@@ -1,5 +1,9 @@
 import "server-only";
 
+import { eq } from "drizzle-orm";
+
+import { db } from "@/db";
+import { profiles } from "@/db/schema";
 import { auth0 } from "@/lib/auth0";
 import {
   getMemberships,
@@ -29,6 +33,8 @@ export type SessionContext =
       memberships: GroupMembership[];
       sectionMemberships: RockGroupMember[];
       activeGroup: GroupMembership | null;
+      /** True when the reader has 2+ Connect Group memberships and hasn't picked one yet. */
+      needsGroupChoice: boolean;
       campusId: number | null;
       isLeader: boolean;
       isAdminScope: boolean;
@@ -72,10 +78,11 @@ export async function getSessionContext(): Promise<SessionContext> {
     return { status: "not-found-in-rock" };
   }
 
-  const [person, rawMemberships, sectionMemberships] = await Promise.all([
+  const [person, rawMemberships, sectionMemberships, profileRow] = await Promise.all([
     getPerson(rockPersonId),
     getMemberships(rockPersonId),
     getSectionMemberships(rockPersonId),
+    db.select().from(profiles).where(eq(profiles.rockPersonId, rockPersonId)).limit(1),
   ]);
 
   if (!person) {
@@ -90,8 +97,13 @@ export async function getSessionContext(): Promise<SessionContext> {
     isLeader: m.GroupRoleId === ROLE_GT25_LEADER || m.GroupRoleId === ROLE_GT25_ASSISTANT_LEADER,
   }));
 
-  const activeGroup =
-    memberships.find((m) => m.isLeader) ?? memberships[0] ?? null;
+  // A person who has explicitly chosen a group (chooseGroup action) keeps
+  // that choice even if it isn't their leader group. Otherwise default to a
+  // leader membership, then the first membership, per intent/FLOWS.md.
+  const chosenGroupId = profileRow[0]?.activeGroupId ?? null;
+  const chosenGroup = chosenGroupId ? memberships.find((m) => m.groupId === chosenGroupId) : undefined;
+  const activeGroup = chosenGroup ?? memberships.find((m) => m.isLeader) ?? memberships[0] ?? null;
+  const needsGroupChoice = memberships.length > 1 && !chosenGroup;
 
   const campusId = activeGroup?.campusId ?? person.PrimaryCampusId ?? null;
   const adminIds = getAdminPersonIds();
@@ -100,10 +112,11 @@ export async function getSessionContext(): Promise<SessionContext> {
   return {
     status: "ok",
     rockPersonId,
-    displayName: person.NickName || person.FirstName,
+    displayName: profileRow[0]?.displayName || person.NickName || person.FirstName,
     memberships,
     sectionMemberships,
     activeGroup,
+    needsGroupChoice,
     campusId,
     isLeader: memberships.some((m) => m.isLeader),
     isAdminScope,
