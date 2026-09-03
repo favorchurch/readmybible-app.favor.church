@@ -233,7 +233,7 @@
 }
 
 .member-card.read > span {
-  color: var(--sage);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -562,6 +562,13 @@
   .connect-screen.frame--rail .frame__main {
     display: contents;
   }
+  /* Flex items with inline-axis auto margins are not stretched (CSS Flexbox
+     spec) -- clear the pre-existing margin: auto centering so these children
+     fill the column instead of shrinking to fit-content. */
+  .connect-screen.frame--rail > *,
+  .connect-screen.frame--rail .frame__main > * {
+    margin-inline: 0;
+  }
   .connect-screen.frame--rail .connect-title {
     order: 1;
   }
@@ -587,6 +594,11 @@
   }
   .connect-screen:not(.frame--rail) .frame__main {
     display: contents;
+  }
+  /* Same auto-margin trap as the leader flex root above, for grid items. */
+  .connect-screen:not(.frame--rail) > *,
+  .connect-screen:not(.frame--rail) .frame__main > * {
+    margin-inline: 0;
   }
   .connect-screen:not(.frame--rail) .big-home-card {
     max-width: 100%;
@@ -616,5 +628,17 @@
   }
   .connect-screen.frame--rail .member-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+  /* At this breakpoint .frame--rail is the two-column grid from frame.css
+     (frame__main is not display: contents here), so .leader-tools and
+     .topbar are direct grid items and hit the same auto-margin trap as the
+     blocks above. .topbar also needs to span both columns -- it is not
+     part of either track -- the way .connect-title already does via
+     frame__span. */
+  .connect-screen.frame--rail > * {
+    margin-inline: 0;
+  }
+  .connect-screen.frame--rail > .topbar {
+    grid-column: 1 / -1;
   }
 }
