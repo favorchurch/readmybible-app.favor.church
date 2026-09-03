@@ -100,3 +100,51 @@ const TOTAL_CHAPTERS_IN_PLAN = PLAN.length;
 export function dayLabelNumber(todayLocal: string): number {
   return Math.min(dayOfOctober(todayLocal), TOTAL_CHAPTERS_IN_PLAN);
 }
+
+/** October 29-31: no new chapter, catch-up only. See GRACE_DAY_START. */
+export const GRACE_DATES: readonly string[] = ["2026-10-29", "2026-10-30", "2026-10-31"];
+
+export type DisplayPhase = "pre-launch" | "active" | "grace" | "closed";
+
+/**
+ * The phase shown in the UI, refining PlanPhase's "active" into "active" vs
+ * "grace" (Oct 29-31) so screens can render the grace-day composition
+ * without re-deriving the date rule themselves.
+ */
+export function displayPhase(todayLocal: string): DisplayPhase {
+  const phase = planPhase(todayLocal);
+  if (phase !== "active") return phase;
+  return GRACE_DATES.includes(todayLocal) ? "grace" : "active";
+}
+
+export type DayState = "read" | "today" | "catch-up" | "upcoming";
+
+/**
+ * The calendar-cell state for a plan entry. Read wins over every other
+ * state; before the plan starts, every day is upcoming (nothing has opened
+ * yet, so there is nothing to catch up on).
+ */
+export function dayState(entry: PlanEntry, todayLocal: string, isRead: boolean): DayState {
+  if (isRead) return "read";
+  if (planPhase(todayLocal) === "pre-launch") return "upcoming";
+  if (entry.date === todayLocal) return "today";
+  if (entry.date < todayLocal) return "catch-up";
+  return "upcoming";
+}
+
+/** Copy for an upcoming day's check-in date, e.g. "Check-in opens October 20." */
+export function checkInOpensLabel(entry: PlanEntry): string {
+  return `Check-in opens October ${entry.day}.`;
+}
+
+/**
+ * A long-form date like "Thursday, October 1" for a YYYY-MM-DD string.
+ * Built from the date's own year/month/day parts as local wall-clock values
+ * (never parsed as an ISO/UTC instant) so the weekday and day number never
+ * shift across a reader's timezone.
+ */
+export function longDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+}

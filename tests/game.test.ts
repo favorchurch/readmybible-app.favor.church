@@ -8,8 +8,27 @@ import {
   nextStageProgress,
   rankGroups,
   stageFor,
+  stageTransition,
   streak,
 } from "@/lib/game";
+
+describe("stageTransition", () => {
+  it("is null when both ratios map to the same stage", () => {
+    expect(stageTransition(0.02, 0.05)).toBeNull(); // both Tent
+  });
+
+  it("is null when the ratio is unchanged", () => {
+    expect(stageTransition(0.3, 0.3)).toBeNull();
+  });
+
+  it("reports the stage change when the ratio crosses a threshold", () => {
+    expect(stageTransition(0.24, 0.26)).toEqual({ from: "Trailer", to: "Cabin" });
+  });
+
+  it("reports a downward transition too", () => {
+    expect(stageTransition(0.5, 0.2)).toEqual({ from: "Apartment", to: "Trailer" });
+  });
+});
 
 describe("coinsFor", () => {
   it("gives 10 coins per chapter", () => {
