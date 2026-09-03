@@ -381,7 +381,7 @@ done_criteria:
     verify: HTML greps: home-growth-sheet trigger present on Connect; reading-visibility trigger present; /admin as global admin contains data-section="admin-scope" and "admin-progress-note"; sheet copy contains "Coins celebrate every chapter"
   - id: dc12
     statement: Admin group data is readable on a 360px phone without horizontal table scrolling.
-    verify: browser at 360x800 on /admin: document.documentElement.scrollWidth <= 360 and document.querySelector('.admin-group-card') !== null and getComputedStyle(document.querySelector('.admin-table') ?? document.body).display === 'none' (paste)
+    verify: browser at 360x800 on /admin: document.documentElement.scrollWidth <= 360 and document.querySelector('.admin-group-card') !== null and the desktop table is not visible, asserted as document.querySelector('.admin-table')?.offsetParent === null (paste). Amended 2026-09-03: the original text asserted getComputedStyle('.admin-table').display === 'none', which false-fails against a correct implementation that hides the .admin-table-scroll WRAPPER instead of the table element. offsetParent === null is implementation-neutral: it holds whether the table itself or any ancestor is hidden.
   - id: dc13
     statement: No core reader screen or Admin horizontally scrolls at 360px, and no accidental empty rail exists at 1024px+ (rail only when it has content).
     verify: .office/qa/matrix.md rows for Today, Connect, Rewards, Progress, Admin at 360x800 all PASS scrollWidth check; planner re-runs Today and Admin at 360 and Connect (member) at 1280
@@ -546,3 +546,16 @@ Approved by Rico on 2026-09-03 with three caller overrides, echoed here: D6 lane
 ## 13. Amendments during execution
 
 - 2026-09-03, after M1 review round 1: dc15 tolerates removed selectors; Task 2 parity covers every stylesheet selector plus ten named heading selectors; Task 14 removes README's pre-existing em dashes. Reason: reviewer R1 findings (see `.office/review/m1-verdict-r1.md`, plan gaps section).
+
+### Amendment 4 (2026-09-03, after lane D review round 1)
+
+**dc12's verify command false-failed a correct implementation.** It asserted
+`getComputedStyle(document.querySelector('.admin-table')).display === 'none'` at 360px. Lane D
+hid the scroll wrapper (`.admin-table-scroll`) instead of the table element, which is the correct
+reading of Task 11 ("remove the horizontal scroll wrapper for the mobile state"): measured at
+360x800 the wrapper computes `none`, the table itself still computes `table`, and
+`.admin-table.offsetParent` is `null`, so the table is genuinely invisible while the literal
+string comparison reports a failure. dc12 now asserts `offsetParent === null`, which is neutral
+about WHICH element carries the hiding rule. The CSS was deliberately not changed to satisfy the
+old literal. Found by the lane D reviewer, graded Minor, and correctly routed to the planner as a
+plan defect rather than a code defect.
