@@ -1,0 +1,7 @@
+@keyframes pageIn { from { opacity: .25; transform: translateY(5px); } }
+
+@keyframes twinkle { to { transform: scale(1.4) rotate(25deg); opacity: .5; } }
+
+@keyframes sheetUp { from { transform: translateY(100%); } } @keyframes pop { from { transform: scale(.3) rotate(-20deg); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }

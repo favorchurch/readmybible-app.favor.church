@@ -1,0 +1,148 @@
+.stats-card { max-width: 720px; margin: auto; background: var(--navy); color: var(--paper); display: flex; gap: 20px; align-items: center; padding: 22px 18px; }.chapter-ring { width: 110px; height: 110px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--gold) 0 43%, rgba(255,255,255,.14) 43%); position: relative; }.chapter-ring:after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--navy); }.chapter-ring span { z-index: 1; }.chapter-ring b { font-family: Georgia, serif; font-size: 34px; font-weight: 400; }.chapter-ring small { font-size: 11px; opacity: .7; }.stat-copy { flex: 1; }.stat-copy p { color: var(--gold); font-size: 8px; letter-spacing: .16em; font-weight: 900; }.stat-copy h2 { font-family: Georgia, serif; font-weight: 500; font-size: 20px; margin: 7px 0 14px; }.stat-copy > span { display: block; font-size: 9px; margin-top: 7px; opacity: .65; }.stats-card .progress-track { background: rgba(255,255,255,.12); }
+.mini-stats { max-width: 720px; margin: 9px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }.mini-stats article { border: 1px solid var(--line); background: var(--paper); display: flex; align-items: center; gap: 10px; padding: 14px 11px; }.stat-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; color: white; }.stat-icon.coral { background: var(--coral); }.stat-icon.gold { background: var(--gold); }.mini-stats b, .mini-stats small { display: block; }.mini-stats b { font-size: 12px; }.mini-stats small { font-size: 8px; color: var(--ink-muted); margin-top: 3px; }
+.calendar-card { max-width: 720px; margin: 26px auto 0; }.weekday, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }.weekday { margin: 18px 0 7px; }.weekday span { text-align: center; font-size: 8px; color: var(--ink-muted); }.calendar-grid > span { aspect-ratio: 1; display: grid; place-items: center; background: rgba(255,255,255,.44); color: var(--ink-muted); font-size: 10px; border: 1px solid transparent; }.calendar-grid > span.read { background: var(--sage); color: white; font-weight: 900; }.calendar-grid > span.missed { background: #e8dfd0; }.calendar-grid > span.today { border-color: var(--coral); color: var(--coral); font-weight: 900; }.progress-reward { margin-top: 25px; }
+
+.leaderboard-card { max-width: 720px; margin: 26px auto 0; }
+.leaderboard-card .gentle-note { margin: 4px 0 14px; text-align: left; }
+.leaderboard-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.leaderboard-list li { border: 1px solid var(--line); background: var(--paper); padding: 12px 14px; border-radius: 3px; font-size: 12px; font-weight: 700; }
+
+@media (min-width: 768px) {
+  .progress-screen { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; max-width: 1040px; margin: 0 auto; padding-bottom: 140px; }
+  .progress-screen .topbar,
+  .progress-screen .progress-profile-card,
+  .progress-screen .page-title.compact { grid-column: 1 / -1; }
+  .progress-screen .stats-card,
+  .progress-screen .mini-stats,
+  .progress-screen .calendar-card { grid-column: 1; }
+  .progress-screen .next-reward.progress-reward,
+  .progress-screen .leaderboard-card { grid-column: 2; }
+}
+
+@media (max-width: 370px) {
+  .stats-card { gap: 12px; }.chapter-ring { width: 88px; height: 88px; }.stat-copy h2 { font-size: 17px; }
+}
+
+/* Personal identity takes center stage on Progress. */
+.progress-profile-card {
+  position: relative;
+  max-width: 720px;
+  margin: 30px auto 18px;
+  padding: 22px 18px 17px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 13px 17px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.progress-profile-card:before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: var(--coral);
+}
+.progress-profile-card .avatar-preview {
+  width: 120px;
+  height: 120px;
+  box-shadow: inset 0 0 0 3px rgba(23,41,67,.1), 0 8px 18px rgba(23,41,67,.1);
+}
+.progress-profile-copy { min-width: 0; }
+.progress-profile-copy .eyebrow { margin: 0 0 4px; }
+.progress-profile-copy h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 27px;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.progress-profile-copy > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.progress-profile-copy button {
+  margin-top: 13px;
+  padding: 0 0 3px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.progress-profile-copy button b { margin-left: 4px; }
+.progress-profile-copy button:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+.progress-profile-highlights {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line);
+}
+.progress-profile-highlights div {
+  padding: 13px 8px 0;
+  text-align: center;
+}
+.progress-profile-highlights div + div { border-left: 1px solid var(--line); }
+.progress-profile-highlights b,
+.progress-profile-highlights span { display: block; }
+.progress-profile-highlights b { font-size: 20px; line-height: 1; }
+.progress-profile-highlights span {
+  margin-top: 4px;
+  color: var(--ink-muted);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.progress-screen .page-title { margin-top: 25px; }
+
+@media (min-width: 680px) {
+  .progress-profile-card {
+    grid-template-columns: auto minmax(150px, 1fr) minmax(220px, .9fr);
+    gap: 22px;
+    padding: 25px 27px;
+  }
+  .progress-profile-card .avatar-preview { width: 132px; height: 132px; }
+  .progress-profile-highlights { grid-column: auto; border-top: 0; }
+  .progress-profile-highlights div { padding: 12px; }
+}
+
+@media (max-width: 370px) {
+  .progress-profile-card .avatar-preview { width: 104px; height: 104px; }
+  .progress-profile-copy h2 { font-size: 24px; }
+}
+
+
+.calendar-grid > button {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0 0 8px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--coral);
+  background: #fff4ed;
+  color: var(--coral);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.calendar-grid > button i {
+  position: absolute;
+  right: 1px;
+  bottom: 2px;
+  left: 1px;
+  overflow: hidden;
+  font-size: 5px;
+  font-style: normal;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}

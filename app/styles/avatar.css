@@ -1,0 +1,939 @@
+.translation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.translation-choices button { border: 1px solid var(--line); background: var(--paper); padding: 8px 14px; border-radius: 3px; font-weight: 800; font-size: 12px; cursor: pointer; }
+.translation-choices button.selected { border-color: var(--coral); color: var(--coral); background: #fff5eb; }
+.profile-field small { display: block; margin-top: 6px; font-size: 10px; color: var(--ink-muted); }
+
+/* Personal avatar builder */
+.profile-sheet { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+.profile-sheet h2 { font-family: var(--font-sans); font-size: 28px; font-weight: 900; letter-spacing: -.025em; text-transform: none; }
+.profile-intro { margin: 8px 0 18px; color: var(--ink-muted); font-size: 12px; line-height: 1.5; }
+.profile-preview-wrap { min-height: 150px; display: flex; align-items: center; justify-content: center; gap: 18px; margin: 0 -20px 19px; background: var(--paper); border-block: 1px solid var(--line); }
+.profile-preview-wrap strong, .profile-preview-wrap span { display: block; }.profile-preview-wrap strong { font-size: 18px; }.profile-preview-wrap span { margin-top: 3px; color: var(--ink-muted); font-size: 10px; }
+.profile-field { margin: 0 0 18px; padding: 0; border: 0; }
+.profile-field legend { margin-bottom: 9px; font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--navy); }
+.segment-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.segment-choices button { min-height: 44px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 12px; font-weight: 800; }
+.segment-choices button.selected { border: 2px solid var(--coral); color: var(--coral); background: #fff4ed; }
+.hair-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.hair-choices button { min-width: 0; min-height: 78px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
+.hair-choices button > span:last-child { font-size: 9px; font-weight: 800; }.hair-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
+.color-choices { display: grid; grid-template-columns: repeat(5, 42px); gap: 10px; }
+.color-choices button { width: 42px; height: 42px; padding: 0; border: 3px solid var(--cream); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.color-choices button.selected { box-shadow: 0 0 0 3px var(--navy); transform: scale(.92); }
+.profile-save { margin-top: 5px; }
+
+@media (min-width: 760px) {
+  .profile-preview-wrap { margin-left: -34px; margin-right: -34px; }
+}
+
+/* Expanded avatar hair library */
+.hair-long-curly .avatar-back-hair,
+.hair-medium-curly .avatar-back-hair,
+.hair-short-curly .avatar-back-hair { background: var(--hair); border-radius: 47% 47% 35% 35%; }
+.hair-long-curly .avatar-back-hair { width: 84%; height: 76%; left: 8%; top: 5%; }
+.hair-medium-curly .avatar-back-hair { width: 76%; height: 62%; left: 12%; top: 7%; }
+.hair-short-curly .avatar-back-hair { width: 69%; height: 47%; left: 15.5%; top: 8%; }
+.hair-long-curly .avatar-hair,
+.hair-medium-curly .avatar-hair,
+.hair-short-curly .avatar-hair { width: 66%; height: 34%; left: 17%; top: 6%; border-radius: 48%; transform: none; box-shadow: -8px 3px 0 -2px var(--hair),8px 3px 0 -2px var(--hair),-4px -4px 0 -2px var(--hair),5px -5px 0 -2px var(--hair); }
+
+.hair-long-straight .avatar-back-hair,
+.hair-medium-straight .avatar-back-hair { background: var(--hair); border-radius: 46% 46% 18% 18%; }
+.hair-long-straight .avatar-back-hair { width: 78%; height: 78%; left: 11%; top: 5%; }
+.hair-medium-straight .avatar-back-hair { width: 72%; height: 62%; left: 14%; top: 6%; }
+.hair-long-straight .avatar-hair,
+.hair-medium-straight .avatar-hair,
+.hair-short-straight .avatar-hair { width: 69%; height: 34%; left: 15.5%; top: 5%; border-radius: 55% 52% 28% 18%; transform: none; }
+.hair-short-straight .avatar-hair { height: 29%; top: 8%; border-radius: 58% 48% 35% 20%; }
+
+.hair-long-wavy .avatar-back-hair,
+.hair-medium-wavy .avatar-back-hair,
+.hair-short-wavy .avatar-back-hair { background: var(--hair); border-radius: 50% 50% 32% 32%; }
+.hair-long-wavy .avatar-back-hair { width: 82%; height: 78%; left: 9%; top: 4%; }
+.hair-medium-wavy .avatar-back-hair { width: 76%; height: 63%; left: 12%; top: 5%; }
+.hair-short-wavy .avatar-back-hair { width: 70%; height: 48%; left: 15%; top: 7%; }
+.hair-long-wavy .avatar-hair,
+.hair-medium-wavy .avatar-hair,
+.hair-short-wavy .avatar-hair { width: 70%; height: 38%; left: 15%; top: 4%; border-radius: 58% 62% 43% 30%; transform: rotate(3deg); }
+
+.hair-extra-short .avatar-hair { width: 61%; height: 25%; left: 19.5%; top: 10%; border-radius: 62% 50% 35% 22%; transform: rotate(-3deg); }
+.hair-ponytail .avatar-back-hair { width: 68%; height: 54%; left: 16%; top: 7%; background: var(--hair); border-radius: 48% 48% 34% 34%; }
+.hair-ponytail .avatar-back-hair:after { content: ""; position: absolute; width: 35%; height: 55%; right: -21%; top: 25%; background: var(--hair); border-radius: 45% 55% 65% 35%; transform: rotate(-12deg); }
+.hair-ponytail .avatar-hair { width: 66%; height: 32%; left: 17%; top: 7%; border-radius: 58% 54% 30% 25%; transform: none; }
+
+.face-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.face-choices button { min-width: 0; min-height: 76px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
+.face-choices button > span:last-child { font-size: 9px; font-weight: 800; }.face-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
+.color-choices { grid-template-columns: repeat(auto-fit, 42px); }
+
+/* A reward shelf that grows from small medals into substantial trophies. */
+.shelf-award { --award: #a96c45; --award-dark: #76462f; position: relative; margin: auto; color: #fff7dc; filter: drop-shadow(0 4px 2px rgba(80,46,28,.18)); }
+.shelf-award.silver { --award: #9ca9ad; --award-dark: #6c7b80; }.shelf-award.gold { --award: #e7a72f; --award-dark: #aa7418; }.shelf-award.violet { --award: #9c84ab; --award-dark: #695675; }.shelf-award.navy { --award: #263f63; --award-dark: #172943; }
+.medal-award { --award-size: 58px; width: var(--award-size); height: 78px; }
+.medal-award.medal-small { --award-size: 52px; height: 68px; }.medal-award.medal-medium { --award-size: 66px; height: 82px; }.medal-award.medal-star { --award-size: 84px; height: 94px; }
+.medal-ribbons { position: absolute; width: 62%; height: 47%; left: 19%; top: 0; background: linear-gradient(90deg,var(--award-dark) 0 42%,#f3d798 42% 58%,var(--award) 58%); clip-path: polygon(0 0,100% 0,82% 100%,50% 78%,18% 100%); }
+.medal-face { position: absolute; z-index: 2; width: 72%; aspect-ratio: 1; left: 14%; bottom: 0; display: grid; place-items: center; border-radius: 50%; background: var(--award); border: 4px solid var(--award-dark); box-shadow: inset 0 0 0 3px rgba(255,255,255,.28); font-size: 17px; }
+.medal-award > span { position: absolute; z-index: 3; width: 100%; bottom: 11%; left: 0; text-align: center; font-size: 9px; font-style: normal; font-weight: 900; color: var(--navy); }
+.medal-star .medal-face { width: 88%; left: 6%; border-radius: 0; clip-path: polygon(50% 0,62% 34%,98% 36%,69% 57%,79% 94%,50% 73%,21% 94%,31% 57%,2% 36%,38% 34%); border: 0; font-size: 22px; }
+.medal-star > span { bottom: 17%; color: #654612; }
+
+.trophy-award { width: 78px; height: 98px; }.trophy-award.trophy-large { width: 102px; height: 122px; }
+.trophy-cup { position: absolute; z-index: 2; width: 72%; height: 46%; left: 14%; top: 4%; display: grid; place-items: center; background: var(--award); border: 3px solid var(--award-dark); clip-path: polygon(0 0,100% 0,87% 62%,66% 82%,34% 82%,13% 62%); font-size: 18px; }
+.trophy-cup:before,.trophy-cup:after { content: ""; position: absolute; width: 31%; height: 48%; top: 8%; border: 4px solid var(--award-dark); border-radius: 50%; z-index: -1; }.trophy-cup:before { left: -27%; }.trophy-cup:after { right: -27%; }
+.trophy-award > i { position: absolute; width: 11%; height: 28%; left: 44.5%; top: 43%; background: var(--award-dark); }
+.trophy-award > b { position: absolute; width: 62%; height: 13%; left: 19%; bottom: 7%; background: var(--award-dark); border-radius: 3px 3px 1px 1px; box-shadow: 0 -7px 0 -2px var(--award); }
+.trophy-award > em { position: absolute; z-index: 4; width: 100%; left: 0; top: 23%; text-align: center; color: #fff7dc; font-size: 10px; font-style: normal; font-weight: 900; }
+.trophy-large .trophy-cup { font-size: 25px; }.trophy-large > em { font-size: 12px; }
+
+/* Avatar geometry refinements */
+.face-narrow .avatar-ears { width: 48%; left: 26%; }
+.face-normal .avatar-ears { width: 60%; left: 20%; }
+.face-round .avatar-ears { width: 68%; left: 16%; top: 40%; }
+
+.hair-bald .avatar-hair,
+.hair-bald .avatar-back-hair { display: none; }
+
+.hair-extra-short .avatar-back-hair { display: none; }
+.hair-extra-short .avatar-hair { height: 18%; top: 20%; border-radius: 52% 52% 20% 20% / 72% 72% 20% 20%; transform: none; clip-path: polygon(2% 45%,10% 19%,28% 4%,50% 0,72% 4%,90% 19%,98% 45%,91% 73%,80% 59%,68% 73%,54% 60%,40% 73%,25% 59%,10% 73%); }
+.hair-extra-short.face-narrow .avatar-hair { width: 43%; left: 28.5%; }
+.hair-extra-short.face-normal .avatar-hair { width: 52%; left: 24%; }
+.hair-extra-short.face-round .avatar-hair { width: 61%; left: 19.5%; top: 19%; }
+
+.hair-long-curly .avatar-back-hair,
+.hair-medium-curly .avatar-back-hair,
+.hair-short-curly .avatar-back-hair { border-radius: 46% 46% 35% 35%; background:
+  radial-gradient(circle at 9% 22%,var(--hair) 0 15%,transparent 16%),
+  radial-gradient(circle at 28% 10%,var(--hair) 0 17%,transparent 18%),
+  radial-gradient(circle at 50% 8%,var(--hair) 0 18%,transparent 19%),
+  radial-gradient(circle at 72% 10%,var(--hair) 0 17%,transparent 18%),
+  radial-gradient(circle at 91% 22%,var(--hair) 0 15%,transparent 16%),
+  radial-gradient(circle at 8% 50%,var(--hair) 0 18%,transparent 19%),
+  radial-gradient(circle at 92% 50%,var(--hair) 0 18%,transparent 19%),
+  var(--hair); }
+.hair-long-curly .avatar-hair,
+.hair-medium-curly .avatar-hair,
+.hair-short-curly .avatar-hair { width: 74%; height: 39%; left: 13%; top: 3%; border-radius: 0; transform: none; box-shadow: none; background:
+  radial-gradient(circle at 8% 58%,var(--hair) 0 18%,transparent 19%),
+  radial-gradient(circle at 23% 31%,var(--hair) 0 20%,transparent 21%),
+  radial-gradient(circle at 40% 20%,var(--hair) 0 21%,transparent 22%),
+  radial-gradient(circle at 59% 20%,var(--hair) 0 21%,transparent 22%),
+  radial-gradient(circle at 77% 31%,var(--hair) 0 20%,transparent 21%),
+  radial-gradient(circle at 92% 58%,var(--hair) 0 18%,transparent 19%),
+  radial-gradient(circle at 50% 67%,var(--hair) 0 31%,transparent 32%); }
+
+.hair-long-wavy .avatar-back-hair,
+.hair-medium-wavy .avatar-back-hair,
+.hair-short-wavy .avatar-back-hair { clip-path: polygon(4% 7%,25% 0,50% 4%,75% 0,96% 7%,100% 54%,91% 69%,82% 57%,72% 77%,62% 60%,51% 82%,40% 61%,29% 78%,18% 58%,8% 72%,0 55%); }
+.hair-long-wavy .avatar-hair,
+.hair-medium-wavy .avatar-hair,
+.hair-short-wavy .avatar-hair { border-radius: 54% 58% 0 0; clip-path: polygon(0 5%,22% 0,43% 7%,62% 0,83% 8%,100% 3%,98% 68%,87% 55%,75% 79%,62% 56%,50% 82%,37% 57%,25% 79%,13% 55%,2% 72%); transform: rotate(1deg); }
+
+/* Open curly hairline with visible forehead and longer long-curl sides. */
+.hair-long-curly .avatar-back-hair { width: 92%; height: 96%; left: 4%; top: 2%; border-radius: 45% 45% 24% 24%; }
+.hair-long-curly .avatar-hair,
+.hair-medium-curly .avatar-hair,
+.hair-short-curly .avatar-hair { width: 76%; height: 31%; left: 12%; top: 3%; background:
+  radial-gradient(circle at 7% 63%,var(--hair) 0 19%,transparent 20%),
+  radial-gradient(circle at 22% 38%,var(--hair) 0 22%,transparent 23%),
+  radial-gradient(circle at 40% 21%,var(--hair) 0 22%,transparent 23%),
+  radial-gradient(circle at 60% 21%,var(--hair) 0 22%,transparent 23%),
+  radial-gradient(circle at 78% 38%,var(--hair) 0 22%,transparent 23%),
+  radial-gradient(circle at 93% 63%,var(--hair) 0 19%,transparent 20%); }
+
+/* Shoulder-length waves and open parts for straight hair. */
+.hair-long-wavy .avatar-back-hair { width: 90%; height: 94%; left: 5%; top: 3%; border-radius: 46% 46% 25% 25%; }
+.hair-long-straight .avatar-hair { width: 72%; height: 38%; left: 14%; top: 4%; border-radius: 0; background:
+  linear-gradient(132deg,var(--hair) 0 55%,transparent 56%) left top / 54% 100% no-repeat,
+  linear-gradient(228deg,var(--hair) 0 55%,transparent 56%) right top / 54% 100% no-repeat; }
+.hair-medium-straight .avatar-hair { width: 72%; height: 36%; left: 14%; top: 5%; border-radius: 0; background:
+  linear-gradient(118deg,var(--hair) 0 62%,transparent 63%) left top / 69% 100% no-repeat,
+  linear-gradient(236deg,var(--hair) 0 48%,transparent 49%) right top / 40% 94% no-repeat; }
+
+/* Face-aware, organic hair silhouettes. Every style now grows from the face width. */
+.avatar {
+  --face-width: 52%;
+  --face-left: 24%;
+  --hair-width: 66%;
+  --hair-left: 17%;
+}
+.avatar.face-narrow { --face-width: 43%; --face-left: 28.5%; --hair-width: 57%; --hair-left: 21.5%; }
+.avatar.face-normal { --face-width: 52%; --face-left: 24%; --hair-width: 66%; --hair-left: 17%; }
+.avatar.face-round { --face-width: 61%; --face-left: 19.5%; --hair-width: 75%; --hair-left: 12.5%; }
+
+.avatar-face { width: var(--face-width); left: var(--face-left); }
+.avatar-ears { width: calc(var(--face-width) + 6%); left: calc(var(--face-left) - 3%); }
+.face-round .avatar-ears { top: 40%; }
+
+.hair-crop .avatar-hair,
+.hair-curls .avatar-hair,
+.hair-bob .avatar-hair,
+.hair-bun .avatar-hair,
+.hair-waves .avatar-hair,
+.hair-graybun .avatar-hair,
+.hair-long-curly .avatar-hair,
+.hair-medium-curly .avatar-hair,
+.hair-short-curly .avatar-hair,
+.hair-long-straight .avatar-hair,
+.hair-medium-straight .avatar-hair,
+.hair-short-straight .avatar-hair,
+.hair-long-wavy .avatar-hair,
+.hair-medium-wavy .avatar-hair,
+.hair-short-wavy .avatar-hair,
+.hair-ponytail .avatar-hair {
+  width: var(--hair-width);
+  left: var(--hair-left);
+}
+
+/* Long and medium back layers taper like real hair instead of forming boxes. */
+.hair-long-curly .avatar-back-hair,
+.hair-long-straight .avatar-back-hair,
+.hair-long-wavy .avatar-back-hair {
+  width: calc(var(--hair-width) + 18%);
+  left: calc(var(--hair-left) - 9%);
+  height: 92%;
+  top: 3%;
+  border-radius: 50% 50% 42% 42% / 31% 31% 69% 69%;
+  clip-path: none;
+}
+.hair-medium-curly .avatar-back-hair,
+.hair-medium-straight .avatar-back-hair,
+.hair-medium-wavy .avatar-back-hair,
+.hair-bob .avatar-back-hair,
+.hair-waves .avatar-back-hair {
+  width: calc(var(--hair-width) + 10%);
+  left: calc(var(--hair-left) - 5%);
+  height: 64%;
+  top: 6%;
+  border-radius: 50% 50% 44% 44% / 38% 38% 62% 62%;
+  clip-path: none;
+}
+.hair-short-curly .avatar-back-hair,
+.hair-short-wavy .avatar-back-hair {
+  width: calc(var(--hair-width) + 4%);
+  left: calc(var(--hair-left) - 2%);
+  height: 48%;
+  top: 7%;
+  border-radius: 52% 52% 47% 47% / 48% 48% 52% 52%;
+  clip-path: none;
+}
+
+/* Curls sit around an open hairline; the individual lobes keep the edge soft. */
+.hair-long-curly .avatar-hair,
+.hair-medium-curly .avatar-hair,
+.hair-short-curly .avatar-hair {
+  height: 31%;
+  top: 4%;
+  border-radius: 50%;
+  clip-path: none;
+  transform: none;
+  background:
+    radial-gradient(circle at 7% 64%, var(--hair) 0 18%, transparent 19%),
+    radial-gradient(circle at 22% 36%, var(--hair) 0 21%, transparent 22%),
+    radial-gradient(circle at 40% 20%, var(--hair) 0 21%, transparent 22%),
+    radial-gradient(circle at 60% 20%, var(--hair) 0 21%, transparent 22%),
+    radial-gradient(circle at 78% 36%, var(--hair) 0 21%, transparent 22%),
+    radial-gradient(circle at 93% 64%, var(--hair) 0 18%, transparent 19%);
+}
+
+/* Straight styles use a rounded scalp cap with a fine center/side part. */
+.hair-long-straight .avatar-hair,
+.hair-medium-straight .avatar-hair,
+.hair-short-straight .avatar-hair {
+  height: 34%;
+  top: 5%;
+  overflow: hidden;
+  border-radius: 54% 54% 40% 34% / 62% 62% 38% 34%;
+  clip-path: none;
+  transform: none;
+  background: var(--hair);
+}
+.hair-long-straight .avatar-hair:before,
+.hair-medium-straight .avatar-hair:before {
+  content: "";
+  position: absolute;
+  width: 2px;
+  height: 52%;
+  top: -4%;
+  left: 50%;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--skin) 82%, transparent);
+  transform: rotate(7deg);
+  transform-origin: top;
+}
+.hair-medium-straight .avatar-hair:before { left: 38%; transform: rotate(-11deg); }
+.hair-short-straight .avatar-hair { height: 29%; top: 8%; border-radius: 58% 52% 43% 34% / 68% 62% 38% 34%; }
+
+/* Wavy silhouettes use flowing curves rather than angular polygon cutouts. */
+.hair-long-wavy .avatar-hair,
+.hair-medium-wavy .avatar-hair,
+.hair-short-wavy .avatar-hair {
+  height: 36%;
+  top: 5%;
+  border-radius: 55% 60% 44% 36% / 62% 66% 38% 42%;
+  clip-path: none;
+  transform: rotate(1deg);
+  background:
+    radial-gradient(ellipse at 16% 91%, var(--skin) 0 12%, transparent 13%),
+    radial-gradient(ellipse at 49% 96%, var(--skin) 0 11%, transparent 12%),
+    radial-gradient(ellipse at 83% 90%, var(--skin) 0 12%, transparent 13%),
+    var(--hair);
+}
+.hair-long-wavy .avatar-back-hair,
+.hair-medium-wavy .avatar-back-hair,
+.hair-short-wavy .avatar-back-hair {
+  background:
+    radial-gradient(ellipse at 9% 96%, var(--avatar-bg) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 35% 99%, var(--avatar-bg) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 65% 99%, var(--avatar-bg) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 91% 96%, var(--avatar-bg) 0 8%, transparent 9%),
+    var(--hair);
+}
+
+/* The close crop is painted directly onto the scalp and scales exactly with it. */
+.hair-extra-short .avatar-hair {
+  width: var(--face-width);
+  left: var(--face-left);
+  height: 17%;
+  top: 20%;
+  border-radius: 54% 54% 24% 24% / 76% 76% 24% 24%;
+  clip-path: none;
+  transform: none;
+}
+.hair-ponytail .avatar-back-hair {
+  width: calc(var(--hair-width) + 6%);
+  left: calc(var(--hair-left) - 3%);
+  height: 57%;
+  top: 6%;
+  border-radius: 50% 50% 45% 45% / 42% 42% 58% 58%;
+}
+.hair-ponytail .avatar-hair { height: 32%; top: 7%; border-radius: 56% 56% 40% 34% / 64% 64% 36% 36%; transform: none; }
+
+/* Keep the existing Connect-member cuts equally soft and proportional. */
+.hair-crop .avatar-hair { height: 31%; top: 7%; border-radius: 60% 52% 44% 32% / 66% 60% 40% 34%; }
+.hair-curls .avatar-hair { height: 31%; top: 7%; border-radius: 50%; }
+.hair-bob .avatar-hair,
+.hair-waves .avatar-hair { height: 34%; top: 6%; border-radius: 56% 58% 43% 36% / 64% 64% 36% 38%; transform: none; }
+.hair-bun .avatar-hair,
+.hair-graybun .avatar-hair { height: 32%; top: 8%; border-radius: 58% 58% 40% 36% / 66% 66% 34% 34%; }
+
+/* Polished straight hair: asymmetrical side parts with an open forehead. */
+.hair-long-straight .avatar-hair,
+.hair-medium-straight .avatar-hair,
+.hair-short-straight .avatar-hair {
+  background: var(--hair);
+  overflow: visible;
+  border-radius: 60% 52% 40% 34% / 68% 62% 34% 30%;
+  -webkit-mask-image: radial-gradient(ellipse 53% 84% at 40% 109%, transparent 0 71%, #000 73%);
+  mask-image: radial-gradient(ellipse 53% 84% at 40% 109%, transparent 0 71%, #000 73%);
+}
+.hair-medium-straight .avatar-hair {
+  border-radius: 57% 55% 38% 35% / 66% 64% 34% 32%;
+  -webkit-mask-image: radial-gradient(ellipse 52% 82% at 36% 110%, transparent 0 70%, #000 72%);
+  mask-image: radial-gradient(ellipse 52% 82% at 36% 110%, transparent 0 70%, #000 72%);
+}
+.hair-short-straight .avatar-hair {
+  border-radius: 59% 50% 43% 32% / 70% 62% 38% 30%;
+  -webkit-mask-image: radial-gradient(ellipse 51% 80% at 39% 111%, transparent 0 69%, #000 71%);
+  mask-image: radial-gradient(ellipse 51% 80% at 39% 111%, transparent 0 69%, #000 71%);
+}
+.hair-long-straight .avatar-hair:before,
+.hair-medium-straight .avatar-hair:before,
+.hair-short-straight .avatar-hair:before { content: none; }
+
+/* Clean wavy hair built from rounded locks—no notches, wedges, or square layers. */
+.hair-long-wavy .avatar-hair,
+.hair-medium-wavy .avatar-hair,
+.hair-short-wavy .avatar-hair {
+  height: 34%;
+  top: 6%;
+  background: var(--hair);
+  border-radius: 58% 55% 44% 42% / 68% 64% 36% 40%;
+  clip-path: none;
+  transform: none;
+}
+.hair-long-wavy .avatar-hair:before,
+.hair-medium-wavy .avatar-hair:before,
+.hair-short-wavy .avatar-hair:before,
+.hair-long-wavy .avatar-hair:after,
+.hair-medium-wavy .avatar-hair:after,
+.hair-short-wavy .avatar-hair:after {
+  content: "";
+  position: absolute;
+  width: 33%;
+  height: 64%;
+  bottom: -24%;
+  background: var(--hair);
+  border-radius: 52% 48% 62% 38% / 44% 54% 46% 56%;
+}
+.hair-long-wavy .avatar-hair:before,
+.hair-medium-wavy .avatar-hair:before,
+.hair-short-wavy .avatar-hair:before { left: -3%; transform: rotate(13deg); }
+.hair-long-wavy .avatar-hair:after,
+.hair-medium-wavy .avatar-hair:after,
+.hair-short-wavy .avatar-hair:after { right: -3%; transform: rotate(-13deg); }
+
+.hair-long-wavy .avatar-back-hair,
+.hair-medium-wavy .avatar-back-hair,
+.hair-short-wavy .avatar-back-hair {
+  background: var(--hair);
+  clip-path: none;
+  border-radius: 50% 50% 43% 43% / 32% 32% 68% 68%;
+}
+.hair-long-wavy .avatar-back-hair:before,
+.hair-medium-wavy .avatar-back-hair:before,
+.hair-short-wavy .avatar-back-hair:before,
+.hair-long-wavy .avatar-back-hair:after,
+.hair-medium-wavy .avatar-back-hair:after,
+.hair-short-wavy .avatar-back-hair:after {
+  content: "";
+  position: absolute;
+  width: 29%;
+  height: 55%;
+  top: 31%;
+  background: var(--hair);
+  border-radius: 50% 50% 58% 42% / 44% 48% 52% 56%;
+}
+.hair-long-wavy .avatar-back-hair:before,
+.hair-medium-wavy .avatar-back-hair:before,
+.hair-short-wavy .avatar-back-hair:before {
+  left: -6%;
+  transform: rotate(9deg);
+  box-shadow: 4px 18px 0 -2px var(--hair);
+}
+.hair-long-wavy .avatar-back-hair:after,
+.hair-medium-wavy .avatar-back-hair:after,
+.hair-short-wavy .avatar-back-hair:after {
+  right: -6%;
+  transform: rotate(-9deg);
+  box-shadow: -4px 18px 0 -2px var(--hair);
+}
+
+/* Image-generated Read My Bible avatar system. */
+.avatar {
+  --hair-asset: url("/avatar-hair-v2/short-crop.png");
+  --hair-scale: 1;
+}
+.avatar.face-narrow { --hair-scale: .91; }
+.avatar.face-normal { --hair-scale: 1; }
+.avatar.face-round { --hair-scale: 1.08; }
+
+.avatar .avatar-back-hair { display: none !important; }
+.avatar .avatar-hair {
+  display: block;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--hair) !important;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transform: scaleX(var(--hair-scale)) !important;
+  transform-origin: 50% 42%;
+  -webkit-mask-image: var(--hair-asset) !important;
+  mask-image: var(--hair-asset) !important;
+  -webkit-mask-position: center !important;
+  mask-position: center !important;
+  -webkit-mask-size: 100% 100% !important;
+  mask-size: 100% 100% !important;
+  -webkit-mask-repeat: no-repeat !important;
+  mask-repeat: no-repeat !important;
+}
+.avatar .avatar-hair:before,
+.avatar .avatar-hair:after { content: none !important; display: none !important; }
+.avatar.hair-bald .avatar-hair { display: none !important; }
+
+.hair-extra-short { --hair-asset: url("/avatar-hair-v2/buzz.png"); }
+.hair-crop { --hair-asset: url("/avatar-hair-v2/short-crop.png"); }
+.hair-short-straight,
+.hair-medium-straight { --hair-asset: url("/avatar-hair-v2/side-part.png"); }
+.hair-pixie { --hair-asset: url("/avatar-hair-v2/pixie.png"); }
+.hair-bob { --hair-asset: url("/avatar-hair-v2/bob.png"); }
+.hair-ponytail,
+.hair-bun,
+.hair-graybun { --hair-asset: url("/avatar-hair-v2/ponytail.png"); }
+.hair-short-curly,
+.hair-medium-curly,
+.hair-curls { --hair-asset: url("/avatar-hair-v2/short-curls.png"); }
+.hair-long-curly { --hair-asset: url("/avatar-hair-v2/long-curls.png"); }
+.hair-short-wavy,
+.hair-medium-wavy,
+.hair-waves { --hair-asset: url("/avatar-hair-v2/short-waves.png"); }
+.hair-long-wavy { --hair-asset: url("/avatar-hair-v2/long-waves.png"); }
+.hair-long-straight { --hair-asset: url("/avatar-hair-v2/long-straight.png"); }
+
+/* Reference-led face and clothing proportions. */
+.avatar-face {
+  width: var(--face-width);
+  height: 49%;
+  left: var(--face-left);
+  top: 20%;
+  border-radius: 46% 46% 48% 48% / 42% 42% 58% 58%;
+}
+.avatar.face-narrow { --face-width: 43%; --face-left: 28.5%; }
+.avatar.face-normal { --face-width: 52%; --face-left: 24%; }
+.avatar.face-round { --face-width: 60%; --face-left: 20%; }
+.face-round .avatar-face { height: 51%; top: 19%; border-radius: 49% 49% 50% 50%; }
+.avatar-ears {
+  width: calc(var(--face-width) + 10%);
+  height: 13%;
+  left: calc(var(--face-left) - 5%);
+  top: 39%;
+  border-radius: 50%;
+}
+.avatar-face i {
+  width: 4.5%;
+  top: 43%;
+  left: 27%;
+}
+.avatar-face i + i { left: 68.5%; }
+.avatar-face:before {
+  content: "";
+  position: absolute;
+  width: 9%;
+  height: 17%;
+  left: 45%;
+  top: 48%;
+  border-left: 1px solid rgba(23,41,67,.46);
+  border-bottom: 1px solid rgba(23,41,67,.46);
+  border-radius: 0 0 0 70%;
+  transform: skewX(-5deg);
+}
+.avatar-face b {
+  width: 19%;
+  height: 8%;
+  left: 40.5%;
+  bottom: 13%;
+  border-bottom: 1px solid rgba(23,41,67,.58);
+}
+.avatar-body {
+  width: 88%;
+  height: 56%;
+  left: 6%;
+  bottom: -28%;
+  border-radius: 48% 48% 0 0 / 38% 38% 0 0;
+}
+.avatar-body:before {
+  content: "";
+  position: absolute;
+  width: 24%;
+  height: 27%;
+  left: 38%;
+  top: -16%;
+  border-radius: 0 0 44% 44%;
+  background: var(--skin);
+}
+.avatar-body:after {
+  content: "";
+  position: absolute;
+  width: 31%;
+  height: 9%;
+  left: 34.5%;
+  top: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--avatar-color) 72%, var(--navy));
+  border-radius: 50%;
+}
+
+.hair-choices button { min-height: 88px; }
+.hair-choices .avatar-small,
+.face-choices .avatar-small { width: 46px; height: 46px; }
+
+/* Exact reference-matched avatar layers generated from the supplied campaign art. */
+.avatar {
+  --face-scale: 1;
+  --hair-asset: url("/avatar-hair-v2/short-crop.png");
+}
+.avatar.face-narrow { --face-scale: .89; --hair-scale: .91; }
+.avatar.face-normal { --face-scale: 1; --hair-scale: 1; }
+.avatar.face-round { --face-scale: 1.1; --hair-scale: 1.08; }
+
+.avatar .avatar-body {
+  display: block;
+  z-index: 2;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--avatar-color) !important;
+  border-radius: 0 !important;
+  -webkit-mask: url("/avatar-base-v2/shirt.png") center / 100% 100% no-repeat;
+  mask: url("/avatar-base-v2/shirt.png") center / 100% 100% no-repeat;
+}
+.avatar .avatar-body:before,
+.avatar .avatar-body:after { content: none !important; display: none !important; }
+
+.avatar .avatar-face {
+  display: block;
+  z-index: 3;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--skin) !important;
+  border-radius: 0 !important;
+  transform: scaleX(var(--face-scale));
+  transform-origin: 50% 43%;
+  -webkit-mask: url("/avatar-base-v2/skin.png") center / 100% 100% no-repeat;
+  mask: url("/avatar-base-v2/skin.png") center / 100% 100% no-repeat;
+}
+.avatar .avatar-face:before,
+.avatar .avatar-face:after,
+.avatar .avatar-face i,
+.avatar .avatar-face b { content: none !important; display: none !important; }
+
+/* The former ear layer now carries the generated facial ink and collar marks. */
+.avatar .avatar-ears {
+  display: block;
+  z-index: 6;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--navy) !important;
+  border-radius: 0 !important;
+  transform: scaleX(var(--face-scale));
+  transform-origin: 50% 43%;
+  -webkit-mask: url("/avatar-base-v2/features.png") center / 100% 100% no-repeat;
+  mask: url("/avatar-base-v2/features.png") center / 100% 100% no-repeat;
+}
+
+.avatar .avatar-hair {
+  z-index: 5;
+  -webkit-mask-image: var(--hair-asset) !important;
+  mask-image: var(--hair-asset) !important;
+}
+.avatar.hair-bald .avatar-hair { display: none !important; }
+.hair-extra-short { --hair-asset: url("/avatar-hair-v2/buzz.png"); }
+.hair-crop { --hair-asset: url("/avatar-hair-v2/short-crop.png"); }
+.hair-short-straight,
+.hair-medium-straight { --hair-asset: url("/avatar-hair-v2/side-part.png"); }
+.hair-pixie { --hair-asset: url("/avatar-hair-v2/pixie.png"); }
+.hair-bob { --hair-asset: url("/avatar-hair-v2/bob.png"); }
+.hair-ponytail,
+.hair-bun,
+.hair-graybun { --hair-asset: url("/avatar-hair-v2/ponytail.png"); }
+.hair-short-curly,
+.hair-medium-curly,
+.hair-curls { --hair-asset: url("/avatar-hair-v2/short-curls.png"); }
+.hair-long-curly { --hair-asset: url("/avatar-hair-v2/long-curls.png"); }
+.hair-short-wavy,
+.hair-medium-wavy,
+.hair-waves { --hair-asset: url("/avatar-hair-v2/short-waves.png"); }
+.hair-long-wavy { --hair-asset: url("/avatar-hair-v2/long-waves.png"); }
+.hair-long-straight { --hair-asset: url("/avatar-hair-v2/long-straight.png"); }
+
+.avatar-beard { z-index: 7; width: 36%; height: 25%; left: 32%; top: 43%; }
+.avatar-glasses { z-index: 8; width: 16%; height: 12%; left: 30%; top: 36%; }
+
+/* Gender, eyewear, and facial-hair profile controls. */
+.avatar { --body-scale: 1; }
+.avatar.gender-female.face-narrow { --face-scale: .86; --hair-scale: .9; --body-scale: .96; }
+.avatar.gender-female.face-normal { --face-scale: .97; --hair-scale: .98; --body-scale: .96; }
+.avatar.gender-female.face-round { --face-scale: 1.07; --hair-scale: 1.06; --body-scale: .96; }
+.avatar.gender-male.face-narrow { --face-scale: .92; --hair-scale: .94; --body-scale: 1.05; }
+.avatar.gender-male.face-normal { --face-scale: 1.03; --hair-scale: 1.02; --body-scale: 1.05; }
+.avatar.gender-male.face-round { --face-scale: 1.13; --hair-scale: 1.1; --body-scale: 1.05; }
+.avatar .avatar-body { transform: scaleX(var(--body-scale)); transform-origin: 50% 65%; }
+
+.avatar-glasses {
+  z-index: 8;
+  width: 14%;
+  height: 11%;
+  left: 34%;
+  top: 35.5%;
+  border: 1.5px solid var(--navy);
+  border-radius: 44%;
+  background: rgba(255,248,231,.13);
+}
+.avatar-glasses:before { width: 100%; height: 100%; left: 128%; top: -1.5px; border-radius: 44%; background: rgba(255,248,231,.13); }
+.avatar-glasses:after { width: 29%; left: 100%; top: 43%; }
+
+.avatar-facial-hair { position: absolute; z-index: 7; background: var(--hair); pointer-events: none; }
+.avatar-facial-hair.facial-mustache {
+  width: 24%;
+  height: 8%;
+  left: 38%;
+  top: 48.5%;
+  border-radius: 52%;
+  clip-path: polygon(0 28%,34% 0,50% 32%,66% 0,100% 28%,88% 100%,50% 68%,12% 100%);
+}
+.avatar-facial-hair.facial-stubble {
+  width: 31%;
+  height: 19%;
+  left: 34.5%;
+  top: 46%;
+  background: radial-gradient(circle,var(--hair) 0 1px,transparent 1.2px) 0 0 / 4px 4px;
+  opacity: .58;
+  clip-path: polygon(3% 8%,22% 26%,50% 19%,78% 26%,97% 8%,89% 72%,50% 100%,11% 72%);
+}
+.avatar-facial-hair.facial-beard {
+  width: 36%;
+  height: 25%;
+  left: 32%;
+  top: 43%;
+  border-radius: 15% 15% 48% 48%;
+  clip-path: polygon(0 10%,18% 24%,50% 14%,82% 24%,100% 10%,91% 72%,50% 100%,9% 72%);
+}
+
+.gender-choices,
+.accessory-choices,
+.facial-hair-choices { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
+.avatar-option {
+  min-width: 0;
+  min-height: 78px;
+  padding: 8px 5px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--navy);
+  cursor: pointer;
+}
+.avatar-option > span:last-child { font-size: 9px; font-weight: 800; }
+.avatar-option.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
+.avatar-option .avatar-small { width: 48px; height: 48px; }
+
+/* Final portrait refinements: petite female faces and stronger male features. */
+.avatar.gender-female.face-narrow { --face-scale: .78; --hair-scale: .88; }
+.avatar.gender-female.face-normal { --face-scale: .89; --hair-scale: .95; }
+.avatar.gender-female.face-round { --face-scale: .98; --hair-scale: 1.02; }
+.avatar-brows { display: none; position: absolute; z-index: 7; inset: 0; pointer-events: none; }
+.avatar.gender-male .avatar-brows { display: block; }
+.avatar.gender-male .avatar-brows:before,
+.avatar.gender-male .avatar-brows:after {
+  content: "";
+  position: absolute;
+  top: 35%;
+  width: 11%;
+  height: 2.8%;
+  border-radius: 60% 45% 45% 60%;
+  background: var(--hair);
+}
+.avatar.gender-male .avatar-brows:before { left: 34.5%; transform: rotate(-5deg); }
+.avatar.gender-male .avatar-brows:after { right: 34.5%; transform: scaleX(-1) rotate(-5deg); }
+
+/* A single centered frame guarantees matching lens size, height, and spacing. */
+.avatar-glasses {
+  position: absolute;
+  z-index: 8;
+  width: 36%;
+  height: 12%;
+  left: 32%;
+  top: 35%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.avatar-glasses:before,
+.avatar-glasses:after { content: none; display: none; }
+.avatar-glasses i {
+  position: absolute;
+  top: 0;
+  width: 36%;
+  height: 100%;
+  border: 1.5px solid var(--navy);
+  background: rgba(255,248,231,.13);
+  box-sizing: border-box;
+}
+.avatar-glasses i:first-child { left: 0; }
+.avatar-glasses i:nth-child(2) { right: 0; }
+.avatar-glasses b {
+  position: absolute;
+  left: 36%;
+  top: 46%;
+  width: 28%;
+  height: 1.5px;
+  border: 0;
+  background: var(--navy);
+}
+.avatar-glasses.glasses-round i { border-radius: 50%; }
+.avatar-glasses.glasses-square i { border-radius: 24%; }
+
+/* Facial hair uses the same simple, softly rounded blocks as the reference portraits. */
+.avatar-facial-hair.facial-mustache {
+  width: 25%;
+  height: 9%;
+  left: 37.5%;
+  top: 48%;
+  border-radius: 0;
+  clip-path: none;
+  background: transparent;
+}
+.avatar-facial-hair.facial-mustache:before,
+.avatar-facial-hair.facial-mustache:after {
+  content: "";
+  position: absolute;
+  top: 8%;
+  width: 54%;
+  height: 66%;
+  background: var(--hair);
+  border-radius: 65% 35% 62% 48%;
+}
+.avatar-facial-hair.facial-mustache:before { left: 0; transform: rotate(8deg); }
+.avatar-facial-hair.facial-mustache:after { right: 0; transform: scaleX(-1) rotate(8deg); }
+.avatar-facial-hair.facial-stubble {
+  width: 32%;
+  height: 19%;
+  left: 34%;
+  top: 46%;
+  opacity: .42;
+  border-radius: 0 0 48% 48%;
+  background: color-mix(in srgb,var(--hair) 72%,transparent);
+  clip-path: polygon(4% 3%,21% 25%,50% 18%,79% 25%,96% 3%,88% 73%,50% 100%,12% 73%);
+}
+.avatar-facial-hair.facial-stubble:after {
+  content: "";
+  position: absolute;
+  inset: 18% 23% 38%;
+  border-radius: 50%;
+  background: var(--skin);
+}
+.avatar-facial-hair.facial-beard {
+  width: 37%;
+  height: 25%;
+  left: 31.5%;
+  top: 43.5%;
+  border-radius: 18% 18% 47% 47%;
+  background: var(--hair);
+  clip-path: polygon(2% 8%,18% 24%,50% 15%,82% 24%,98% 8%,91% 69%,72% 91%,50% 100%,28% 91%,9% 69%);
+}
+.avatar-facial-hair.facial-beard:before {
+  content: "";
+  position: absolute;
+  width: 48%;
+  height: 23%;
+  left: 26%;
+  top: 20%;
+  border-radius: 48%;
+  background: var(--skin);
+}
+.avatar-facial-hair.facial-beard:after {
+  content: "";
+  position: absolute;
+  width: 58%;
+  height: 15%;
+  left: 21%;
+  top: 15%;
+  border-radius: 50%;
+  background: var(--hair);
+}
+.accessory-choices { grid-template-columns: repeat(3,minmax(0,1fr)); }
+
+/* Keep body and hair proportions tied to the selected face width. */
+.avatar.gender-female { --body-scale: .82; }
+.avatar.gender-male { --body-scale: 1.05; }
+.avatar .avatar-body { transform-origin: 50% 68%; }
+
+.avatar.gender-female.face-narrow { --face-scale: .78; --hair-scale: .82; }
+.avatar.gender-female.face-normal { --face-scale: .89; --hair-scale: .93; }
+.avatar.gender-female.face-round { --face-scale: .98; --hair-scale: 1.02; }
+.avatar.gender-male.face-narrow { --face-scale: .92; --hair-scale: .96; }
+.avatar.gender-male.face-normal { --face-scale: 1.03; --hair-scale: 1.07; }
+.avatar.gender-male.face-round { --face-scale: 1.13; --hair-scale: 1.17; }
+
+/* Longer and fuller silhouettes need a little extra room around the cheeks. */
+.avatar.gender-female.face-narrow:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: .86; }
+.avatar.gender-female.face-normal:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: .97; }
+.avatar.gender-female.face-round:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: 1.06; }
+.avatar.gender-male.face-narrow:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: 1; }
+.avatar.gender-male.face-normal:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: 1.11; }
+.avatar.gender-male.face-round:is(.hair-bob,.hair-ponytail,.hair-bun,.hair-graybun,.hair-short-curly,.hair-medium-curly,.hair-curls,.hair-long-curly,.hair-short-wavy,.hair-medium-wavy,.hair-waves,.hair-long-wavy,.hair-long-straight) { --hair-scale: 1.21; }
+
+/* Match the generated hairline exactly to the face and ear layer. */
+.avatar.face-narrow,
+.avatar.face-normal,
+.avatar.face-round { --hair-scale: var(--face-scale); }
+
+/* Female portraits keep a noticeably lighter shoulder silhouette. */
+.avatar.gender-female { --body-scale: .68; }
+
+/* Compact, face-aware eyewear: rounded and classic Wayfarer silhouettes. */
+.avatar-glasses {
+  width: 33%;
+  height: 11.5%;
+  left: 50%;
+  top: 35.5%;
+  transform: translateX(-50%) scaleX(var(--face-scale));
+  transform-origin: 50% 50%;
+}
+.avatar-glasses i {
+  width: 42%;
+  height: 100%;
+  border: 1.5px solid var(--navy);
+  background: rgba(255,248,231,.16);
+}
+.avatar-glasses i:first-child { left: 0; }
+.avatar-glasses i:nth-child(2) { right: 0; }
+.avatar-glasses b {
+  left: 42%;
+  top: 43%;
+  width: 16%;
+  height: 1.5px;
+}
+.avatar-glasses.glasses-round { width: 31%; height: 11.5%; }
+.avatar-glasses.glasses-round i { width: 41%; border-radius: 50%; }
+.avatar-glasses.glasses-round b { left: 41%; width: 18%; }
+.avatar-glasses.glasses-wayfarer i {
+  border-radius: 17% 17% 36% 36% / 18% 18% 45% 45%;
+}
+.avatar-glasses.glasses-wayfarer i:first-child { transform: skewX(2deg); }
+.avatar-glasses.glasses-wayfarer i:nth-child(2) { transform: skewX(-2deg); }
+.avatar-glasses.glasses-wayfarer i:before {
+  content: "";
+  position: absolute;
+  left: -1.5px;
+  right: -1.5px;
+  top: -1.5px;
+  height: 2.5px;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--navy);
+}
+
+/* Long styles sit slightly lower and closer to the cheeks on every face width. */
+.avatar:is(.hair-long-curly,.hair-long-wavy,.hair-long-straight) .avatar-hair {
+  top: 2.25% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 2% !important;
+  width: 96% !important;
+  height: 100% !important;
+}
+
+.avatar.hair-long-straight .avatar-hair {
+  top: 3.75% !important;
+}
+
+
+.profile-name-field {
+  display: block;
+  margin: 0 0 20px;
+}
+.profile-name-field > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.profile-name-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  outline: 0;
+  background: var(--paper);
+  color: var(--navy);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+}
+.profile-name-field input:focus { border-color: var(--coral); box-shadow: 0 0 0 2px rgba(217,108,87,.16); }
+.profile-name-field small {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-muted);
+  font-size: 8px;
+}

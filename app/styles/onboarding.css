@@ -1,0 +1,11 @@
+.picker-screen, .solo-screen, .join-screen { max-width: 560px; margin: 0 auto; padding-top: 64px; text-align: center; }
+.picker-list { display: grid; gap: 10px; max-width: 420px; margin: 0 auto 22px; }
+.picker-option { border: 1px solid var(--line); background: var(--paper); padding: 16px; border-radius: 4px; font-weight: 800; font-size: 14px; cursor: pointer; text-align: left; }
+.picker-option.selected { border: 2px solid var(--coral); background: #fff5eb; color: var(--coral); }
+.solo-screen .primary-button, .picker-screen .primary-button, .join-screen .primary-button { max-width: 420px; margin: 0 auto; }
+.join-code-form { max-width: 320px; margin: 0 auto 18px; display: grid; gap: 14px; }
+.join-code-form label { display: grid; gap: 6px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.join-code-form input { border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 14px; font-size: 22px; letter-spacing: .3em; text-align: center; font-weight: 900; text-transform: uppercase; }
+.join-confirm-card { max-width: 420px; margin: 24px auto 0; border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 22px; }
+.join-confirm-card h2 { font-family: Georgia, serif; font-weight: 500; margin: 0 0 12px; }
+.join-success { text-align: center; font-family: Georgia, serif; font-size: 18px; color: var(--sage); margin-top: 18px; }

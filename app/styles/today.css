@@ -1,0 +1,117 @@
+.reading-card { background: var(--coral); color: #fffaf0; border-radius: 6px; padding: 18px; max-width: 720px; margin: 0 auto; box-shadow: 0 9px 0 rgba(23,41,67,.06); transition: background .3s; }
+.reading-card.is-complete { background: var(--sage); }
+.reading-topline { display: flex; justify-content: space-between; font-weight: 900; letter-spacing: .14em; font-size: 9px; }
+.streak { color: #fff2bd; letter-spacing: 0; font-size: 11px; text-transform: none; }
+.reading-main { min-height: 145px; display: flex; align-items: center; justify-content: space-between; }
+.book-label { font-size: 9px; letter-spacing: .2em; font-weight: 900; }.reading-main h2 { font-family: Georgia, serif; font-size: 37px; font-weight: 400; margin: 2px 0; }.reading-main h2 b { font-family: Arial, sans-serif; font-size: 13px; vertical-align: super; }.reading-main p { margin: 0; opacity: .82; font-size: 12px; }
+.chapter-mark { font-family: Impact, sans-serif; font-size: 84px; line-height: 1; color: rgba(255,250,240,.2); letter-spacing: -.08em; }
+
+.section-block { max-width: 720px; margin: 36px auto 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }.section-heading h2 { font-family: Georgia, serif; margin: 0; font-weight: 500; font-size: 24px; }.section-heading button { border: 0; background: none; font-size: 12px; text-decoration: underline; font-weight: 800; cursor: pointer; padding: 8px 0; }
+.home-card { margin-top: 15px; border: 1px solid var(--line); background: var(--paper); border-radius: 5px; overflow: hidden; }
+
+.home-info { padding: 14px 16px 17px; }.stage-row { display: flex; justify-content: space-between; margin-bottom: 9px; font-family: Georgia, serif; font-size: 15px; }.stage-row span + span:before { content: "Next · "; font-family: Arial, sans-serif; color: var(--ink-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }.stage-row.detail { font-family: Arial, sans-serif; font-size: 10px; color: var(--ink-muted); margin: 7px 0 0; }.stage-row.detail strong { color: var(--navy); }
+
+.people-today { max-width: 720px; margin: 17px auto 0; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--line); padding-bottom: 24px; }.avatar-stack { display: flex; min-width: 98px; }.avatar-stack .avatar { margin-right: -14px; border: 2px solid var(--cream); }.people-today strong, .people-today span { display: block; }.people-today strong { font-size: 12px; }.people-today span { color: var(--ink-muted); font-size: 10px; margin-top: 3px; }.daily-note { text-align: center; color: var(--coral); font-family: Georgia, serif; font-style: italic; margin: 22px 0 0; font-size: 13px; }
+
+@media (min-width: 760px) {
+  .reading-card { padding: 24px; }
+  .home-card { display: grid; grid-template-columns: 1.1fr .9fr; align-items: stretch; }.home-card .home-scene { height: 230px; }.home-info { display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+}
+
+@media (max-width: 370px) {
+  .chapter-mark { font-size: 67px; }.reading-main h2 { font-size: 33px; }
+}
+
+.catchup-card {
+  max-width: 720px;
+  margin: 16px auto 0;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 13px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.catchup-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8dfd0;
+  color: var(--coral);
+  font-size: 15px;
+  font-weight: 900;
+}
+.catchup-copy { min-width: 0; }
+.catchup-copy .eyebrow { margin: 0 0 3px; font-size: 7px; }
+.catchup-copy h2 { margin: 0; font-size: 14px; line-height: 1.2; }
+.catchup-copy > span { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 9px; line-height: 1.35; }
+.catchup-card > button {
+  padding: 8px 0 4px;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.catchup-card > button b { margin-left: 3px; }
+.catchup-card > small {
+  grid-column: 2 / -1;
+  color: var(--ink-muted);
+  font-size: 7px;
+  letter-spacing: .025em;
+}
+.catchup-card.is-complete { border-color: rgba(145,168,139,.6); background: #f4f6eb; }
+.catchup-card.is-complete .catchup-mark { background: var(--sage); color: white; }
+
+@media (max-width: 430px) {
+  .catchup-card { grid-template-columns: auto minmax(0, 1fr); }
+  .catchup-card > button { grid-column: 2; justify-self: start; margin-top: 2px; }
+  .catchup-card > small { grid-column: 2; }
+}
+
+/* Make the one essential action unmistakable on the Today screen. */
+.today-reading-button {
+  min-height: 78px;
+  margin-top: 4px;
+  padding: 0 20px 0 23px;
+  border: 2px solid rgba(255,250,240,.92);
+  border-radius: 5px;
+  box-shadow: 0 7px 0 rgba(17,29,45,.2), 0 12px 24px rgba(17,29,45,.18);
+}
+.today-reading-button strong {
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: -.015em;
+}
+.today-reading-button .button-arrow {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 24px;
+  line-height: 1;
+}
+
+
+.quick-verse-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,250,240,.5);
+  border-radius: 5px;
+  background: rgba(255,250,240,.14);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.quick-verse-button .eyebrow { color: #fffaf0; opacity: .78; margin-bottom: 3px; }
+.quick-verse-button strong { display: block; font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
