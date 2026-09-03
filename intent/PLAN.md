@@ -105,3 +105,28 @@ Touches: `lib/scripture/`, `app/api/scripture/`, popup component, profile transl
 | R3 | API.Bible keys for NIV and CSB not approved by Sunday | Fallback popup with Bible.com link is the default path |
 | R4 | Rock roster reads slow at scale | 5-minute Redis cache, one OData call per screen |
 | R5 | Three-day window | Admin timeline chart is the first thing to cut, and I say so if it happens |
+
+## Shipped (2026-09-03)
+
+Production: readmybible-app.favor.church on Vercel project `favor-church/readmybible-app`, deployed
+from `main` at dbebb45. Smoke script 9/9 (login redirect, Auth0 authorize URL, scripture API, admin
+redirect, join redirect, assets, headers).
+
+What changed against the plan above:
+
+- Executors ran on claude sonnet high in herdr panes, not codex (weekly quota exhausted 09-03).
+  Reviews ran on fresh Opus low. agy Flash high wrote the smoke script.
+- Three review rounds (Leg A, Leg C, Leg B fix round of 7) plus a final pre-ship review: APPROVED.
+- NET provider moved from labs.bible.org to bolls.life. labs.bible.org is behind a Cloudflare
+  challenge and returns an empty body to server clients. bolls.life also serves ESV, NIV, NLT, and
+  CSB (`CSB17`) keyless; using it for those four is a licensing decision, not made.
+- `middleware.ts` renamed to `proxy.ts` for Next 16.
+- `/admin` now redirects logged-out visitors to login instead of rendering the no-access page.
+
+Open before Sunday 2026-09-06:
+
+- Rico: log in on prod, then the fixture sequence on rico+test (PersonId 13358) in group 24077:
+  Member (role 23) → Leader (role 24) → removed. Each Rock write gets a heads-up first.
+- ESV_API_KEY, NLT_API_KEY, API_BIBLE_KEY (plus CSB/NIV bibleIds) are unset; those translations
+  show the Bible.com link only.
+- Redis and Supabase reads have not been exercised by a logged-in user on prod yet.
