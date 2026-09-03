@@ -123,9 +123,20 @@ What changed against the plan above:
 - `middleware.ts` renamed to `proxy.ts` for Next 16.
 - `/admin` now redirects logged-out visitors to login instead of rendering the no-access page.
 
+Fixed 2026-09-03 (post-ship): Rico's first real prod login landed on
+`/not-found-in-rock` despite his Rock person record and the Auth0 Action both
+being correct. Root cause: `@auth0/nextjs-auth0` v4 filters `session.user`
+down to a fixed default claim set (`sub`, `name`, `email`, ...) and silently
+drops every other ID token claim — including the Action's namespaced
+`rock_person_found`/`rock_person_id` — unless the client defines
+`beforeSessionSaved`. `lib/auth0.ts` had none. Fixed by adding the hook
+(f50e341). Verified live via a logged-in browser check: lands on the Today
+tab. Also narrowed Q4: connect.favor.church is leader-only, never shown to
+members or the public (65e55b5, see DECISIONS.md Q25).
+
 Open before Sunday 2026-09-06:
 
-- Rico: log in on prod, then the fixture sequence on rico+test (PersonId 13358) in group 24077:
+- Rico: run the fixture sequence on rico+test (PersonId 13358) in group 24077:
   Member (role 23) → Leader (role 24) → removed. Each Rock write gets a heads-up first.
 - ESV_API_KEY, NLT_API_KEY, API_BIBLE_KEY (plus CSB/NIV bibleIds) are unset; those translations
   show the Bible.com link only.
