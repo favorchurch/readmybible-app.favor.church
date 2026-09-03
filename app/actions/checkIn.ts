@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { checkins } from "@/db/schema";
 import { redisDel } from "@/lib/cache/redis";
 import { validateCheckIn } from "@/lib/checkin-validation";
+import { appNow } from "@/lib/dev-clock";
 import { getSessionContext } from "@/lib/session";
 
 const inputSchema = z.object({
@@ -36,7 +37,7 @@ export async function checkIn(input: z.infer<typeof inputSchema>): Promise<Check
     return { ok: false, error: "You need to be logged in to check in." };
   }
 
-  const validation = validateCheckIn({ chapter, timezone });
+  const validation = validateCheckIn({ chapter, timezone }, appNow());
   if (!validation.ok) {
     return validation;
   }

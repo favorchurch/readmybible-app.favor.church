@@ -50,6 +50,7 @@ export type AppShellProps = {
   groupStats: GroupStats | null;
   campusBoard: GroupStanding[];
   appBaseUrl: string;
+  devMockToday: string | null;
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -58,7 +59,7 @@ function toUserProfile(displayName: string, avatar: AvatarConfig, translation: T
 
 export function AppShell(props: AppShellProps) {
   const router = useRouter();
-  const today = useToday();
+  const today = useToday(props.devMockToday);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()

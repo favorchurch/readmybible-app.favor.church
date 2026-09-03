@@ -24,6 +24,11 @@ under Environment variables. `DEV_MOCK_PERSON_ID` lets local dev skip Auth0 and
 impersonate a real Rock production PersonId; it is only honored when
 `NODE_ENV !== "production"`.
 
+`DEV_MOCK_TODAY` (a `YYYY-MM-DD` date) lets local dev move "today" to any
+active, grace, or closed reading-plan date without changing the system clock.
+Also only honored when `NODE_ENV !== "production"`, and only `lib/dev-clock.ts`
+reads it: `PORT=3100 DEV_MOCK_TODAY=2026-10-08 pnpm dev`.
+
 ## Scripts
 
 - `pnpm dev` — local dev server

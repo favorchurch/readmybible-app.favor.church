@@ -18,11 +18,12 @@ import { db } from "@/db";
 import { checkins } from "@/db/schema";
 import { cached } from "@/lib/cache/redis";
 import { timezoneForCampus } from "@/lib/campus-timezones";
+import { appNow } from "@/lib/dev-clock";
 import { getCampusGroups, getRoster } from "@/lib/rock/client";
 import { groupRatio, rankGroups, type GroupStanding } from "@/lib/game";
 
-export function todayInTimezone(timezone: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date());
+export function todayInTimezone(timezone: string, now: Date = appNow()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
 }
 
 export type PersonReadingState = {

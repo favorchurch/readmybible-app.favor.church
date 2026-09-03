@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 
 import { and, count, countDistinct, eq, gte, inArray } from "drizzle-orm";
 
+import { appNow } from "@/lib/dev-clock";
 import { groupRatio, stageFor, TOTAL_CHAPTERS, type Stage } from "@/lib/game";
 import type { HierarchyGroupNode, HierarchySectionNode } from "@/lib/rock/hierarchy";
 
@@ -20,7 +21,7 @@ export const PLAN_START = "2026-10-01";
 const ADMIN_TZ = "Asia/Manila";
 
 /** Today's date (YYYY-MM-DD) in Favor's org-local timezone, for "read today" and chart range. */
-export function adminToday(now: Date = new Date()): string {
+export function adminToday(now: Date = appNow()): string {
   try {
     return new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(now);
   } catch {
