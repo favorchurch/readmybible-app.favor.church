@@ -24,6 +24,10 @@ export function SoloScreen({
         <h1>You&apos;re reading solo for now.</h1>
         <p>Ask a Connect Group leader for their group code and join in. Your coins come with you.</p>
       </section>
+      <p className="onboarding-note">
+        You can join a Connect Group later. Your personal chapter progress stays with you either
+        way.
+      </p>
       {!entering ? (
         <button className="primary-button" onClick={() => setEntering(true)}>
           <strong>Enter a group code</strong>

@@ -23,9 +23,24 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 
 const LINE_COLORS = ["#d96c57", "#7b9caf", "#e7a72f", "#91a88b", "#9c84ab", "#172943"];
 
+// Mirrors lib/admin/stats.ts's PLAN_START (a frozen literal, not expected to
+// change) as a local value: importing the real binding here would pull that
+// module's server-only DB loaders into this "use client" component's bundle.
+const PLAN_START = "2026-10-01";
+
+/** Pre-launch (or otherwise dateless) series: every point missing or dated before the plan starts. */
+function isPreLaunchEmpty(series: TopLevelSeries[]): boolean {
+  if (series.length === 0) return true;
+  return series.every((s) => s.points.length === 0 || s.points.every((p) => p.date < PLAN_START));
+}
+
 export function HierarchyChart({ series }: { series: TopLevelSeries[] }) {
-  if (series.length === 0 || series.every((s) => s.points.length === 0)) {
-    return <p className="admin-chart-empty">No reading days in range yet.</p>;
+  if (isPreLaunchEmpty(series)) {
+    return (
+      <p className="admin-chart-empty" data-section="admin-chart-empty">
+        The chart starts filling in on October 1.
+      </p>
+    );
   }
 
   const labels = series[0].points.map((p) => p.date.slice(5));
@@ -53,7 +68,7 @@ export function HierarchyChart({ series }: { series: TopLevelSeries[] }) {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } },
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 12 } } },
           },
           scales: {
             y: {

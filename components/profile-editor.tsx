@@ -284,6 +284,15 @@ export function ProfileEditor({
         >
           {saving ? "Saving…" : "Save"} <span>✓</span>
         </button>
+        <details className="reading-data-note" data-section="reading-data-note">
+          <summary>About your reading data</summary>
+          <p>
+            Your chapter check-ins power your personal progress and your Connect
+            Group&apos;s shared progress. Your Connect Group can see today&apos;s
+            check-in status. Section leaders see group totals in their dashboard, not
+            your private reading details.
+          </p>
+        </details>
     </Sheet>
   );
 }

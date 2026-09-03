@@ -24,6 +24,10 @@ export function GroupPickerScreen({
           <h1>Which group are you reading with?</h1>
           <p>You&apos;re in more than one Connect Group. Pick one for October. You can switch later.</p>
         </section>
+        <p className="onboarding-note">
+          This is the Connect Group your October reading will count toward. Past check-ins stay
+          with the group they were recorded with.
+        </p>
         <div className="picker-list">
           {memberships.map((m) => (
             <button
