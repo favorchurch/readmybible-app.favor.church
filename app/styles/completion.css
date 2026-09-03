@@ -123,6 +123,39 @@
 .trophy-progress-copy small { display: block; margin-top: 6px; }
 .completion-close { margin-top: 17px; min-height: 61px; font-size: 15px; }
 
+.coin-reward-card > strong { animation: coinBump var(--dur-slow) var(--ease-out); }
+@keyframes coinBump {
+  0% { opacity: 0; transform: scale(.7); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.home-progress-line {
+  margin: 11px 2px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  text-align: center;
+}
+.home-progress-line strong { color: var(--navy); }
+
+.stage-up {
+  margin-top: 11px;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--sage-soft);
+  text-align: center;
+  animation: stageUpReveal var(--dur-slow) var(--ease-out);
+}
+.stage-up .home3d-wrap { margin: 0 auto; }
+.stage-up p { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+.stage-up strong { color: var(--navy); }
+@keyframes stageUpReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 430px) {
   .today-reading-button { min-height: 74px; }
   .today-reading-button strong { font-size: 17px; }

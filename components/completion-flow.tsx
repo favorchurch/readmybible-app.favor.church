@@ -1,8 +1,10 @@
 "use client";
 
-import { COINS_PER_CHAPTER, nextMedal } from "@/lib/game";
+import type { CheckInGroupState } from "@/app/actions/checkIn";
+import { COINS_PER_CHAPTER, nextMedal, stageTransition } from "@/lib/game";
 import { planEntryForChapter } from "@/lib/plan";
 import { ProgressBar } from "@/components/progress-bar";
+import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { Sheet } from "@/components/sheet";
 
 export function CompletionFlow({
@@ -11,7 +13,7 @@ export function CompletionFlow({
   isCatchUp,
   chaptersRead,
   groupName,
-  streakDays,
+  group,
   error,
   pending,
   onClose,
@@ -22,7 +24,7 @@ export function CompletionFlow({
   isCatchUp: boolean;
   chaptersRead: number;
   groupName: string | null;
-  streakDays: number;
+  group: CheckInGroupState | null;
   error?: string | null;
   pending?: boolean;
   onClose: () => void;
@@ -32,6 +34,7 @@ export function CompletionFlow({
   const nextTrophyAt = nextMedal(chaptersRead);
   const trophyProgress = nextTrophyAt ? Math.min(chaptersRead, nextTrophyAt) : chaptersRead;
   const home = groupName ?? "your reading";
+  const stageChange = group ? stageTransition(group.before.ratio, group.after.ratio) : null;
 
   return (
     <Sheet open={Boolean(step)} onClose={onClose} labelledBy="modal-title">
@@ -56,39 +59,20 @@ export function CompletionFlow({
           {error && <p className="error-note">{error}</p>}
           <p className="honor-note">This is an honor-based check-in. Take your time.</p>
         </>
-      ) : isCatchUp ? (
-        <>
-          <button className="close-button" onClick={onClose} aria-label="Close">
-            ×
-          </button>
-          <div className="celebration-mark">✦</div>
-          <p className="eyebrow centered">CAUGHT UP</p>
-          <h2 id="modal-title" className="centered">
-            Matthew {chapter} is done!
-          </h2>
-          <p className="reward-line">
-            <b>+{COINS_PER_CHAPTER} coins</b> for {home}
-          </p>
-          <p className="catchup-modal-note">
-            This counts toward finishing Matthew. Your daily streak stays at {streakDays} day
-            {streakDays === 1 ? "" : "s"}.
-          </p>
-          <button className="primary-button" onClick={onClose}>
-            See what changed <span>→</span>
-          </button>
-        </>
       ) : (
         <div className="today-completion">
           <button className="close-button" onClick={onClose} aria-label="Close congratulations">
             ×
           </button>
           <div className="celebration-mark">✦</div>
-          <p className="eyebrow centered">TODAY&apos;S READING COMPLETE</p>
+          <p className="eyebrow centered">{isCatchUp ? "CAUGHT UP" : "TODAY'S READING COMPLETE"}</p>
           <h2 id="modal-title" className="centered">
-            Read. Nice one.
+            {isCatchUp ? `Matthew ${chapter} is done!` : "Read. Nice one."}
           </h2>
           <p className="completion-note">
-            Matthew {chapter} is complete. Your faithful step is helping {home} build together.
+            {isCatchUp
+              ? `Matthew ${chapter} is complete. This chapter counts toward finishing Matthew with ${home}.`
+              : `Matthew ${chapter} is complete. Your faithful step is helping ${home} build together.`}
           </p>
           <div className="coin-reward-card">
             <strong>+{COINS_PER_CHAPTER}</strong>
@@ -114,6 +98,22 @@ export function CompletionFlow({
                 <ProgressBar value={trophyProgress} max={nextTrophyAt} />
                 <small>{nextTrophyAt - trophyProgress} more chapters to unlock</small>
               </div>
+            </div>
+          )}
+          {group && (
+            <p className="home-progress-line">
+              <strong>
+                {Math.round(group.before.ratio * 100)}% → {Math.round(group.after.ratio * 100)}%
+              </strong>{" "}
+              of {home}&apos;s shared home, now a {group.after.stage}.
+            </p>
+          )}
+          {stageChange && (
+            <div className="stage-up" data-section="stage-up">
+              <HomeIllustration stage={stageIndex(stageChange.to)} />
+              <p>
+                <strong>{home}</strong> grew from a {stageChange.from} to a {stageChange.to}.
+              </p>
             </div>
           )}
           <button className="primary-button completion-close" onClick={onClose}>

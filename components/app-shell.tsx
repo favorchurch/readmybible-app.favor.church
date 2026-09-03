@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { checkIn } from "@/app/actions/checkIn";
+import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
@@ -80,6 +80,7 @@ export function AppShell(props: AppShellProps) {
   const [pending, setPending] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [checkInError, setCheckInError] = useState<string | null>(null);
+  const [flowGroupResult, setFlowGroupResult] = useState<CheckInGroupState | null>(null);
 
   const chapters = useMemo(() => Array.from(new Set(props.chapters)), [props.chapters]);
   const chaptersRead = chapters.length;
@@ -108,6 +109,7 @@ export function AppShell(props: AppShellProps) {
     const result = await checkIn({ chapter: flowChapter, timezone: today.timezone });
     setPending(false);
     if (result.ok) {
+      setFlowGroupResult(result.group);
       setFlowStep(2);
       router.refresh();
     } else {
@@ -186,6 +188,8 @@ export function AppShell(props: AppShellProps) {
           profile={profile}
           onStart={startReading}
           onEditProfile={() => setProfileOpen(true)}
+          onViewConnect={() => selectTab("connect")}
+          onViewProgress={() => selectTab("progress")}
         />
       )}
       {tab === "connect" && (
@@ -226,13 +230,14 @@ export function AppShell(props: AppShellProps) {
           isCatchUp={flowChapter !== today.entry?.chapter}
           chaptersRead={chaptersRead}
           groupName={groupName}
-          streakDays={currentStreak}
+          group={flowGroupResult}
           error={checkInError}
           pending={pending}
           onClose={() => {
             setFlowStep(0);
             setFlowChapter(null);
             setCheckInError(null);
+            setFlowGroupResult(null);
           }}
           onComplete={finishReading}
         />

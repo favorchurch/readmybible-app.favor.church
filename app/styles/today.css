@@ -116,3 +116,152 @@
 }
 .quick-verse-button .eyebrow { color: #fffaf0; opacity: .78; margin-bottom: 3px; }
 .quick-verse-button strong { display: block; font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
+
+/* Pre-launch and active: hero + reading content in .frame__main, secondary
+   info in .frame__rail. Frame children fill their grid track, so the hero's
+   own 720px cap is dropped in favor of the track width. */
+.frame--rail .hero-copy { max-width: none; margin: 44px 0 var(--space-6); }
+/* On narrow viewports .frame--rail stacks main then rail in source order
+   (frame.css only grids them at 1024px+); this margin is the gap between
+   them and is inert on the grid layout since the two tracks sit side by
+   side, not stacked. */
+.frame--rail > .frame__main { margin-bottom: var(--space-6); }
+
+.day1-preview-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.day1-preview-card .reading-topline { color: var(--coral); }
+.day1-preview-card .reading-main { min-height: auto; }
+.day1-preview-card .reading-main h2 { color: var(--ink); }
+.day1-preview-card .reading-main p { color: var(--ink-muted); opacity: 1; }
+.day1-preview-card .chapter-mark { color: var(--surface-3); }
+.day1-preview-card .quick-verse-button {
+  border-color: var(--line);
+  background: var(--surface-1);
+  color: var(--ink);
+}
+.day1-preview-card .quick-verse-button .eyebrow { color: var(--coral); opacity: 1; }
+
+.readiness-card,
+.home-preview-card,
+.how-it-works-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-top: var(--space-5);
+}
+.frame__rail > *:first-child { margin-top: 0; }
+
+.readiness-card h2 { margin: 0 0 var(--space-3); font-family: Georgia, serif; font-size: 18px; font-weight: 500; }
+.readiness-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.readiness-row:first-of-type { border-top: 0; padding-top: 0; }
+.readiness-row > span:first-child { font-size: 12px; color: var(--ink-muted); }
+.readiness-row strong { font-size: 14px; text-align: right; }
+.readiness-arrow { color: var(--coral); }
+.readiness-row:active { transform: scale(.98); }
+
+.home-preview-card { text-align: center; }
+.home-preview-card p { margin: var(--space-2) 0 0; font-size: 13px; color: var(--ink-muted); }
+
+.how-it-works-card ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); counter-reset: hiw; }
+.how-it-works-card li { padding-left: 28px; position: relative; font-size: 13px; line-height: 1.5; color: var(--ink-2); counter-increment: hiw; }
+.how-it-works-card li:before {
+  content: counter(hiw);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--coral-soft);
+  color: var(--coral-deep);
+  font-size: 11px; /* decorative */
+  font-weight: 900;
+}
+.how-it-works-card li strong { color: var(--ink); }
+
+.roadmap-link-row { margin-top: var(--space-5); }
+.roadmap-link-row .secondary-link { margin: 0; max-width: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .readiness-row:hover { color: var(--coral); }
+}
+
+/* Grace days (Oct 29-31): catch-up dashboard, no daily eyebrow. */
+.grace-dashboard {
+  max-width: 720px;
+  margin: 20px auto 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+.grace-stat { display: flex; align-items: baseline; gap: var(--space-2); }
+.grace-stat strong { font-family: Georgia, serif; font-size: 32px; color: var(--navy); }
+.grace-stat span { font-size: 13px; color: var(--ink-muted); }
+.grace-complete-note { margin: var(--space-4) 0 0; font-size: 14px; color: var(--sage); font-weight: 700; }
+.grace-chip-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.chapter-chip {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  background: var(--surface-1);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.chapter-chip:active { transform: scale(.96); }
+.grace-group-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.grace-group-status span { color: var(--ink-muted); }
+.grace-group-status strong { color: var(--navy); }
+
+@media (hover: hover) and (pointer: fine) {
+  .chapter-chip:hover { background: var(--coral-soft); border-color: var(--coral); }
+}
+
+/* Closed (Nov 1 onward): compact final summary, no daily wording. */
+.closed-summary {
+  max-width: 720px;
+  margin: 20px auto 0;
+  display: grid;
+  gap: var(--space-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+.closed-summary-stat { display: flex; justify-content: space-between; align-items: baseline; }
+.closed-summary-stat strong { font-family: Georgia, serif; font-size: 20px; color: var(--navy); }
+.closed-summary-stat span { font-size: 13px; color: var(--ink-muted); }
+.closed-summary .secondary-link { margin: var(--space-2) 0 0; }
