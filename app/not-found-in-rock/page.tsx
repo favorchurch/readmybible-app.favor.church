@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Read My Bible — We couldn't find you yet",
+  title: "Read My Bible: We couldn't find you yet",
 };
 
 export default function NotFoundInRockPage() {

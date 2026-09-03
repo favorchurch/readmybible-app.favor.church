@@ -15,6 +15,15 @@ import {
   GROUP_TYPE_SECTION,
   GT25_ACTIVE_ROLE_IDS,
 } from "@/lib/rock/constants";
+import {
+  fixtureCampusGroups,
+  fixtureMemberships,
+  fixturePerson,
+  fixtureRoster,
+  fixtureSectionMemberships,
+  fixtureSectionSubtree,
+  isFixtureMode,
+} from "@/lib/rock/fixtures";
 
 const ROCK_API_URL = process.env.ROCK_API_URL ?? "https://rock.favor.church/api";
 
@@ -85,6 +94,7 @@ export type RockGroupMember = {
 
 /** People/{id} -- selected fields only. Cached 5 minutes. */
 export async function getPerson(personId: number): Promise<RockPerson | null> {
+  if (isFixtureMode()) return fixturePerson(personId);
   return cached(`rock:person:${personId}`, 300, async () => {
     try {
       return await rockFetch<RockPerson>(
@@ -99,6 +109,7 @@ export async function getPerson(personId: number): Promise<RockPerson | null> {
 
 /** Active Connect Group (GT25) memberships for a person, roles Member/Leader/Assistant Leader. Cached 5 minutes. */
 export async function getMemberships(personId: number): Promise<RockGroupMember[]> {
+  if (isFixtureMode()) return fixtureMemberships(personId);
   return cached(`rock:memberships:${personId}`, 300, async () => {
     const roleFilter = GT25_ACTIVE_ROLE_IDS.map((id) => `GroupRoleId eq ${id}`).join(" or ");
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active' and (${roleFilter})`;
@@ -116,6 +127,7 @@ export async function getMemberships(personId: number): Promise<RockGroupMember[
 
 /** Active Connect section (GT24) memberships for a person. Cached 5 minutes. */
 export async function getSectionMemberships(personId: number): Promise<RockGroupMember[]> {
+  if (isFixtureMode()) return fixtureSectionMemberships(personId);
   return cached(`rock:sections:${personId}`, 300, async () => {
     const filter = `PersonId eq ${personId} and GroupMemberStatus eq 'Active'`;
     const rows = await rockFetch<RockGroupMember[]>(
@@ -127,6 +139,7 @@ export async function getSectionMemberships(personId: number): Promise<RockGroup
 
 /** Active roster of a Connect Group, with person data expanded. Cached 5 minutes. */
 export async function getRoster(groupId: number): Promise<RockGroupMember[]> {
+  if (isFixtureMode()) return fixtureRoster(groupId);
   return cached(`rock:roster:${groupId}`, 300, async () => {
     const filter = `GroupId eq ${groupId} and GroupMemberStatus eq 'Active'`;
     return rockFetch<RockGroupMember[]>(
@@ -137,6 +150,7 @@ export async function getRoster(groupId: number): Promise<RockGroupMember[]> {
 
 /** Active, non-archived Connect Groups for a campus. Cached 15 minutes. */
 export async function getCampusGroups(campusId: number): Promise<RockGroup[]> {
+  if (isFixtureMode()) return fixtureCampusGroups(campusId);
   return cached(`rock:campusgroups:${campusId}`, 900, async () => {
     const filter = `GroupTypeId eq ${GROUP_TYPE_CONNECT_GROUP} and CampusId eq ${campusId} and IsActive eq true and IsArchived eq false`;
     return rockFetch<RockGroup[]>(`Groups?$filter=${encodeURIComponent(filter)}`);
@@ -145,6 +159,7 @@ export async function getCampusGroups(campusId: number): Promise<RockGroup[]> {
 
 /** All descendant groups of a section, recursively, down to GT25 Connect Groups. Cached 15 minutes. */
 export async function getSectionSubtree(sectionGroupId: number): Promise<RockGroup[]> {
+  if (isFixtureMode()) return fixtureSectionSubtree(sectionGroupId);
   return cached(`rock:subtree:${sectionGroupId}`, 900, async () => {
     const result: RockGroup[] = [];
     async function walk(parentId: number) {
@@ -172,10 +187,13 @@ export async function getSectionSubtree(sectionGroupId: number): Promise<RockGro
 export async function joinGroup(groupId: number, personId: number): Promise<{ outcome: "joined" | "reactivated" | "already_member" }> {
   const filter = `PersonId eq ${personId} and GroupId eq ${groupId}`;
   const existing = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
-  const [existingRow] = existing;
+  // Several rows (e.g. an old inactive row plus a newer one) can come back --
+  // prefer an active one over existing[0], which may not be it.
+  const existingRow =
+    existing.find((row) => row.GroupMemberStatus === GROUP_MEMBER_STATUS_ACTIVE) ?? existing[0];
 
   if (existingRow && existingRow.GroupMemberStatus === GROUP_MEMBER_STATUS_ACTIVE) {
-    await bustPersonCache(personId);
+    await bustPersonCache(personId, groupId);
     return { outcome: "already_member" };
   }
 
@@ -184,24 +202,48 @@ export async function joinGroup(groupId: number, personId: number): Promise<{ ou
       method: "PATCH",
       body: JSON.stringify({ GroupMemberStatus: GROUP_MEMBER_STATUS_ACTIVE }),
     });
-    await bustPersonCache(personId);
+    await bustPersonCache(personId, groupId);
     return { outcome: "reactivated" };
   }
 
-  await rockFetch(`GroupMembers`, {
-    method: "POST",
-    body: JSON.stringify({
-      GroupId: groupId,
-      PersonId: personId,
-      GroupRoleId: GT25_ACTIVE_ROLE_IDS[0],
-      GroupMemberStatus: GROUP_MEMBER_STATUS_ACTIVE,
-    }),
-  });
-  await bustPersonCache(personId);
+  try {
+    await rockFetch(`GroupMembers`, {
+      method: "POST",
+      body: JSON.stringify({
+        GroupId: groupId,
+        PersonId: personId,
+        GroupRoleId: GT25_ACTIVE_ROLE_IDS[0],
+        GroupMemberStatus: GROUP_MEMBER_STATUS_ACTIVE,
+      }),
+    });
+  } catch (error) {
+    // Rock rejects a duplicate GroupMembers row (person already has one for
+    // this group) rather than returning it from the lookup above in some
+    // cases -- re-fetch and reactivate instead of failing the join.
+    if (error instanceof RockApiError && /duplicate|already/i.test(error.message)) {
+      const retry = await rockFetch<RockGroupMember[]>(`GroupMembers?$filter=${encodeURIComponent(filter)}`);
+      const [retryRow] = retry;
+      if (retryRow) {
+        await rockFetch(`GroupMembers/${retryRow.Id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ GroupMemberStatus: GROUP_MEMBER_STATUS_ACTIVE }),
+        });
+        await bustPersonCache(personId, groupId);
+        return { outcome: "reactivated" };
+      }
+    }
+    throw error;
+  }
+  await bustPersonCache(personId, groupId);
   return { outcome: "joined" };
 }
 
-async function bustPersonCache(personId: number): Promise<void> {
+async function bustPersonCache(personId: number, groupId: number): Promise<void> {
   const { redisDel } = await import("@/lib/cache/redis");
-  await redisDel(`rock:memberships:${personId}`, `rock:sections:${personId}`, `rock:person:${personId}`);
+  await redisDel(
+    `rock:memberships:${personId}`,
+    `rock:sections:${personId}`,
+    `rock:person:${personId}`,
+    `rock:roster:${groupId}`,
+  );
 }

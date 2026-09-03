@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { checkins } from "@/db/schema";
 import { redisDel } from "@/lib/cache/redis";
+import { validateCheckIn } from "@/lib/checkin-validation";
 import { getSessionContext } from "@/lib/session";
 
 const inputSchema = z.object({
@@ -13,17 +14,6 @@ const inputSchema = z.object({
   timezone: z.string().min(1),
 });
 
-const PLAN_START = "2026-10-01";
-const PLAN_END = "2026-10-31";
-const CLOCK_SKEW_DAYS = 1;
-
-function addDays(dateStr: string, days: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
 export type CheckInResult =
   | { ok: true }
   | { ok: false; error: string };
@@ -31,8 +21,9 @@ export type CheckInResult =
 /**
  * Honor-based check-in. One row per person per chapter (DB unique
  * constraint backs this up; a repeat call is a no-op). Only accepts dates
- * inside the plan window, up to "tomorrow" to tolerate clock skew, never a
- * future day beyond that.
+ * inside the plan window, up to "tomorrow" (server-derived local today) to
+ * tolerate clock skew, never a future day beyond that. See
+ * lib/checkin-validation.ts for the window and chapter/day rules.
  */
 export async function checkIn(input: z.infer<typeof inputSchema>): Promise<CheckInResult> {
   const parsed = inputSchema.safeParse(input);
@@ -46,9 +37,9 @@ export async function checkIn(input: z.infer<typeof inputSchema>): Promise<Check
     return { ok: false, error: "You need to be logged in to check in." };
   }
 
-  const clientToleratedMax = addDays(readingDate, CLOCK_SKEW_DAYS);
-  if (readingDate < PLAN_START || readingDate > PLAN_END || readingDate > clientToleratedMax) {
-    return { ok: false, error: "That date is outside the reading plan window." };
+  const validation = validateCheckIn({ chapter, readingDate, timezone });
+  if (!validation.ok) {
+    return validation;
   }
 
   const groupId = session.activeGroup?.groupId ?? null;
@@ -70,4 +61,3 @@ export async function checkIn(input: z.infer<typeof inputSchema>): Promise<Check
 
   return { ok: true };
 }
-

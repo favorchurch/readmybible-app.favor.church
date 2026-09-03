@@ -58,7 +58,8 @@ export async function getSessionContext(): Promise<SessionContext> {
     if (!session) return { status: "logged-out" };
 
     const claims = session.user as Record<string, unknown>;
-    const found = claims[`${AUTH0_NAMESPACE}rock_person_found`];
+    const foundClaim = claims[`${AUTH0_NAMESPACE}rock_person_found`];
+    const found = foundClaim === true || foundClaim === "true";
     const idClaim = claims[`${AUTH0_NAMESPACE}rock_person_id`];
 
     if (!found || idClaim === undefined || idClaim === null) {

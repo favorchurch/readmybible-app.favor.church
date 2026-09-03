@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Read My Bible — Read Anywhere, Grow Together",
+  title: "Read My Bible: Read Anywhere, Grow Together",
   description: "A mobile-first Bible reading challenge for Favor Church Connect groups.",
   icons: {
     icon: "/favicon.svg",

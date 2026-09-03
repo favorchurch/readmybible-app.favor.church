@@ -15,6 +15,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import postgres from "postgres";
 
+if (!process.env.DATABASE_URL_DIRECT) {
+  throw new Error("DATABASE_URL_DIRECT is not set.");
+}
+
 const sql = postgres(process.env.DATABASE_URL_DIRECT, { max: 1 });
 
 try {
