@@ -46,7 +46,15 @@
 .home3d-model.apartment { --w: 136px; --h: 170px; --d: 105px; --wall-front: #a28eaf; --wall-side: #796e89; --wall-light: #b4a2bd; top: 53%; }.apartment .roof3d, .apartment .chimney3d { display: none; }.apartment .upper-windows { display: block; }.apartment .window3d { top: 112px; }.apartment .side-window { top: 95px; }.apartment .face-top { background: #776d84; }
 .home3d-model.house3d { --w: 170px; --h: 115px; --d: 118px; --wall-front: #d2ad70; --wall-side: #a57e55; --wall-light: #e1bd80; }.house3d .roof3d > span { width: calc(var(--w) + 30px); }
 .home3d-model.mansion { --w: 212px; --h: 140px; --d: 126px; --wall-front: #d8c89d; --wall-side: #a99b7d; --wall-light: #eadcaf; top: 55%; }.mansion .roof3d > span { width: calc(var(--w) + 34px); background: #7f718c; }.mansion .roof-back { background: #675e73 !important; }.mansion .upper-windows, .mansion .balcony3d { display: block; }.mansion .window3d { top: 88px; }.mansion .side-window { top: 64px; }.mansion .chimney3d { right: 28px; }
-.rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; align-items: center; gap: 7px; color: rgba(23,41,67,.68); font-size: 12px; }.rotate-hint > span { font-size: 17px; }.rotate-hint button { margin-left: auto; border: 0; background: rgba(255,250,240,.55); padding: 5px 8px; font-size: 12px; cursor: pointer; }
+.rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--navy); font-size: 12px; }
+.rotate-hint .rotate-glyph { font-size: 16px; line-height: 1; color: var(--ink-2); }
+.rotate-hint .rotate-text { font-size: 12px; color: var(--ink-2); }
+.rotate-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.rotate-hint button { border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(255,250,240,.85); padding: 4px 8px; font-size: 12px; color: var(--navy); cursor: pointer; line-height: 1.2; }
+@media (hover: hover) and (pointer: fine) {
+  .rotate-hint button:hover { background: var(--paper); border-color: var(--line-strong); }
+}
+.rotate-hint button:active { transform: translateY(1px); }
 .home3d-complete { position: absolute; z-index: 7; top: 14px; left: 14px; background: var(--gold); color: var(--navy); padding: 7px 10px; font-size: 12px; box-shadow: 4px 4px 0 rgba(23,41,67,.16); animation: pop .5s cubic-bezier(.2,1.5,.4,1); }
 .home-note { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 12px; }
 .journey-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.journey-heading h2 { margin: 0; font-family: var(--font-display); font-size: 25px; line-height: 1; }.journey-heading > span { max-width: 145px; text-align: right; color: var(--ink-muted); font-size: 12px; line-height: 1.35; }
