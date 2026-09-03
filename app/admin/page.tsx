@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   title: "Read My Bible: Connect Group progress",
 };
 
+/** Oxford-comma-joined list: "A", "A and B", "A, B, and C". */
+function formatNameList(names: string[]): string {
+  if (names.length === 0) return "";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
 export default async function AdminPage() {
   const session = await getSessionContext();
   if (session.status === "logged-out") {
@@ -41,22 +49,41 @@ export default async function AdminPage() {
   const sections = await loadSectionSubtree(scope.rootIds);
   const { sections: statsSections, series } = await loadAdminStats(sections);
 
-  const scopeLine =
-    scope.kind === "global"
-      ? "Showing the entire Connect Groups tree."
-      : `Showing ${statsSections.map((s) => s.name).join(", ")} and everything under it.`;
-
   return (
     <main className="screen admin-screen frame">
       <section className="page-title">
         <h1>Connect Group progress</h1>
-        <p className="admin-scope-line">{scopeLine}</p>
+      </section>
+
+      <section className="admin-scope-card" data-section="admin-scope">
+        <h2>Your view</h2>
+        {scope.kind === "global" ? (
+          <p>You have access to the full Connect Group tree for this dashboard.</p>
+        ) : (
+          <>
+            <p>
+              You&apos;re seeing the Connect Groups under the section or sections you lead in
+              Favor&apos;s records. This dashboard shows group totals for your scope only.
+            </p>
+            <p className="admin-scope-sections">
+              Sections shown: {formatNameList(statsSections.map((s) => s.name))}.
+            </p>
+          </>
+        )}
       </section>
 
       <div className="admin-chart-card">
         <h2>Daily progress since October 1</h2>
         <HierarchyChart series={series} />
       </div>
+
+      <details className="admin-progress-note" data-section="admin-progress-note">
+        <summary>How progress is calculated</summary>
+        <p>
+          Progress is completed chapter check-ins divided by active members x 28 chapters. This
+          keeps group sizes comparable.
+        </p>
+      </details>
 
       <div className="admin-toolbar">
         <a className="admin-csv-link" href="/admin/export.csv">
