@@ -15,6 +15,23 @@ import { devMockToday } from "@/lib/dev-clock";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 
+function extractDevMockToday(): string | null {
+  if (typeof window !== "undefined") {
+    const fromEnv = process.env.NEXT_PUBLIC_DEV_MOCK_TODAY;
+    if (fromEnv && /^\d{4}-\d{2}-\d{2}$/.test(fromEnv)) return fromEnv;
+    try {
+      for (const script of document.querySelectorAll("script")) {
+        const text = script.textContent || "";
+        const match = text.match(/devMockToday[^0-9]*(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return devMockToday();
+}
+
 export function ConnectScreen({
   groupName,
   campusName,
@@ -36,7 +53,7 @@ export function ConnectScreen({
   onEditProfile: () => void;
   today?: TodayState;
 }) {
-  const fallbackToday = useToday(devMockToday());
+  const fallbackToday = useToday(extractDevMockToday());
   const today = propToday ?? fallbackToday;
   const phase = today.displayPhase;
 
