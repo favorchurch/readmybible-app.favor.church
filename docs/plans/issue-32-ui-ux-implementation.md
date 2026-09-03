@@ -580,3 +580,28 @@ actually render.
 
 Both are the same failure shape: an assertion written against an assumed render path rather than
 the real one. When a verify command passes, confirm it could have failed.
+
+### Amendment 6 (2026-09-03, standing rule after the same bug appeared in two lanes)
+
+**A client screen reads the day from the `today` prop that `AppShell` passes. Nothing else.**
+
+`components/app-shell.tsx` computes `const today = useToday(props.devMockToday)` once and is the
+single source of the current day for every screen under it. A screen that needs the day takes it as
+a prop.
+
+This rule exists because lane B and lane C, working independently in separate worktrees, both
+invented the same wrong mechanism: scraping `<script>` tags out of the document with a regex
+(`/devMockToday[^0-9]*(\d{4}-\d{2}-\d{2})/`) to recover the dev clock, because `AppShell` did not
+pass `today` to their screen and the plan never said how they should get it. Lane C's copy ran in
+production on every render, where `[^0-9]*` walks to whatever digits appear next in Next's RSC
+payload and can capture an unrelated date as "today".
+
+Two independent agents producing the same defect is a specification failure, not two coding
+mistakes. Forbidden in this codebase from here on:
+- reading the clock out of the DOM, `document.getElementsByTagName("script")`, or the RSC payload;
+- a second `useToday()` call inside a screen as a "fallback" when the prop is absent. If the prop is
+  absent, wire it in `AppShell` instead.
+
+M3 Task 12 should add a test that fails on any `devMockToday` regex or script-tag scrape outside
+`lib/dev-clock.ts`.
+
