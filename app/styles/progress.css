@@ -44,7 +44,6 @@
   border: 1px solid var(--line);
 }
 .plan-fact-value {
-  font-family: Georgia, serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--navy);
@@ -220,6 +219,10 @@
 
 /* Responsive rail integration */
 @media (max-width: 1023px) {
+  .progress-screen.frame--rail {
+    display: flex;
+    flex-direction: column;
+  }
   .progress-screen .frame__main,
   .progress-screen .frame__rail {
     display: contents;
@@ -373,7 +376,6 @@
   margin: 4px 0 10px;
 }
 .day-preview-title-copy {
-  font-family: Georgia, serif;
   font-size: 18px;
   color: var(--navy);
   margin: 0 0 16px;

@@ -201,7 +201,12 @@ export function AppShell(props: AppShellProps) {
         />
       )}
       {tab === "rewards" && (
-        <RewardsScreen profile={profile} chapters={chaptersRead} onEditProfile={() => setProfileOpen(true)} />
+        <RewardsScreen
+          profile={profile}
+          chapters={chaptersRead}
+          onEditProfile={() => setProfileOpen(true)}
+          today={today}
+        />
       )}
       {tab === "progress" && (
         <ProgressScreen

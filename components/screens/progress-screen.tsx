@@ -91,16 +91,18 @@ export function ProgressScreen({
               Edit avatar <b>→</b>
             </button>
           </div>
-          <div className="progress-profile-highlights">
-            <div>
-              <b>{streakDays}</b>
-              <span>day streak</span>
+          {!isPreLaunch && (
+            <div className="progress-profile-highlights">
+              <div>
+                <b>{streakDays}</b>
+                <span>day streak</span>
+              </div>
+              <div>
+                <b>{chaptersRead}</b>
+                <span>chapters read</span>
+              </div>
             </div>
-            <div>
-              <b>{chaptersRead}</b>
-              <span>chapters read</span>
-            </div>
-          </div>
+          )}
         </section>
         <section className="page-title compact">
           <p className="eyebrow">YOUR OCTOBER</p>
