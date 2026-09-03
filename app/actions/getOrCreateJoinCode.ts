@@ -31,22 +31,20 @@ export async function getOrCreateJoinCode(): Promise<JoinCodeResult> {
     return { ok: true, code: existing.code };
   }
 
+  // group_id is the primary key, so a concurrent request for the same group
+  // and a `code` collision with someone else's group are both just a no-op
+  // insert here -- re-reading by group_id afterward picks up whichever row
+  // exists (ours, or the one that raced us), and a `code` collision with no
+  // row for this group yet falls through to try another random code.
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const code = randomJoinCode();
-    try {
-      await db.insert(joinCodes).values({
-        groupId: group.groupId,
-        code,
-        createdBy: session.rockPersonId,
-      });
-      return { ok: true, code };
-    } catch {
-      // Unique constraint on `code` collided -- try again with a new one.
-      // A concurrent request for the same group could also have inserted
-      // its row first; check for that before giving up.
-      const [raced] = await db.select().from(joinCodes).where(eq(joinCodes.groupId, group.groupId)).limit(1);
-      if (raced) return { ok: true, code: raced.code };
-    }
+    await db
+      .insert(joinCodes)
+      .values({ groupId: group.groupId, code, createdBy: session.rockPersonId })
+      .onConflictDoNothing();
+
+    const [row] = await db.select().from(joinCodes).where(eq(joinCodes.groupId, group.groupId)).limit(1);
+    if (row) return { ok: true, code: row.code };
   }
 
   return { ok: false, error: "Something went wrong on our side. Try again in a bit." };
