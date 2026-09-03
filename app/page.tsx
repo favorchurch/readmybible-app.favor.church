@@ -139,6 +139,8 @@ function RotatableHome({ stage, completed, compact = false }: { stage: number; c
   return (
     <div className={`home3d-wrap ${compact ? "compact" : ""}`}>
       <div className="home3d-sky"><i /><i /><span /></div>
+      {/* drag/keyboard-rotatable 3D preview, not a semantic control */}
+      {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
       <div
         className="home3d-viewport"
         onPointerDown={pointerDown}
@@ -150,6 +152,7 @@ function RotatableHome({ stage, completed, compact = false }: { stage: number; c
         tabIndex={0}
         aria-label={`Interactive 3D ${selected.name}. Drag, swipe, or use arrow keys to rotate.`}
       >
+      {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
         <div className="home3d-turntable" style={{ transform: `rotateX(-9deg) rotateY(${rotation}deg)` }}>
           <div className="home3d-ground"><span className="path3d" /><span className="shrub shrub-one" /><span className="shrub shrub-two" /></div>
           <div className={`home3d-model ${selected.className}`}>
@@ -496,6 +499,9 @@ export default function Home() {
         const facialHair: FacialHair = previous.facialHair === "mustache" || previous.facialHair === "stubble" || previous.facialHair === "beard" ? previous.facialHair : previous.beard ? "beard" : "none";
         const glasses: GlassesStyle = previous.glasses === "wayfarer" || previous.glasses === "square" ? "wayfarer" : previous.glasses === "round" || previous.glasses === true ? "round" : "none";
         const displayName = typeof previous.displayName === "string" && previous.displayName.trim() ? previous.displayName.trim().slice(0, 24) : defaultProfile.displayName;
+        // One-time hydration from local storage on mount, not a React-state sync -- see
+        // https://react.dev/learn/you-might-not-need-an-effect for the general rule this bends.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setProfile({ ...defaultProfile, ...previous, displayName, gender, glasses, facialHair, face: previous.face ?? "normal", hair: legacyHair[previous.hair as HairStyle] ?? previous.hair ?? defaultProfile.hair });
       }
     } catch { /* Keep the friendly default if device storage is unavailable. */ }

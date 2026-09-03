@@ -15,7 +15,6 @@
 
 # next.js
 /.next/
-/.vinext/
 /out/
 
 # misc
@@ -34,10 +33,5 @@ yarn-error.log*
 # vercel
 .vercel
 
-/dist/
-/.wrangler/
-/outputs/
-/work/
-/assets/avatar-sources/
-/assets/avatar-sources-exact/
-/assets/avatar-hair-v1/
+# supabase CLI local cache
+/supabase/.temp/

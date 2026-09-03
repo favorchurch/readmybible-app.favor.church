@@ -1,11 +1,11 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+  // A stray pnpm-lock.yaml in a parent directory outside this git repo
+  // otherwise makes Turbopack guess the wrong workspace root.
+  turbopack: {
+    root: path.resolve(import.meta.dirname),
   },
 };
 
