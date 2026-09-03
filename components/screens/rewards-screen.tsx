@@ -25,6 +25,21 @@ export const REWARD_TITLES: Record<number, string> = {
 
 const REWARD_THRESHOLDS = [3, 7, 14, 21, 28];
 
+function getClientMockToday(): string | null {
+  if (typeof document === "undefined") return null;
+  try {
+    const scripts = document.getElementsByTagName("script");
+    for (let i = 0; i < scripts.length; i++) {
+      const text = scripts[i].textContent || "";
+      const match = text.match(/devMockToday[^0-9]*([0-9]{4}-[0-9]{2}-[0-9]{2})/);
+      if (match) return match[1];
+    }
+  } catch {
+    // fallback
+  }
+  return null;
+}
+
 export function RewardsScreen({
   profile,
   chapters,
@@ -36,7 +51,7 @@ export function RewardsScreen({
   onEditProfile: () => void;
   today?: TodayState;
 }) {
-  const fallbackToday = useToday();
+  const fallbackToday = useToday(getClientMockToday());
   const today = todayProp ?? fallbackToday;
   const isPreLaunch = today.displayPhase === "pre-launch";
 
