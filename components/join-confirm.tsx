@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { joinByCode } from "@/app/actions/joinByCode";
+import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 export function JoinConfirm({ code, groupName }: { code: string; groupName: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEscapeToClose(() => router.push("/"), !pending && !success);
 
   async function handleJoin() {
     setPending(true);

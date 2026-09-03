@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
+import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string };
 
@@ -33,14 +34,11 @@ export function ScripturePopup({
     };
   }, [passageRef, translation]);
 
+  useEscapeToClose(onClose);
+
   useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", onKeyDown);
     sheetRef.current?.focus();
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, []);
 
   const bibleComUrl =
     state !== "loading" && state !== "error" ? state.bibleComUrl : `https://www.bible.com/search/bible?q=${encodeURIComponent(passageRef)}`;

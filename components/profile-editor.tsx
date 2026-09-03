@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type Translation, type UserProfile } from "@/components/avatar";
+import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 const hairChoices: Array<{ value: HairStyle; label: string }> = [
   { value: "bald", label: "Bald" },
@@ -74,6 +75,7 @@ export function ProfileEditor({
   onSave: (profile: UserProfile) => void;
 }) {
   const [draft, setDraft] = useState(profile);
+  useEscapeToClose(onClose);
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }

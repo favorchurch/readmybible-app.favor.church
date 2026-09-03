@@ -5,6 +5,7 @@ import { useState } from "react";
 import { COINS_PER_CHAPTER, nextMedal } from "@/lib/game";
 import { planEntryForChapter } from "@/lib/plan";
 import { ProgressBar } from "@/components/progress-bar";
+import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 const LOCATIONS: Array<[string, string]> = [
   ["⌂", "Home"],
@@ -43,6 +44,8 @@ export function CompletionFlow({
   const nextTrophyAt = nextMedal(chaptersRead);
   const trophyProgress = nextTrophyAt ? Math.min(chaptersRead, nextTrophyAt) : chaptersRead;
   const home = groupName ?? "your reading";
+
+  useEscapeToClose(onClose, Boolean(step));
 
   if (!step) return null;
 
