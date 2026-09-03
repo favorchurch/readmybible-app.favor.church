@@ -1,5 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import type { UserProfile } from "@/components/avatar";
 import { Header } from "@/components/screens/header";
+import { useToday, type TodayState } from "@/components/use-today";
 import { medals as medalsReached, nextMedal } from "@/lib/game";
 
 const REWARD_META: Record<number, { tone: string; kind: "medal" | "trophy"; shape: string }> = {
@@ -20,31 +25,95 @@ export const REWARD_TITLES: Record<number, string> = {
 
 const REWARD_THRESHOLDS = [3, 7, 14, 21, 28];
 
-export function RewardsScreen({ profile, chapters, onEditProfile }: { profile: UserProfile; chapters: number; onEditProfile: () => void }) {
+export function RewardsScreen({
+  profile,
+  chapters,
+  onEditProfile,
+  today: todayProp,
+}: {
+  profile: UserProfile;
+  chapters: number;
+  onEditProfile: () => void;
+  today?: TodayState;
+}) {
+  const fallbackToday = useToday();
+  const today = todayProp ?? fallbackToday;
+  const isPreLaunch = today.displayPhase === "pre-launch";
+
   const earned = medalsReached(chapters);
   const next = nextMedal(chapters);
+
+  const [shineEarned] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const key = "rmb:medals-seen";
+      const seenRaw = sessionStorage.getItem(key);
+      const seen = seenRaw !== null ? Number(seenRaw) : 0;
+      return earned.length > seen;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (!shineEarned) return;
+    try {
+      sessionStorage.setItem("rmb:medals-seen", String(earned.length));
+    } catch {
+      // Ignore storage restrictions in private browsing
+    }
+  }, [shineEarned, earned.length]);
+
   return (
     <main className="screen rewards-screen frame">
       <Header heading="Rewards" profile={profile} onEditProfile={onEditProfile} />
       <section className="page-title">
-        <h1>Rewards</h1>
-        <p>Rewards celebrate consistency, not comparison.</p>
+        {isPreLaunch ? (
+          <>
+            <p className="eyebrow">STARTS OCTOBER 1</p>
+            <h1>Rewards</h1>
+            <p className="rewards-sub">
+              Rewards celebrate your own consistency. Your group&apos;s home is a separate journey.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1>Rewards</h1>
+            <p className="rewards-sub">Rewards celebrate consistency, not comparison.</p>
+          </>
+        )}
       </section>
-      <section className="shelf-cabinet">
-        <div className="shelf-row">
-          {REWARD_THRESHOLDS.slice(0, 3).map((threshold) => (
-            <Reward key={threshold} threshold={threshold} earned={earned.includes(threshold)} />
-          ))}
+
+      <section className="shelf-cabinet" data-section="rewards-shelf">
+        <div className="shelf-stage">
+          <div className="shelf-row one">
+            {REWARD_THRESHOLDS.slice(0, 3).map((threshold) => (
+              <Reward
+                key={threshold}
+                threshold={threshold}
+                earned={earned.includes(threshold)}
+                shine={shineEarned && earned.includes(threshold)}
+                isPreLaunch={isPreLaunch}
+              />
+            ))}
+          </div>
+          <div className="wood-shelf middle-shelf" />
+          <div className="shelf-row two">
+            {REWARD_THRESHOLDS.slice(3).map((threshold) => (
+              <Reward
+                key={threshold}
+                threshold={threshold}
+                earned={earned.includes(threshold)}
+                shine={shineEarned && earned.includes(threshold)}
+                isPreLaunch={isPreLaunch}
+              />
+            ))}
+          </div>
+          <div className="wood-shelf bottom-shelf" />
         </div>
-        <div className="wood-shelf" />
-        <div className="shelf-row two">
-          {REWARD_THRESHOLDS.slice(3).map((threshold) => (
-            <Reward key={threshold} threshold={threshold} earned={earned.includes(threshold)} />
-          ))}
-        </div>
-        <div className="wood-shelf" />
       </section>
-      {next !== null && (
+
+      {!isPreLaunch && next !== null && (
         <section className="next-reward">
           <div className="mini-medal gold">◇</div>
           <div>
@@ -61,11 +130,25 @@ export function RewardsScreen({ profile, chapters, onEditProfile }: { profile: U
   );
 }
 
-function Reward({ threshold, earned }: { threshold: number; earned: boolean }) {
+function Reward({
+  threshold,
+  earned,
+  shine,
+  isPreLaunch,
+}: {
+  threshold: number;
+  earned: boolean;
+  shine: boolean;
+  isPreLaunch: boolean;
+}) {
   const meta = REWARD_META[threshold];
   const title = REWARD_TITLES[threshold];
+
+  const stateClass = earned ? "earned" : isPreLaunch ? "pre-launch-silhouette" : "unearned";
+  const shineClass = shine ? "earned-shine" : "";
+
   return (
-    <article className={`reward ${earned ? "earned" : "locked"}`}>
+    <article className={`reward ${stateClass} ${shineClass}`}>
       {meta.kind === "trophy" ? (
         <div className={`shelf-award trophy-award ${meta.tone} trophy-${meta.shape}`}>
           <span className="trophy-cup">★</span>
