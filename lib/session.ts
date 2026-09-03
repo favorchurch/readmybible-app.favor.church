@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { auth0 } from "@/lib/auth0";
+import { AUTH0_CLAIM_NAMESPACE, auth0 } from "@/lib/auth0";
 import {
   getMemberships,
   getPerson,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/rock/client";
 import { ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER } from "@/lib/rock/constants";
 
-const AUTH0_NAMESPACE = "https://auth.favor.church/";
+const AUTH0_NAMESPACE = AUTH0_CLAIM_NAMESPACE;
 
 export type GroupMembership = {
   groupId: number;

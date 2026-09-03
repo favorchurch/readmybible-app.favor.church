@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import { Auth0Client, filterDefaultIdTokenClaims } from "@auth0/nextjs-auth0/server";
 import type { OnCallbackContext } from "@auth0/nextjs-auth0/types";
 import type { SdkError } from "@auth0/nextjs-auth0/errors";
+
+/**
+ * Shared with lib/session.ts's claim reads -- must match the Action's NAMESPACE
+ * in rock-auth0/actions/post-login/code.js exactly (trailing slash included).
+ */
+export const AUTH0_CLAIM_NAMESPACE = "https://auth.favor.church/";
 
 /** Keep reflected Auth0 error text short and inert before it reaches a URL or the DOM. */
 function sanitizeDetail(value: unknown, maxLength: number): string {
@@ -76,4 +82,23 @@ export const auth0 = new Auth0Client({
   appBaseUrl: process.env.APP_BASE_URL,
   secret: process.env.AUTH0_SECRET,
   onCallback,
+  /**
+   * v4 keeps only a fixed default claim set (sub, name, email, ...) in the
+   * session cookie and drops everything else -- including the rock_person_id
+   * / rock_person_found namespaced claims the post-login Action sets. Without
+   * this hook every session resolves to "not-found-in-rock" regardless of
+   * what Rock or the Action actually returned.
+   */
+  async beforeSessionSaved(session) {
+    const namespacedClaims = Object.fromEntries(
+      Object.entries(session.user).filter(([key]) => key.startsWith(AUTH0_CLAIM_NAMESPACE)),
+    );
+    return {
+      ...session,
+      user: {
+        ...filterDefaultIdTokenClaims(session.user),
+        ...namespacedClaims,
+      },
+    };
+  },
 });
