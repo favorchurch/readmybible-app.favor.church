@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
 import { isTranslation } from "@/lib/scripture/types";
 import { fetchEsv } from "@/lib/scripture/providers/esv";
+import { bookOrdinal, fetchNet, stripVerseMarkup } from "@/lib/scripture/providers/net";
 import { fetchNlt } from "@/lib/scripture/providers/nlt";
 import { fetchCsb, fetchNiv } from "@/lib/scripture/providers/api-bible";
 
@@ -101,5 +102,49 @@ describe("provider fallback when a key is missing", () => {
     process.env.API_BIBLE_KEY = "test-key";
     await expect(fetchCsb(parsed)).resolves.toBeNull();
     await expect(fetchNiv(parsed)).resolves.toBeNull();
+  });
+});
+
+describe("NET provider (bolls.life)", () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("maps USFM codes to the canon ordinal", () => {
+    expect(bookOrdinal("GEN")).toBe(1);
+    expect(bookOrdinal("MAT")).toBe(40);
+    expect(bookOrdinal("REV")).toBe(66);
+    expect(bookOrdinal("XYZ")).toBeNull();
+  });
+
+  it("strips bolls markup and footnotes", () => {
+    expect(stripVerseMarkup('“Blessed<sup>a</sup> are the poor,<br/>for theirs is <i>the</i> kingdom.')).toBe(
+      "“Blessed are the poor, for theirs is the kingdom.",
+    );
+  });
+
+  it("fetches the chapter and keeps only the requested verse range, in order", async () => {
+    let calledUrl = "";
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      calledUrl = String(input);
+      return new Response(
+        JSON.stringify([
+          { pk: 3, verse: 5, text: "five" },
+          { pk: 1, verse: 3, text: "three<br/>" },
+          { pk: 2, verse: 4, text: "four" },
+          { pk: 0, verse: 2, text: "two" },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    const parsed = parseReference("Matthew 5:3-4")!;
+    await expect(fetchNet(parsed)).resolves.toBe("three four");
+    expect(calledUrl).toBe("https://bolls.life/get-text/NET/40/5/");
+  });
+
+  it("throws when the range is empty so the caller degrades to null", async () => {
+    globalThis.fetch = (async () => new Response("[]", { status: 200 })) as typeof fetch;
+    await expect(fetchNet(parseReference("Matthew 5:3")!)).rejects.toThrow();
   });
 });

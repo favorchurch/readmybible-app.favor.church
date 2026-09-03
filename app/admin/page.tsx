@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { redirect } from "next/navigation";
+
 import { getSessionContext } from "@/lib/session";
 import { resolveAdminScope } from "@/lib/admin/access";
 import { loadSectionSubtree } from "@/lib/rock/hierarchy";
@@ -14,6 +16,12 @@ export const metadata: Metadata = {
 
 export default async function AdminPage() {
   const session = await getSessionContext();
+  if (session.status === "logged-out") {
+    redirect("/auth/login?returnTo=%2Fadmin");
+  }
+  if (session.status === "not-found-in-rock") {
+    redirect("/not-found-in-rock");
+  }
   const scope = resolveAdminScope(session);
 
   if (!scope) {
