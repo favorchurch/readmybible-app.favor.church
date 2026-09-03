@@ -195,7 +195,7 @@ Behavior:
 - Grace (Oct 29 to 31): hero `Three catch-up days.` variant by remaining count; cards: completed count, remaining unread chapters as a compact list of chapter chips that open the catch-up flow, group status, and a completed state (`All 28 chapters. Well done.`) when `chaptersRead === 28` (`grace-dashboard`). No `DAY n OF 28` eyebrow on grace days.
 - Closed: compact summary: chapters read of 28, medals earned (`medals()`), final home stage when grouped, button to Progress; no daily wording (`closed-summary`).
 - Completion feedback (`completion-flow.tsx`): keep step 1 honor-based copy. Success step shows `+10 coins` chip with a brief count bump (transform/opacity only), personal reward progress (existing), and when a group exists a home progress line from `result.group` (Task 5b): percentage `before.ratio` to `after.ratio` and the stage; when `stageTransition(before.ratio, after.ratio)` is non-null show a one-time stage-up block (`stage-up`) naming `from` and `to` with the existing home illustration, transform/opacity motion only, reduced-motion safe. `AppShell` passes `result.group` into `CompletionFlow` as a prop. No celebration replays on revisit (state lives in the flow only, cleared on close). Catch-up success gets the same treatment minus the streak note change. Remove the `See what changed` dead-end: primary action closes.
-Verify (executor pastes, planner re-runs): with `.office/tools/render.sh 3101 / DEV_MOCK_PERSON_ID=13358` (real Rock reads), the HTML contains each pre-launch marker exactly once, zero `I read today`, and zero matches of the deficit pattern `\b0 of [0-9]+\b|haven't|not started|behind|not yet|so far` (case-insensitive); with `DEV_MOCK_TODAY=2026-10-08` the HTML contains `Matthew 8` and `data-section="reading-card"`; with `2026-10-30` it contains `grace-dashboard`; with `2026-11-03` it contains `closed-summary` and not `I read today`; at 360px no horizontal scroll (`document.documentElement.scrollWidth <= 360` via browser console); at 1280px with fixture leader 194, the rail exists; with a groupless id (999001), `.frame__rail` is absent. Gate green in the lane worktree. Copy: `grep -c "—" components/screens/today-screen.tsx components/completion-flow.tsx` both 0.
+Verify (executor pastes, planner re-runs): with `.office/tools/render.sh 3101 / DEV_MOCK_PERSON_ID=13358` (real Rock reads), the HTML contains each pre-launch marker exactly once, zero `I read today`, and zero matches of the deficit pattern `\b0 of [0-9]+\b|haven't|not started|behind|not yet|so far` (case-insensitive); with `DEV_MOCK_TODAY=2026-10-08` the HTML contains `Matthew 8` and `data-section="reading-card"`; with `2026-10-30` it contains `grace-dashboard`; with `2026-11-03` it contains `closed-summary` and not `I read today`; at 360px no horizontal scroll (`document.documentElement.scrollWidth <= 360` via browser console); at 1280px with fixture leader 194, the rail exists. (AMENDED 2026-09-03: the original clause "with a groupless id (999001), `.frame__rail` is absent" is DROPPED. It passed vacuously: 999001 routes to `/not-found-in-rock` and never renders `TodayScreen` at all, so the assertion was satisfied without proving anything about the rail. The no-empty-rail property is covered by dc13 instead.) Gate green in the lane worktree. Copy: `grep -c "—" components/screens/today-screen.tsx components/completion-flow.tsx` both 0.
 
 **Task 9. Lane B: Connect by role and phase, home-growth sheet, privacy note.** `WORKER agy` (executor E3, worktree `/Users/rico/Git/wt-rmb-lane-b`, branch `issue/32-lane-b`, port 3102).
 Touches: `components/screens/connect-screen.tsx`, `app/styles/connect.css`, `components/rotatable-home.tsx`, `app/styles/home3d.css`, new `components/home-growth-sheet.tsx`, new `components/reading-visibility-note.tsx`.
@@ -375,7 +375,7 @@ done_criteria:
     verify: .office/tools/render.sh 3100 / ROCK_API_KEY= DEV_MOCK_PERSON_ID=1869 | grep -c "leader-tools\|connect.favor.church"   # 0 ; then DEV_MOCK_PERSON_ID=194 -> grep -c "connect.favor.church" = 1 and grep -c "leader-tools" = 1 ; plus pasted getComputedStyle(main).gridTemplateColumns for member at 1280px showing one track
   - id: dc10
     statement: Progress shows the full roadmap (28 days plus 3 grace cells) with four non-color-only states, and upcoming days open a preview that names the check-in date and offers no check-in.
-    verify: H=$(.office/tools/render.sh 3100 / DEV_MOCK_PERSON_ID=13358); grep -o 'data-day="[0-9]*"' <<<"$H" | sort -u | wc -l   # 31 ; grep -o 'data-day-state="upcoming"' <<<"$H" | wc -l   # 28 pre-launch ; grep -c 'data-section="calendar-legend"' <<<"$H"   # 1 ; grep -c "I read today" <<<"$H"   # 0 ; with DEV_MOCK_TODAY=2026-10-10 and chapter 8 read as 13358: states today=1, catch-up=8 (days 1-7 and 9), read=1, upcoming=18 ; browser: open day 20 preview, paste its text containing "Check-in opens October 20." and assert no button with text "I read today"
+    verify: AMENDED 2026-09-03 -- these markers live on the Progress tab, which app-shell.tsx mounts CLIENT-SIDE only after tab navigation, so they are absent from served HTML in every state and the original grep-the-HTML form was unsatisfiable. Assert against the MOUNTED DOM instead: with the dev server up on 3100 (DEV_MOCK_PERSON_ID=13358), in a browser click `button[data-tab="progress"]`, wait, then evaluate: new Set([...document.querySelectorAll('[data-day]')].map(e=>e.getAttribute('data-day'))).size   # 31 ; document.querySelectorAll('[data-day-state="upcoming"]').length   # 28 pre-launch ; document.querySelectorAll('[data-day-state="grace"]').length   # 3 ; document.querySelectorAll('[data-section="calendar-legend"]').length   # 1 ; document.body.innerText.includes("I read today")   # false ; with DEV_MOCK_TODAY=2026-10-10 and chapter 8 read as 13358: states today=1, catch-up=8 (days 1-7 and 9), read=1, upcoming=18 ; browser: open day 20 preview, paste its text containing "Check-in opens October 20." and assert no button with text "I read today"
   - id: dc11
     statement: Readers can discover how the home grows, what their group can see, and why their admin scope exists; coins and stage are explained as distinct.
     verify: HTML greps: home-growth-sheet trigger present on Connect; reading-visibility trigger present; /admin as global admin contains data-section="admin-scope" and "admin-progress-note"; sheet copy contains "Coins celebrate every chapter"
@@ -559,3 +559,24 @@ string comparison reports a failure. dc12 now asserts `offsetParent === null`, w
 about WHICH element carries the hiding rule. The CSS was deliberately not changed to satisfy the
 old literal. Found by the lane D reviewer, graded Minor, and correctly routed to the planner as a
 plan defect rather than a code defect.
+
+### Amendment 5 (2026-09-03, after lane C and lane A review round 1)
+
+Two verify commands asserted things they could not actually observe. Both are plan defects, not
+lane faults, and both were caught by reviewers rather than by the gate.
+
+**dc10 and Task 10's Verify grepped served HTML for Progress-tab markers.** `app-shell.tsx` mounts
+the Progress tab client-side after tab navigation, so `data-day`, `data-day-state` and
+`calendar-legend` are absent from the served HTML in every state. Run literally the assertions
+return 0 and read as a lane failure. I hit this myself while verifying lane C, then confirmed the
+markers are all present and correct in the mounted DOM (31 distinct days, 28 upcoming, 3 grace,
+1 legend, cells are real buttons at 72px). dc10 now asserts against the mounted DOM after clicking
+`button[data-tab="progress"]`.
+
+**Task 8's Verify asserted `.frame__rail` is absent for groupless id 999001.** That id routes to
+`/not-found-in-rock`, so `TodayScreen` never renders and the assertion passed while proving
+nothing. The clause is dropped; dc13 already covers the no-empty-rail property against states that
+actually render.
+
+Both are the same failure shape: an assertion written against an assumed render path rather than
+the real one. When a verify command passes, confirm it could have failed.
