@@ -9,6 +9,8 @@
  * tests/admin-stats.test.ts) the same way tests/game.test.ts covers
  * lib/game.ts.
  */
+import { createHash } from "node:crypto";
+
 import { and, count, countDistinct, eq, gte, inArray } from "drizzle-orm";
 
 import { groupRatio, stageFor, TOTAL_CHAPTERS, type Stage } from "@/lib/game";
@@ -166,7 +168,7 @@ async function getDb() {
 export async function loadCheckinTotals(groupIds: number[]): Promise<Map<number, number>> {
   if (groupIds.length === 0) return new Map();
   const { db, checkins, cached } = await getDb();
-  const key = `admin:totals:${[...groupIds].sort((a, b) => a - b).join(",")}`;
+  const key = `admin:totals:${idsHash(groupIds)}`;
   const rows = await cached(key, 300, async () =>
     db
       .select({ groupId: checkins.groupId, total: count() })
@@ -181,7 +183,7 @@ export async function loadCheckinTotals(groupIds: number[]): Promise<Map<number,
 export async function loadReadersToday(groupIds: number[], today: string): Promise<Map<number, number>> {
   if (groupIds.length === 0) return new Map();
   const { db, checkins, cached } = await getDb();
-  const key = `admin:readerstoday:${today}:${[...groupIds].sort((a, b) => a - b).join(",")}`;
+  const key = `admin:readerstoday:${today}:${idsHash(groupIds)}`;
   const rows = await cached(key, 300, async () =>
     db
       .select({ groupId: checkins.groupId, readers: countDistinct(checkins.rockPersonId) })
@@ -196,7 +198,7 @@ export async function loadReadersToday(groupIds: number[], today: string): Promi
 export async function loadDailyCounts(groupIds: number[], fromDate: string): Promise<DailyCount[]> {
   if (groupIds.length === 0) return [];
   const { db, checkins, cached } = await getDb();
-  const key = `admin:daily:${fromDate}:${[...groupIds].sort((a, b) => a - b).join(",")}`;
+  const key = `admin:daily:${fromDate}:${idsHash(groupIds)}`;
   const rows = await cached(key, 300, async () =>
     db
       .select({ readingDate: checkins.readingDate, total: count() })
@@ -236,3 +238,9 @@ export async function loadAdminStats(
 }
 
 export { TOTAL_CHAPTERS };
+
+/** Short stable digest of a group id set, so cache keys stay small under global scope. */
+function idsHash(groupIds: Iterable<number>): string {
+  const sorted = [...groupIds].sort((a, b) => a - b).join(",");
+  return createHash("sha1").update(sorted).digest("hex").slice(0, 16);
+}

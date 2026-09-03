@@ -164,7 +164,7 @@ function isLiveGroup(g: RawGroup): boolean {
  */
 async function buildSubtreeForRoot(rootId: number): Promise<HierarchySectionNode | null> {
   const [rootGroup] = await fetchGroupsByIds([rootId]);
-  if (!rootGroup) return null;
+  if (!rootGroup || !isLiveSection(rootGroup)) return null;
 
   const nodesById = new Map<number, HierarchySectionNode>();
   const root: HierarchySectionNode = {
@@ -177,6 +177,8 @@ async function buildSubtreeForRoot(rootId: number): Promise<HierarchySectionNode
   nodesById.set(root.id, root);
 
   const allLeafGroupIds: number[] = [];
+  // Guard against ParentGroupId cycles or duplicate rows in Rock data.
+  const visited = new Set<number>([rootId]);
   let frontier = [rootId];
 
   while (frontier.length > 0) {
@@ -186,6 +188,8 @@ async function buildSubtreeForRoot(rootId: number): Promise<HierarchySectionNode
     for (const child of children) {
       const parent = child.ParentGroupId !== null ? nodesById.get(child.ParentGroupId) : undefined;
       if (!parent) continue;
+      if (visited.has(child.Id)) continue;
+      visited.add(child.Id);
 
       if (isLiveSection(child)) {
         const node: HierarchySectionNode = {
