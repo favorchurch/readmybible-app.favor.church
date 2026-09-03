@@ -37,7 +37,11 @@ export function ScripturePopup({
   useEscapeToClose(onClose);
 
   useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
     sheetRef.current?.focus();
+    return () => {
+      trigger?.focus?.();
+    };
   }, []);
 
   const bibleComUrl =

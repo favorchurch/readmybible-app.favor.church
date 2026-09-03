@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { auth0 } from "@/lib/auth0";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Mounts /auth/login, /auth/callback, /auth/logout and keeps the session rolling.
   return auth0.middleware(request);
 }

@@ -8,7 +8,7 @@ export async function fetchEsv(parsed: ParsedReference): Promise<string | null> 
   const key = process.env.ESV_API_KEY;
   if (!key) return null;
 
-  const passage = `${parsed.book}+${parsed.chapter}:${parsed.verseStart}-${parsed.verseEnd}`;
+  const passage = encodeURIComponent(`${parsed.book} ${parsed.chapter}:${parsed.verseStart}-${parsed.verseEnd}`);
   const url = `https://api.esv.org/v3/passage/text/?q=${passage}&include-headings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false`;
   const res = await fetchWithTimeout(url, { headers: { Authorization: `Token ${key}` } });
   if (!res.ok) throw new Error(`ESV API ${res.status}`);

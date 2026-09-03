@@ -42,7 +42,7 @@ export async function getPassage(ref: string, translation: Translation): Promise
   }
   const url = bibleComUrl(parsed, translation);
 
-  const cacheKey = `scripture:${translation}:${ref}`;
+  const cacheKey = `scripture:${translation}:${parsed.bookCode}.${parsed.chapter}.${parsed.verseStart}-${parsed.verseEnd}`;
   const cachedText = await redisGet(cacheKey);
   if (cachedText !== null) {
     return { ref, translation, text: cachedText, bibleComUrl: url };
