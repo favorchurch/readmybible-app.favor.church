@@ -219,4 +219,54 @@ describe("css-rules", () => {
     }
     expect(violations).toEqual([]);
   });
+
+  it("has no Georgia declaration whose selector is unlisted in typography.css and unmarked as an intentional exception", () => {
+    // Systemic defect (M3): a per-screen file declares `font-family: Georgia,
+    // serif`, and typography.css (imported last) overrides it -- but only for
+    // selectors it names. Any new selector silently renders serif. This bit
+    // lane A, lane C, and lane D independently. The guard: every live Georgia
+    // declaration's selector must either appear in typography.css (joins the
+    // sans system) or carry a `/* serif-exception */` marker inside its own
+    // declaration block (a deliberate, documented departure -- see
+    // .quick-verse-button strong in intent/DESIGN.md).
+    //
+    // The marker has to survive into the parsed declaration text, but every
+    // OTHER comment (e.g. the pre-existing `/* decorative */` tags that sit
+    // between two rules) must still be stripped before tokenizing, or a
+    // trailing comment leaks into the next rule's selector text. So: swap the
+    // one marker we care about for a plain-text sentinel first, then strip
+    // every remaining real comment as usual.
+    const SENTINEL = "SERIF_EXCEPTION_MARKER";
+    function markException(text: string): string {
+      return text.replace(/\/\*\s*serif-exception\b[^*]*\*\//gi, SENTINEL);
+    }
+
+    const typographySelectors = new Set<string>();
+    for (const path of CSS_FILES) {
+      if (path !== "app/styles/typography.css") continue;
+      const raw = readFileSync(path, "utf8");
+      for (const rule of tokenize(stripComments(raw))) {
+        for (const sel of rule.selector.split(",")) {
+          typographySelectors.add(sel.replace(/\s+/g, " ").trim());
+        }
+      }
+    }
+
+    const violations: string[] = [];
+    for (const path of CSS_FILES) {
+      if (path === "app/styles/typography.css") continue;
+      const raw = readFileSync(path, "utf8");
+      for (const rule of tokenize(stripComments(markException(raw)))) {
+        if (!/font-family\s*:[^;]*\bGeorgia\b/i.test(rule.decls)) continue;
+        if (rule.decls.includes(SENTINEL)) continue;
+        for (const sel of rule.selector.split(",")) {
+          const normalized = sel.replace(/\s+/g, " ").trim();
+          if (!typographySelectors.has(normalized)) {
+            violations.push(`${path}: "${normalized}"`);
+          }
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
 });

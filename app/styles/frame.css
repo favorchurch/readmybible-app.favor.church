@@ -41,4 +41,26 @@
   .frame--rail:has(> .frame__rail:empty) {
     grid-template-columns: 1fr;
   }
+
+  /* A screen's <header class="topbar"> is sometimes a direct child of
+     .frame--rail (Connect, Progress) rather than nested one level up
+     (Today). As a bare grid item it inherits its centering margin: auto
+     from base.css, and a grid item with inline auto margins sizes to
+     fit-content instead of stretching -- the same trap Task 9 hit and
+     fixed locally in connect.css. Fixed once here so it cannot recur per
+     screen. */
+  .frame--rail > .topbar {
+    grid-column: 1 / -1;
+    margin-inline: 0;
+  }
+
+  /* The fixed .bottom-nav floats over the last ~100px of the viewport.
+     Progress already reserved extra scroll clearance for this
+     (app/styles/progress.css); applied here to every screen with a rail so
+     Today and a leader's Connect get the same clearance once, not per
+     screen. */
+  .screen:has(> .frame--rail),
+  .frame--rail.screen {
+    padding-bottom: 140px;
+  }
 }

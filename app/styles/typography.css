@@ -96,7 +96,8 @@ body { letter-spacing: .008em; line-height: 1.4; }
 .section-heading h2 { max-width: 270px; font-size: 21px; }
 .reading-main h2 { letter-spacing: -.03em; }
 .stage-row { align-items: baseline; gap: 20px; font-size: 13px; line-height: 1.25; }
-.stage-row > span { white-space: nowrap; }
+.stage-row > span,
+.stage-row > strong { white-space: nowrap; }
 .stage-row span + span:before { letter-spacing: .08em; margin-right: 5px; }
 .home-info { padding-top: 17px; }
 .home-info .progress-track { margin-top: 11px; }

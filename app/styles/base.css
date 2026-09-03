@@ -3,6 +3,7 @@ html { background: #ded8cc; }
 body { margin: 0; background: #ded8cc; color: var(--navy); font-family: var(--font-sans); }
 button { color: inherit; font: inherit; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
 .app-shell { min-height: 100dvh; max-width: 1120px; margin: auto; background: var(--cream); position: relative; overflow-x: hidden; }
 .paper-noise { position: fixed; inset: 0; pointer-events: none; z-index: 20; opacity: .16; background-image: radial-gradient(rgba(23,41,67,.35) .45px, transparent .55px); background-size: 5px 5px; mix-blend-mode: multiply; }

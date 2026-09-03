@@ -59,8 +59,7 @@ export function DayPreviewSheet({
           </div>
         ) : (
           <div className="day-preview-status upcoming-status">
-            <p className="day-preview-opens">{checkInOpensLabel(entry)}</p>
-            <p className="day-preview-note">Read ahead any time. Check-in opens October {entry.day}.</p>
+            <p className="day-preview-opens">Read ahead any time. {checkInOpensLabel(entry)}</p>
           </div>
         )}
       </div>

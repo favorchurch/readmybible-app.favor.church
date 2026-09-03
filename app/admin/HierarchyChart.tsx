@@ -30,11 +30,18 @@ const PLAN_START = "2026-10-01";
 
 /** Pre-launch (or otherwise dateless) series: every point missing or dated before the plan starts. */
 function isPreLaunchEmpty(series: TopLevelSeries[]): boolean {
-  if (series.length === 0) return true;
+  if (series.length === 0) return false;
   return series.every((s) => s.points.length === 0 || s.points.every((p) => p.date < PLAN_START));
 }
 
 export function HierarchyChart({ series }: { series: TopLevelSeries[] }) {
+  if (series.length === 0) {
+    return (
+      <p className="admin-chart-empty" data-section="admin-chart-empty">
+        No groups to chart for this view.
+      </p>
+    );
+  }
   if (isPreLaunchEmpty(series)) {
     return (
       <p className="admin-chart-empty" data-section="admin-chart-empty">

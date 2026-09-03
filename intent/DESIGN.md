@@ -104,6 +104,16 @@ Breakpoints are additive: 480, 768, 1024px, on top of the existing 360 to 389px 
 | Small | 13px | Secondary labels, metadata, captions. |
 | Micro | 11px, decorative only | All-caps eyebrow tags and single-letter abbreviations where the same information is legible from context. Never the only source of meaningful information; anything a reader must read to understand the screen sits at 12px or above. |
 
+### Intentional Georgia exception
+
+Every other Georgia declaration in the codebase is a leftover the sans system in `typography.css`
+overrides by naming the selector; `tests/css-rules.test.ts` fails the build if a new one appears
+unlisted and unmarked. One selector is a deliberate exception instead of an oversight:
+`.quick-verse-button strong` (`app/styles/today.css`), the chapter and verse reference inside the
+Quick Verse control (for example "Matthew 8:23-27"). It stays serif to read as a scripture citation,
+distinct from the app's own sans-serif chrome around it, and is marked in its declaration with
+`/* serif-exception */` so the guard test recognizes it as settled rather than missed.
+
 The floor is enforced by `tests/css-rules.test.ts`: no `font-size` at 11px or below unless the
 declaration's line carries `/* decorative */`.
 

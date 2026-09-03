@@ -115,7 +115,7 @@
   cursor: pointer;
 }
 .quick-verse-button .eyebrow { color: #fffaf0; opacity: .78; margin-bottom: 3px; }
-.quick-verse-button strong { display: block; font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
+.quick-verse-button strong { display: block; font-family: Georgia, serif; /* serif-exception: intentional, see intent/DESIGN.md Sec. 4 */ font-size: 15px; font-weight: 500; }
 
 /* Pre-launch and active: hero + reading content in .frame__main, secondary
    info in .frame__rail. Frame children fill their grid track, so the hero's
@@ -160,6 +160,7 @@
 .readiness-card h2 { margin: 0 0 var(--space-3); font-size: 18px; font-weight: 500; }
 .readiness-row {
   width: 100%;
+  min-height: 44px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: baseline;
@@ -223,6 +224,9 @@
 .grace-complete-note { margin: var(--space-4) 0 0; font-size: 14px; color: var(--sage); font-weight: 700; }
 .grace-chip-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
 .chapter-chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   padding: 8px 14px;

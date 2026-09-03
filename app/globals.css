@@ -27,7 +27,9 @@
   --sage: #91a88b;
   --blue: #7b9caf;
   --violet: #9c84ab;
-  --ink-muted: #6e716d;
+  /* Darkened from #6e716d (4.35:1 on --cream, below the 4.5:1 body floor)
+     to #646765 (5.04:1 on --cream, 5.50:1 on --paper). Same hue, D2-compliant. */
+  --ink-muted: #646765;
   --line: rgba(23, 41, 67, .14);
 
   /* Spacing scale (Task 3) */
