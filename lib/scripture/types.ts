@@ -101,7 +101,9 @@ export type ParsedReference = {
 export type ScriptureResult = {
   ref: string;
   translation: Translation;
-  /** null when the provider has no key configured or the fetch failed. */
+  /** null when the bundled data has no entry for this reference (e.g. a range outside the 28 curated key passages on a non-full-text version). */
   text: string | null;
   bibleComUrl: string;
+  /** Publisher attribution line (TRANSLATION_META[translation].attribution); required on every rendered passage. */
+  attribution: string;
 };

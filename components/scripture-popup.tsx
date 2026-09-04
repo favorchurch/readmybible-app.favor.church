@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { Translation } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
 
-type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string };
+type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
 
 export function ScripturePopup({
   passageRef,
@@ -16,14 +16,14 @@ export function ScripturePopup({
   translation: Translation;
   onClose: () => void;
 }) {
-  const [state, setState] = useState<{ text: string | null; bibleComUrl: string } | "loading" | "error">("loading");
+  const [state, setState] = useState<{ text: string | null; bibleComUrl: string; attribution: string } | "loading" | "error">("loading");
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/scripture?ref=${encodeURIComponent(passageRef)}&t=${translation}`)
       .then((res) => (res.ok ? (res.json() as Promise<PassageResponse>) : Promise.reject(res)))
       .then((data) => {
-        if (!cancelled) setState({ text: data.text, bibleComUrl: data.bibleComUrl });
+        if (!cancelled) setState({ text: data.text, bibleComUrl: data.bibleComUrl, attribution: data.attribution });
       })
       .catch(() => {
         if (!cancelled) setState("error");
@@ -47,7 +47,10 @@ export function ScripturePopup({
       {state === "loading" && <p className="passage-note">Loading…</p>}
       {state === "error" && <p className="passage-note">Read this one at Bible.com.</p>}
       {state !== "loading" && state !== "error" && (
-        <p className="passage-note">{state.text ?? "Read this one at Bible.com."}</p>
+        <>
+          <p className="passage-note">{state.text ?? "Read this one at Bible.com."}</p>
+          {state.text && <p className="passage-attribution">{state.attribution}</p>}
+        </>
       )}
       <a className="secondary-link" href={bibleComUrl} target="_blank" rel="noreferrer">
         Open in Bible.com

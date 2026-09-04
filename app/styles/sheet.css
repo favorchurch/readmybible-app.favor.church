@@ -28,3 +28,9 @@
   letter-spacing: .08em;
 }
 .scripture-sheet .secondary-link { display: inline-block; margin-top: 18px; }
+.passage-attribution {
+  margin-top: 10px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}

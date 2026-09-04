@@ -1,60 +1,55 @@
 /**
- * Scripture text lookup for the quick-verse popup. One adapter per
- * provider (lib/scripture/providers/), a shared reference parser, and a
- * Redis-backed cache keyed by translation + reference. Any parse failure,
- * missing provider key, or provider error degrades to `text: null` -- the
- * popup then shows the reference and the Bible.com link only.
+ * Scripture text lookup for the quick-verse popup. Text is bundled at
+ * lib/scripture/data/ (built by scripts/build-scripture.ts) and read
+ * server-side by lib/scripture/store.ts -- there is no runtime fetch and
+ * no cache, since a local file read is already fast. A reference the
+ * bundled data doesn't cover degrades to `text: null` -- the popup then
+ * shows the reference and the Bible.com link only. No "server-only" import
+ * here so tests/scripture.test.ts can call getPassage() directly; the only
+ * runtime caller is app/api/scripture/route.ts, a Route Handler, which
+ * Next.js already refuses to bundle into client code.
  */
-import "server-only";
-
-import { redisGet, redisSetEx } from "@/lib/cache/redis";
-import { fetchCsb, fetchNiv } from "@/lib/scripture/providers/api-bible";
-import { fetchEsv } from "@/lib/scripture/providers/esv";
-import { fetchNet } from "@/lib/scripture/providers/net";
-import { fetchNlt } from "@/lib/scripture/providers/nlt";
 import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
+import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
+import { TRANSLATION_META } from "@/lib/scripture/types";
 import type { ParsedReference, ScriptureResult, Translation } from "@/lib/scripture/types";
 
 export * from "@/lib/scripture/types";
 export { parseReference, bibleComUrl } from "@/lib/scripture/reference";
 
-const THIRTY_DAYS_SECONDS = 60 * 60 * 24 * 30;
+function joinVerses(verses: Record<string, string>): string {
+  return Object.keys(verses)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((n) => verses[String(n)])
+    .join(" ")
+    .trim();
+}
 
-async function fetchPassageText(translation: Translation, parsed: ParsedReference): Promise<string | null> {
-  switch (translation) {
-    case "NET":
-      return fetchNet(parsed);
-    case "ESV":
-      return fetchEsv(parsed);
-    case "NLT":
-      return fetchNlt(parsed);
-    case "CSB":
-      return fetchCsb(parsed);
-    case "NIV":
-      return fetchNiv(parsed);
-    // MSG, NKJV, NASB, AMP, KRV have no runtime provider (D2/D3: this whole
-    // fetch path is being replaced by bundled text in T8) -- same "no
-    // provider configured" degrade to null every other case already falls
-    // back to.
-    default:
-      return null;
+function extractPassage(translation: Translation, parsed: ParsedReference, ref: string): string | null {
+  if (TRANSLATION_META[translation].fullText) {
+    const chapter = loadChapterVerses(translation, parsed.chapter);
+    if (!chapter) return null;
+    const verses: Record<string, string> = {};
+    for (let v = parsed.verseStart; v <= parsed.verseEnd; v++) {
+      const text = chapter[String(v)];
+      if (text) verses[String(v)] = text;
+    }
+    return Object.keys(verses).length ? joinVerses(verses) : null;
   }
+
+  const passage = loadKeyPassage(translation, ref);
+  return passage ? joinVerses(passage) : null;
 }
 
 export async function getPassage(ref: string, translation: Translation): Promise<ScriptureResult> {
   const parsed = parseReference(ref);
+  const attribution = TRANSLATION_META[translation].attribution;
   if (!parsed) {
-    return { ref, translation, text: null, bibleComUrl: "" };
+    return { ref, translation, text: null, bibleComUrl: "", attribution };
   }
+
   const url = bibleComUrl(parsed, translation);
-
-  const cacheKey = `scripture:${translation}:${parsed.bookCode}.${parsed.chapter}.${parsed.verseStart}-${parsed.verseEnd}`;
-  const cachedText = await redisGet(cacheKey);
-  if (cachedText !== null) {
-    return { ref, translation, text: cachedText, bibleComUrl: url };
-  }
-
-  const text = await fetchPassageText(translation, parsed).catch(() => null);
-  if (text) void redisSetEx(cacheKey, THIRTY_DAYS_SECONDS, text);
-  return { ref, translation, text, bibleComUrl: url };
+  const text = extractPassage(translation, parsed, ref);
+  return { ref, translation, text, bibleComUrl: url, attribution };
 }

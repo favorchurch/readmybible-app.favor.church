@@ -1,11 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
+import { getPassage } from "@/lib/scripture";
 import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
+import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
 import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
-import { fetchEsv } from "@/lib/scripture/providers/esv";
-import { bookOrdinal, fetchNet, stripVerseMarkup } from "@/lib/scripture/providers/net";
-import { fetchNlt } from "@/lib/scripture/providers/nlt";
-import { fetchCsb, fetchNiv } from "@/lib/scripture/providers/api-bible";
 
 describe("parseReference", () => {
   it("parses a verse range", () => {
@@ -90,78 +88,71 @@ describe("TRANSLATION_META", () => {
   });
 });
 
-describe("provider fallback when a key is missing", () => {
-  const parsed = parseReference("Matthew 5:3-12")!;
-
-  afterEach(() => {
-    delete process.env.ESV_API_KEY;
-    delete process.env.NLT_API_KEY;
-    delete process.env.API_BIBLE_KEY;
+describe("lib/scripture/store (bundled data on disk)", () => {
+  it("loads a full-book chapter for NET and KRV", () => {
+    const net = loadChapterVerses("NET", 1);
+    const krv = loadChapterVerses("KRV", 1);
+    expect(net?.["1"]).toBeTruthy();
+    expect(krv?.["1"]).toBeTruthy();
   });
 
-  it("ESV adapter returns null without ESV_API_KEY", async () => {
-    delete process.env.ESV_API_KEY;
-    await expect(fetchEsv(parsed)).resolves.toBeNull();
+  it("returns null for a chapter that doesn't exist", () => {
+    expect(loadChapterVerses("NET", 29)).toBeNull();
   });
 
-  it("NLT adapter returns null without NLT_API_KEY", async () => {
-    delete process.env.NLT_API_KEY;
-    await expect(fetchNlt(parsed)).resolves.toBeNull();
+  it("full-book verse counts differ between NET and KRV by design (textual variants), not by fixed count", () => {
+    // NET omits Matthew 17:21, 18:11 and 23:14 as textual variants absent from
+    // the critical text; KRV (Textus-Receptus-based) retains them. Never
+    // assert a single fixed verse count for "every full-book version."
+    const netCh18 = loadChapterVerses("NET", 18)!;
+    const krvCh18 = loadChapterVerses("KRV", 18)!;
+    expect(netCh18["11"]).toBeUndefined();
+    expect(krvCh18["11"]).toBeTruthy();
   });
 
-  it("CSB and NIV adapters return null without API_BIBLE_KEY", async () => {
-    delete process.env.API_BIBLE_KEY;
-    await expect(fetchCsb(parsed)).resolves.toBeNull();
-    await expect(fetchNiv(parsed)).resolves.toBeNull();
+  it("loads a key passage by its exact reference string", () => {
+    const passage = loadKeyPassage("ESV", "Matthew 1:20-21");
+    expect(passage?.["20"]).toBeTruthy();
+    expect(passage?.["21"]).toBeTruthy();
   });
 
-  it("CSB and NIV adapters return null even with a key, since no bibleId is hardcoded yet", async () => {
-    process.env.API_BIBLE_KEY = "test-key";
-    await expect(fetchCsb(parsed)).resolves.toBeNull();
-    await expect(fetchNiv(parsed)).resolves.toBeNull();
+  it("returns null for a reference not among the curated key passages", () => {
+    expect(loadKeyPassage("ESV", "Matthew 1:1")).toBeNull();
+  });
+
+  it("returns null for a version with no bundled data at all (CSB/NIV, sourced in #49)", () => {
+    expect(loadKeyPassage("CSB", "Matthew 1:20-21")).toBeNull();
   });
 });
 
-describe("NET provider (bolls.life)", () => {
-  const originalFetch = globalThis.fetch;
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
+describe("getPassage", () => {
+  it("extracts a verse range from a full-text version, routed by the fullText flag", async () => {
+    const result = await getPassage("Matthew 5:3-4", "NET");
+    expect(result.text).toBeTruthy();
+    expect(result.text).not.toContain("undefined");
   });
 
-  it("maps USFM codes to the canon ordinal", () => {
-    expect(bookOrdinal("GEN")).toBe(1);
-    expect(bookOrdinal("MAT")).toBe(40);
-    expect(bookOrdinal("REV")).toBe(66);
-    expect(bookOrdinal("XYZ")).toBeNull();
+  it("looks up an exact key-passage reference for a non-full-text version", async () => {
+    const result = await getPassage("Matthew 1:20-21", "ESV");
+    expect(result.text).toBeTruthy();
   });
 
-  it("strips bolls markup and footnotes", () => {
-    expect(stripVerseMarkup('“Blessed<sup>a</sup> are the poor,<br/>for theirs is <i>the</i> kingdom.')).toBe(
-      "“Blessed are the poor, for theirs is the kingdom.",
-    );
+  it("degrades to null text for a reference outside the curated key passages on a non-full-text version", async () => {
+    const result = await getPassage("Matthew 1:1", "ESV");
+    expect(result.text).toBeNull();
+    expect(result.bibleComUrl).toContain("bible.com");
   });
 
-  it("fetches the chapter and keeps only the requested verse range, in order", async () => {
-    let calledUrl = "";
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      calledUrl = String(input);
-      return new Response(
-        JSON.stringify([
-          { pk: 3, verse: 5, text: "five" },
-          { pk: 1, verse: 3, text: "three<br/>" },
-          { pk: 2, verse: 4, text: "four" },
-          { pk: 0, verse: 2, text: "two" },
-        ]),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
-    }) as typeof fetch;
-    const parsed = parseReference("Matthew 5:3-4")!;
-    await expect(fetchNet(parsed)).resolves.toBe("three four");
-    expect(calledUrl).toBe("https://bolls.life/get-text/NET/40/5/");
+  it("degrades to null text and an empty bibleComUrl for an unparseable reference", async () => {
+    const result = await getPassage("not a reference", "NET");
+    expect(result.text).toBeNull();
+    expect(result.bibleComUrl).toBe("");
   });
 
-  it("throws when the range is empty so the caller degrades to null", async () => {
-    globalThis.fetch = (async () => new Response("[]", { status: 200 })) as typeof fetch;
-    await expect(fetchNet(parseReference("Matthew 5:3")!)).rejects.toThrow();
+  it("carries the translation's attribution line on every result, including a miss", async () => {
+    const hit = await getPassage("Matthew 1:20-21", "NASB");
+    const miss = await getPassage("Matthew 1:1", "NASB");
+    expect(hit.attribution).toBe(TRANSLATION_META.NASB.attribution);
+    expect(miss.attribution).toBe(TRANSLATION_META.NASB.attribution);
   });
 });
