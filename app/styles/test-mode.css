@@ -1,15 +1,15 @@
 .test-mode-panel { position: fixed; z-index: 90; top: max(12px, env(safe-area-inset-top)); right: 12px; width: 220px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: 0 8px 30px rgba(23,41,67,.18); font-size: 12px; color: var(--ink); }
 .test-mode-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; }
 .test-mode-badge { font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--coral-deep); background: var(--coral-soft); border-radius: var(--radius-sm); padding: 3px 7px; font-size: 11px; } /* decorative */
-.test-mode-header button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; font-weight: 700; color: var(--ink); }
+.test-mode-header button { min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; font-weight: 700; color: var(--ink); }
 .test-mode-header button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .test-mode-body { padding: 0 10px 12px; display: grid; gap: 10px; }
 .test-mode-note { margin: 0; color: var(--ink-muted); line-height: 1.4; }
 .test-mode-field { display: grid; gap: 4px; }
 .test-mode-field > span { font-weight: 700; color: var(--ink-2); }
-.test-mode-field input[type="range"] { width: 100%; }
+.test-mode-field input[type="range"] { width: 100%; min-height: 44px; }
 .test-mode-phase-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.test-mode-phase-row button { min-height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
+.test-mode-phase-row button { min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
 .test-mode-phase-row button.selected { background: var(--navy); color: #fff; border-color: var(--navy); }
 .test-mode-phase-row button:focus-visible,
 .test-mode-field input[type="range"]:focus-visible {
