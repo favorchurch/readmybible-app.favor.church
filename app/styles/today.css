@@ -5,7 +5,7 @@
 .reading-main { min-height: 145px; display: flex; align-items: center; justify-content: space-between; }
 .book-label { font-size: 9px; letter-spacing: .2em; font-weight: 900; } /* decorative */
 .reading-main h2 { font-family: Georgia, serif; font-size: 37px; font-weight: 400; margin: 2px 0; }.reading-main h2 b { font-family: Arial, sans-serif; font-size: 13px; vertical-align: super; }.reading-main p { margin: 0; opacity: .82; font-size: 12px; }
-.chapter-mark { font-family: Impact, sans-serif; font-size: 84px; line-height: 1; color: rgba(255,250,240,.2); letter-spacing: -.08em; }
+.chapter-mark { font-family: Impact, sans-serif; font-size: 84px; line-height: 1; color: rgba(255,250,240,.2); }
 
 .section-block { max-width: 720px; margin: 36px auto 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }.section-heading h2 { font-family: Georgia, serif; margin: 0; font-weight: 500; font-size: 24px; }.section-heading button { border: 0; background: none; font-size: 12px; text-decoration: underline; font-weight: 800; cursor: pointer; padding: 8px 0; }
 .home-card { margin-top: 15px; border: 1px solid var(--line); background: var(--paper); border-radius: 5px; overflow: hidden; }
