@@ -188,6 +188,14 @@ describe("css-rules", () => {
     }
   });
 
+  it("keeps the tent people layout mobile-safe and the toggle selector-specific", () => {
+    const today = loadAll().find(({ path }) => path === "app/styles/today.css");
+    expect(today?.raw).toContain(".section-heading .tent-toggle-button");
+    expect(today?.raw).toContain("@media (max-width: 480px)");
+    expect(today?.raw).toContain("position: static");
+    expect(today?.raw).toContain("overflow-x: auto");
+  });
+
   it("has no meaningful font-size at 11px or below (or the rem equivalent) unless marked decorative", () => {
     const violations: string[] = [];
     for (const { path, raw } of loadAll()) {

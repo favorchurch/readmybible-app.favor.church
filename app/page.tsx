@@ -25,16 +25,17 @@ export default async function Page() {
     redirect("/not-found-in-rock");
   }
 
-  const roster = session.activeGroup ? await getRoster(session.activeGroup.groupId) : [];
-  const memberPersonIds = roster.map((m) => m.PersonId);
+  const rosterP = session.activeGroup ? getRoster(session.activeGroup.groupId) : Promise.resolve([]);
+  const memberReadingMapP = rosterP.then((members) => getGroupMembersReadingHistory(members.map((m) => m.PersonId)));
 
-  const [profileRows, readingState, groupStats, campusBoard, campusName, memberReadingMap] = await Promise.all([
+  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
     getPersonReadingState(session.rockPersonId),
+    rosterP,
     session.activeGroup ? getGroupStats(session.activeGroup.groupId, session.activeGroup.campusId) : Promise.resolve(null),
     session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
     session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
-    getGroupMembersReadingHistory(memberPersonIds),
+    memberReadingMapP,
   ]);
 
   const profileRow = profileRows[0];

@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
@@ -197,6 +200,33 @@ describe("ConnectScreen roster cards", () => {
     expect(html).toContain("<strong>Taylor</strong>");
     expect(html).toContain("<strong>Sam</strong>");
   });
+
+  afterEach(() => cleanup());
+
+  it("opens and closes the selected member profile from the roster", () => {
+    render(
+      React.createElement(ConnectScreen, {
+        groupName: "Manila Central",
+        campusName: "Favor Manila",
+        isLeader: false,
+        roster: sampleRoster,
+        groupStats: sampleStats,
+        appBaseUrl: "http://localhost:3000",
+        profile: testProfile,
+        onEditProfile: () => {},
+        today: mockTodayState,
+      }),
+    );
+
+    const memberButton = screen.getByRole("button", { name: /View Jordan/ });
+    memberButton.focus();
+    fireEvent.keyDown(memberButton, { key: "Enter", code: "Enter" });
+    fireEvent.click(memberButton);
+
+    expect(screen.getByRole("dialog").textContent).toContain("Jordan");
+    fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });
 
 describe("TodayScreen tent people toggle", () => {
@@ -223,6 +253,37 @@ describe("TodayScreen tent people toggle", () => {
     expect(html).toContain('class="tent-toggle-button"');
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain("Gather group");
+  });
+
+  it("reveals every roster first name when the tent toggle is activated", () => {
+    const { container } = render(
+      React.createElement(TodayScreen, {
+        today: mockTodayState,
+        chapters: [1, 2, 3, 4, 5],
+        chaptersRead: 5,
+        catchUpChapter: null,
+        streakDays: 5,
+        groupName: "Manila Central",
+        groupStats: sampleStats,
+        roster: sampleRoster,
+        profile: testProfile,
+        onStart: () => {},
+        onEditProfile: () => {},
+        onViewConnect: () => {},
+        onViewProgress: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    const toggle = screen.getByRole("button", { name: /Gather group around home/ });
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect([...container.querySelectorAll(".tent-person-name")].map((node) => node.textContent)).toEqual([
+      "Jordan",
+      "Taylor",
+      "Sam",
+    ]);
   });
 });
 

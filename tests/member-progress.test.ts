@@ -100,7 +100,28 @@ describe("recentFiveDayStreak", () => {
       "2026-10-08",
     ]);
     expect(marks.map((m) => m.day)).toEqual([4, 5, 6, 7, 8]);
+    expect(marks.map((m) => m.label)).toEqual(["Oct 4", "Oct 5", "Oct 6", "Oct 7", "Oct 8"]);
     expect(marks.map((m) => m.read)).toEqual([false, true, true, false, true]);
+  });
+
+  it("keeps month labels correct when the five-day window crosses into November", () => {
+    const marks = recentFiveDayStreak(["2026-11-01"], "2026-11-02");
+
+    expect(marks.map((m) => m.date)).toEqual([
+      "2026-10-29",
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+    ]);
+    expect(marks.map((m) => m.label)).toEqual(["Oct 29", "Oct 30", "Oct 31", "Nov 1", "Nov 2"]);
+    expect(marks.map((m) => m.longLabel)).toEqual([
+      "October 29",
+      "October 30",
+      "October 31",
+      "November 1",
+      "November 2",
+    ]);
   });
 
   it("returns 5 empty marks for pre-launch dates before October 1", () => {

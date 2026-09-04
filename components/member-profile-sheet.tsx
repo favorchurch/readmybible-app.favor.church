@@ -60,10 +60,10 @@ export function MemberProfileSheet({
               <div
                 key={mark.date}
                 className={`streak-dot ${mark.read ? "read" : "unread"}`}
-                title={`October ${mark.day}: ${mark.read ? "Read" : "Missed"}`}
-                aria-label={`October ${mark.day}: ${mark.read ? "Read" : "Missed"}`}
+                title={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
+                aria-label={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
               >
-                <span className="streak-day-label">Oct {mark.day}</span>
+                <span className="streak-day-label">{mark.label}</span>
                 <span className="streak-dot-circle" aria-hidden="true">
                   {mark.read ? "✓" : ""}
                 </span>
@@ -80,13 +80,14 @@ export function MemberProfileSheet({
             <span className="member-calendar-count">{readCount}/28 complete</span>
           </div>
 
-          <div className="member-mini-grid" role="grid" aria-label={`${member.name}'s October reading calendar`}>
+          <div className="member-mini-grid" role="list" aria-label={`${member.name}'s October reading calendar`}>
             {PLAN.map((entry) => {
               const isRead = readChapters.has(entry.chapter);
               return (
                 <div
                   key={entry.day}
                   className={`mini-grid-cell ${isRead ? "read" : "unread"}`}
+                  role="listitem"
                   title={`Day ${entry.day} (Matthew ${entry.chapter}): ${isRead ? "Read" : "Not yet read"}`}
                   aria-label={`Day ${entry.day}, Matthew ${entry.chapter}: ${isRead ? "Read" : "Not yet read"}`}
                 >

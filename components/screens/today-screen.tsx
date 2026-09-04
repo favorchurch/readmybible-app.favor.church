@@ -363,7 +363,7 @@ export function TodayScreen({
                   data-section="tent-toggle"
                   onClick={() => setTentPeopleOpen((v) => !v)}
                   aria-pressed={tentPeopleOpen}
-                  aria-label={tentPeopleOpen ? "Hide group around home" : "Show group around home"}
+                  aria-label={tentPeopleOpen ? "Hide group around home" : "Gather group around home"}
                 >
                   {tentPeopleOpen ? "Hide group" : "Gather group"}
                 </button>
@@ -372,7 +372,7 @@ export function TodayScreen({
                 <div className="home-scene-wrap">
                   <HomeIllustration stage={stageIndex(stage)} />
                   {tentPeopleOpen && (
-                    <div className="tent-people-overlay" aria-label="Group members gathered around the home">
+                    <div className="tent-people-overlay" role="group" aria-label="Group members gathered around the home">
                       {roster.map((m) => {
                         const seed = avatarSeedFor(m.personId);
                         return (

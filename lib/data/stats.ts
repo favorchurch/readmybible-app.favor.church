@@ -24,17 +24,8 @@ import { groupRatio, rankGroups, type GroupStanding } from "@/lib/game";
 
 import {
   deriveMemberReadingHistory,
-  recentFiveDayStreak,
   type MemberReadingHistory,
-  type StreakMark,
 } from "@/lib/member-progress";
-
-export {
-  deriveMemberReadingHistory,
-  recentFiveDayStreak,
-  type MemberReadingHistory,
-  type StreakMark,
-};
 
 export function todayInTimezone(timezone: string, now: Date = appNow()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);

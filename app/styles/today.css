@@ -10,7 +10,7 @@
 .section-block { max-width: 720px; margin: 36px auto 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }.section-heading h2 { font-family: Georgia, serif; margin: 0; font-weight: 500; font-size: 24px; }.section-heading button { border: 0; background: none; font-size: 12px; text-decoration: underline; font-weight: 800; cursor: pointer; padding: 8px 0; }
 .home-card { margin-top: 15px; border: 1px solid var(--line); background: var(--paper); border-radius: 5px; overflow: hidden; }
 
-.tent-toggle-button {
+.section-heading .tent-toggle-button {
   font-size: 13px;
   font-weight: 700;
   color: var(--coral-deep);
@@ -24,10 +24,11 @@
   align-items: center;
   justify-content: center;
   transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
+  flex-shrink: 0;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tent-toggle-button:hover {
+  .section-heading .tent-toggle-button:hover {
     background: #fae4dc;
     border-color: var(--coral);
   }
@@ -39,6 +40,10 @@
 
 .home-scene-wrap {
   position: relative;
+}
+
+.section-block .section-heading > div {
+  min-width: 0;
 }
 
 .tent-people-overlay {
@@ -57,6 +62,22 @@
   max-height: 140px;
   overflow-y: auto;
   animation: sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (max-width: 480px) {
+  .tent-people-overlay {
+    position: static;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--surface-3);
+    padding: 8px 10px;
+  }
+  .tent-person-chip {
+    flex: 0 0 auto;
+  }
 }
 
 .tent-person-chip {

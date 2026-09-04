@@ -6,6 +6,8 @@ export type MemberReadingHistory = {
 export type StreakMark = {
   date: string;
   day: number;
+  label: string;
+  longLabel: string;
   read: boolean;
 };
 
@@ -57,6 +59,14 @@ function toKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+function labelsForDate(dateKey: string): { label: string; longLabel: string } {
+  const date = parseLocalDate(dateKey);
+  return {
+    label: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date),
+    longLabel: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", timeZone: "UTC" }).format(date),
+  };
+}
+
 /**
  * Returns 5 recent streak marks ending at todayLocal (or Oct 1..5 if before launch).
  */
@@ -67,9 +77,11 @@ export function recentFiveDayStreak(dates: string[], todayLocal: string): Streak
   if (todayLocal < "2026-10-01") {
     return [1, 2, 3, 4, 5].map((d) => {
       const date = `2026-10-${String(d).padStart(2, "0")}`;
+      const labels = labelsForDate(date);
       return {
         date,
         day: d,
+        ...labels,
         read: dateSet.has(date),
       };
     });
@@ -82,9 +94,11 @@ export function recentFiveDayStreak(dates: string[], todayLocal: string): Streak
     const d = addDays(today, -i);
     const key = toKey(d);
     const day = Number(key.slice(8, 10));
+    const labels = labelsForDate(key);
     marks.push({
       date: key,
       day,
+      ...labels,
       read: dateSet.has(key),
     });
   }
