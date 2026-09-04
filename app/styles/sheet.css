@@ -15,11 +15,17 @@
   line-height: 1.45;
 }
 
+.scripture-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 .translation-select {
-  display: block;
-  width: fit-content;
-  margin: 0 0 14px auto;
-  padding: 14px 30px 14px 14px;
+  margin: 0;
+  flex-shrink: 0;
+  padding: 10px 26px 10px 12px;
   min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -46,11 +52,38 @@
   line-height: 1.45;
   font-weight: 400;
 }
-.link-groups { margin-top: 10px; display: flex; flex-direction: column; gap: 12px; }
+.link-groups { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
 /* The chapter link belongs to the passage above it; the source groups below are a
    separate band, so give the first group extra room beneath it. */
 .link-groups > .link-group:first-child { margin-bottom: 12px; }
 .scripture-sheet .link-group .eyebrow { margin-bottom: 4px; }
+.scripture-sheet .link-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  list-style: none;
+  cursor: pointer;
+}
+.scripture-sheet .link-disclosure > summary::-webkit-details-marker { display: none; }
+.scripture-sheet .link-disclosure > summary:after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--ink-muted);
+  border-bottom: 2px solid var(--ink-muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform .18s ease-out;
+}
+.scripture-sheet .link-disclosure[open] > summary:after {
+  transform: translateY(2px) rotate(-135deg);
+}
+.scripture-sheet .link-disclosure > summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
 .link-group-row { display: flex; flex-wrap: wrap; align-items: center; }
 .link-group-row.inline-row {
   display: flex;

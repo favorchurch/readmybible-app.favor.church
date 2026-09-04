@@ -48,19 +48,21 @@ export function ScripturePopup({
         ×
       </button>
       <p className="eyebrow">{isChapter ? "CHAPTER READING" : "QUICK VERSE"}</p>
-      <h2 id="scripture-title">{passageRef}</h2>
-      <select
-        className="translation-select"
-        aria-label="Bible translation"
-        value={translation}
-        onChange={(event) => onTranslationChange(event.target.value as Translation)}
-      >
-        {TRANSLATIONS.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
+      <div className="scripture-heading">
+        <h2 id="scripture-title">{passageRef}</h2>
+        <select
+          className="translation-select"
+          aria-label="Bible translation"
+          value={translation}
+          onChange={(event) => onTranslationChange(event.target.value as Translation)}
+        >
+          {TRANSLATIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
       {state === "loading" && <p className="passage-note">Loading…</p>}
       {state === "error" && <p className="passage-note">{isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com."}</p>}
       {state !== "loading" && state !== "error" && (
@@ -75,8 +77,8 @@ export function ScripturePopup({
               </a>
             </div>
           </div>
-          <div className="link-group">
-            <p className="eyebrow">COMMENTARIES</p>
+          <details className="link-group link-disclosure">
+            <summary className="eyebrow">COMMENTARIES</summary>
             <div className="link-group-row inline-row">
               {commentaryLinks.map((link) => (
                 <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">
@@ -84,9 +86,9 @@ export function ScripturePopup({
                 </a>
               ))}
             </div>
-          </div>
-          <div className="link-group">
-            <p className="eyebrow">APPS</p>
+          </details>
+          <details className="link-group link-disclosure">
+            <summary className="eyebrow">APPS</summary>
             <div className="link-group-row inline-row">
               {appsLinks.map((link) => (
                 <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">
@@ -94,7 +96,7 @@ export function ScripturePopup({
                 </a>
               ))}
             </div>
-          </div>
+          </details>
         </div>
       )}
       {state !== "loading" && state !== "error" && state.attribution && (
