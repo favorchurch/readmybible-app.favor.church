@@ -371,33 +371,33 @@ export function TodayScreen({
               <div className="home-card">
                 <div className="home-scene-wrap">
                   <HomeIllustration stage={stageIndex(stage)} />
-                  {tentPeopleOpen && (
-                    <div className="tent-people-overlay" role="group" aria-label="Group members gathered around the home">
-                      {roster.map((m) => {
-                        const seed = avatarSeedFor(m.personId);
-                        return (
-                          <button
-                            type="button"
-                            key={m.personId}
-                            className="tent-person-chip"
-                            onClick={() => {
-                              setSelectedMember(m);
-                              setProfileSheetOpen(true);
-                            }}
-                            title={m.name}
-                            aria-label={`View ${m.name}'s profile`}
-                          >
-                            <div className="tent-person-avatar">
-                              <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} small />
-                              {m.readToday && <b className="tent-person-check" aria-hidden="true">✓</b>}
-                            </div>
-                            <span className="tent-person-name">{m.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
+                {tentPeopleOpen && (
+                  <div className="tent-people-overlay" role="group" aria-label="Group members gathered around the home">
+                    {roster.map((m) => {
+                      const seed = avatarSeedFor(m.personId);
+                      return (
+                        <button
+                          type="button"
+                          key={m.personId}
+                          className="tent-person-chip"
+                          onClick={() => {
+                            setSelectedMember(m);
+                            setProfileSheetOpen(true);
+                          }}
+                          title={m.name}
+                          aria-label={`View ${m.name}'s profile`}
+                        >
+                          <div className="tent-person-avatar">
+                            <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} small />
+                            {m.readToday && <b className="tent-person-check" aria-hidden="true">✓</b>}
+                          </div>
+                          <span className="tent-person-name">{m.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="home-info">
                   <div className="stage-row" style={{ justifyContent: "flex-end" }}>
                     {nextStage && (

@@ -88,10 +88,12 @@ export function recentFiveDayStreak(dates: string[], todayLocal: string): Streak
   }
 
   const today = parseLocalDate(todayLocal);
+  const campaignEnd = parseLocalDate("2026-10-31");
+  const displayEnd = today > campaignEnd ? campaignEnd : today;
   const marks: StreakMark[] = [];
 
   for (let i = 4; i >= 0; i--) {
-    const d = addDays(today, -i);
+    const d = addDays(displayEnd, -i);
     const key = toKey(d);
     const day = Number(key.slice(8, 10));
     const labels = labelsForDate(key);

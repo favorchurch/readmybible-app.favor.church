@@ -3,6 +3,7 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -205,7 +206,8 @@ describe("ConnectScreen roster cards", () => {
 
   afterEach(() => cleanup());
 
-  it("opens and closes the selected member profile from the roster", () => {
+  it("opens and closes the selected member profile from keyboard activation", async () => {
+    const user = userEvent.setup();
     render(
       React.createElement(ConnectScreen, {
         groupName: "Manila Central",
@@ -222,8 +224,7 @@ describe("ConnectScreen roster cards", () => {
 
     const memberButton = screen.getByRole("button", { name: /View Jordan/ });
     memberButton.focus();
-    fireEvent.keyDown(memberButton, { key: "Enter", code: "Enter" });
-    fireEvent.click(memberButton);
+    await user.keyboard("{Enter}");
 
     expect(screen.getByRole("dialog").textContent).toContain("Jordan");
     fireEvent.keyDown(document, { key: "Escape", code: "Escape" });

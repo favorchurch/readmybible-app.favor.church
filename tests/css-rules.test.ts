@@ -194,7 +194,11 @@ describe("css-rules", () => {
     const mobileOverlayRule = today?.rules.find(
       ({ selector, prelude }) => selector === ".tent-people-overlay" && prelude.some((p) => /max-width:\s*480px/.test(p)),
     );
+    const desktopOverlayRule = today?.rules.find(({ selector, prelude }) => selector === ".tent-people-overlay" && prelude.length === 0);
     expect(toggleRule?.decls).toContain("text-decoration: none");
+    expect(desktopOverlayRule?.decls).toContain("flex-wrap: nowrap");
+    expect(desktopOverlayRule?.decls).toContain("max-height: none");
+    expect(desktopOverlayRule?.decls).toContain("overflow-x: auto");
     expect(mobileOverlayRule?.decls).toContain("position: static");
     expect(mobileOverlayRule?.decls).toContain("flex-wrap: nowrap");
     expect(mobileOverlayRule?.decls).toContain("overflow-x: auto");
