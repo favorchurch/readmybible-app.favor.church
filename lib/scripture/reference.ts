@@ -109,11 +109,12 @@ export type OutboundLink = { label: string; url: string };
  * crawling its own link inventory), so it links to its homepage rather
  * than a fabricated chapter URL.
  */
-export function bibleLinkGroup(parsed: ParsedReference, translation: Translation): OutboundLink[] {
+export function appsLinkGroup(): OutboundLink[] {
   return [
-    { label: "Bible.com", url: bibleComUrl(parsed, translation) },
-    { label: "Olive Tree", url: `https://www.olivetree.com/bible?query=${encodeURIComponent(`${parsed.book} ${parsed.chapter}`)}` },
-    { label: "ReadScripture", url: "https://readscripture.org/" },
+    { label: "YouVersion", url: "https://www.bible.com/app" },
+    { label: "Blue Letter Bible", url: "https://www.blueletterbible.org/" },
+    { label: "Olive Tree", url: "https://www.olivetree.com/" },
+    { label: "ReadScripture", url: "https://www.readscripture.org/" },
   ];
 }
 

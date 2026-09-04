@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getPassage } from "@/lib/scripture";
-import { bibleComUrl, bibleLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
+import { bibleComUrl, appsLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
 import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
 import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
 
@@ -67,13 +67,12 @@ describe("bibleComUrl", () => {
   });
 });
 
-describe("bibleLinkGroup", () => {
-  it("builds three deep links keyed to the chapter", () => {
-    const parsed = parseReference("Matthew 5:3-12")!;
-    const links = bibleLinkGroup(parsed, "NET");
-    expect(links.map((l) => l.label)).toEqual(["Bible.com", "Olive Tree", "ReadScripture"]);
-    expect(links[0].url).toBe("https://www.bible.com/bible/107/MAT.5.NET");
-    expect(links[1].url).toBe("https://www.olivetree.com/bible?query=Matthew%205");
+describe("appsLinkGroup", () => {
+  it("builds four gateway links", () => {
+    const links = appsLinkGroup();
+    expect(links.map((l) => l.label)).toEqual(["YouVersion", "Blue Letter Bible", "Olive Tree", "ReadScripture"]);
+    expect(links[0].url).toBe("https://www.bible.com/app");
+    expect(links[1].url).toBe("https://www.blueletterbible.org/");
   });
 });
 

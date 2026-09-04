@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
-import { bibleLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
+import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
 type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
@@ -39,7 +39,7 @@ export function ScripturePopup({
 
   const parsed = parseReference(passageRef);
   const isChapter = parsed?.verseEnd === null;
-  const bibleLinks = parsed ? bibleLinkGroup(parsed, translation) : [];
+  const appsLinks = appsLinkGroup();
   const commentaryLinks = parsed ? commentaryLinkGroup(parsed) : [];
 
   return (
@@ -64,34 +64,47 @@ export function ScripturePopup({
       {state === "loading" && <p className="passage-note">Loading…</p>}
       {state === "error" && <p className="passage-note">{isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com."}</p>}
       {state !== "loading" && state !== "error" && (
-        <>
-          <p className="passage-note">{state.text ?? (isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com.")}</p>
-          {state.text && <p className="passage-attribution">{state.attribution}</p>}
-        </>
+        <p className="passage-text">{state.text ?? (isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com.")}</p>
       )}
       {parsed && (
         <div className="link-groups">
           <div className="link-group">
-            <p className="eyebrow">BIBLE</p>
-            <div className="link-group-row">
-              {bibleLinks.map((link) => (
-                <a key={link.label} className="secondary-link" href={link.url} target="_blank" rel="noreferrer">
-                  {link.label}
-                </a>
-              ))}
+            <div className="link-group-row inline-row">
+              <a className="inline-link" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
+                Open full chapter ↗
+              </a>
             </div>
           </div>
           <div className="link-group">
             <p className="eyebrow">COMMENTARIES</p>
-            <div className="link-group-row">
-              {commentaryLinks.map((link) => (
-                <a key={link.label} className="secondary-link" href={link.url} target="_blank" rel="noreferrer">
-                  {link.label}
-                </a>
+            <div className="link-group-row inline-row">
+              {commentaryLinks.map((link, i) => (
+                <span key={link.label}>
+                  <a className="inline-link" href={link.url} target="_blank" rel="noreferrer">
+                    {link.label} ↗
+                  </a>
+                  {i < commentaryLinks.length - 1 && <span className="middot">·</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="link-group">
+            <p className="eyebrow">APPS</p>
+            <div className="link-group-row inline-row">
+              {appsLinks.map((link, i) => (
+                <span key={link.label}>
+                  <a className="inline-link" href={link.url} target="_blank" rel="noreferrer">
+                    {link.label} ↗
+                  </a>
+                  {i < appsLinks.length - 1 && <span className="middot">·</span>}
+                </span>
               ))}
             </div>
           </div>
         </div>
+      )}
+      {state !== "loading" && state !== "error" && state.attribution && (
+        <p className="passage-attribution">{state.attribution}</p>
       )}
     </Sheet>
   );
