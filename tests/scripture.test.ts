@@ -26,6 +26,16 @@ describe("parseReference", () => {
     });
   });
 
+  it("parses a bare chapter as a whole-chapter reference", () => {
+    expect(parseReference("Matthew 5")).toEqual({
+      book: "Matthew",
+      bookCode: "MAT",
+      chapter: 5,
+      verseStart: 1,
+      verseEnd: null,
+    });
+  });
+
   it("parses a numbered book name", () => {
     expect(parseReference("1 John 4:8")).toEqual({
       book: "1 John",
@@ -155,6 +165,19 @@ describe("getPassage", () => {
     const result = await getPassage("Matthew 5:3-4", "NET");
     expect(result.text).toBeTruthy();
     expect(result.text).not.toContain("undefined");
+  });
+
+  it("extracts every verse for a bare chapter from a full-text version", async () => {
+    const result = await getPassage("Matthew 1", "NET");
+    expect(result.text).toBeTruthy();
+    expect(result.text).not.toContain("undefined");
+    expect(result.attribution).toBe(TRANSLATION_META.NET.attribution);
+  });
+
+  it("returns null text for a bare chapter on a key-passage-only version", async () => {
+    const result = await getPassage("Matthew 1", "ESV");
+    expect(result.text).toBeNull();
+    expect(result.bibleComUrl).toContain("bible.com");
   });
 
   it("looks up an exact key-passage reference for a non-full-text version", async () => {

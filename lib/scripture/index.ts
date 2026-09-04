@@ -30,6 +30,7 @@ function extractPassage(translation: Translation, parsed: ParsedReference, ref: 
   if (TRANSLATION_META[translation].fullText) {
     const chapter = loadChapterVerses(translation, parsed.chapter);
     if (!chapter) return null;
+    if (parsed.verseEnd === null) return joinVerses(chapter);
     const verses: Record<string, string> = {};
     for (let v = parsed.verseStart; v <= parsed.verseEnd; v++) {
       const text = chapter[String(v)];

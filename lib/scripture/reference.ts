@@ -76,8 +76,8 @@ const BOOK_CODES: Record<string, string> = {
   revelation: "REV",
 };
 
-/** Matches "Book chapter:verse" or "Book chapter:verse-verse", book may lead with a number (e.g. "1 John"). */
-const REFERENCE_PATTERN = /^([1-3]?\s*[A-Za-z]+(?:\s+of\s+[A-Za-z]+|\s+[A-Za-z]+)*)\s+(\d+):(\d+)(?:-(\d+))?$/;
+/** Matches "Book chapter", "Book chapter:verse", or "Book chapter:verse-verse", book may lead with a number (e.g. "1 John"). */
+const REFERENCE_PATTERN = /^([1-3]?\s*[A-Za-z]+(?:\s+of\s+[A-Za-z]+|\s+[A-Za-z]+)*)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/;
 
 export function parseReference(ref: string): ParsedReference | null {
   const match = REFERENCE_PATTERN.exec(ref.trim());
@@ -88,9 +88,9 @@ export function parseReference(ref: string): ParsedReference | null {
   if (!bookCode) return null;
 
   const chapter = Number.parseInt(chapterStr, 10);
-  const verseStart = Number.parseInt(verseStartStr, 10);
-  const verseEnd = verseEndStr ? Number.parseInt(verseEndStr, 10) : verseStart;
-  if (verseEnd < verseStart) return null;
+  const verseStart = verseStartStr ? Number.parseInt(verseStartStr, 10) : 1;
+  const verseEnd = verseStartStr ? (verseEndStr ? Number.parseInt(verseEndStr, 10) : verseStart) : null;
+  if (verseEnd !== null && verseEnd < verseStart) return null;
 
   return { book, bookCode, chapter, verseStart, verseEnd };
 }

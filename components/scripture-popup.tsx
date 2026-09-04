@@ -38,6 +38,7 @@ export function ScripturePopup({
   }, [passageRef, translation]);
 
   const parsed = parseReference(passageRef);
+  const isChapter = parsed?.verseEnd === null;
   const bibleLinks = parsed ? bibleLinkGroup(parsed, translation) : [];
   const commentaryLinks = parsed ? commentaryLinkGroup(parsed) : [];
 
@@ -46,7 +47,7 @@ export function ScripturePopup({
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>
-      <p className="eyebrow">QUICK VERSE</p>
+      <p className="eyebrow">{isChapter ? "CHAPTER READING" : "QUICK VERSE"}</p>
       <h2 id="scripture-title">{passageRef}</h2>
       <select
         className="translation-select"
@@ -61,10 +62,10 @@ export function ScripturePopup({
         ))}
       </select>
       {state === "loading" && <p className="passage-note">Loading…</p>}
-      {state === "error" && <p className="passage-note">Read this one at Bible.com.</p>}
+      {state === "error" && <p className="passage-note">{isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com."}</p>}
       {state !== "loading" && state !== "error" && (
         <>
-          <p className="passage-note">{state.text ?? "Read this one at Bible.com."}</p>
+          <p className="passage-note">{state.text ?? (isChapter ? "This chapter is available at Bible.com." : "Read this one at Bible.com.")}</p>
           {state.text && <p className="passage-attribution">{state.attribution}</p>}
         </>
       )}

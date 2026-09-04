@@ -6,6 +6,7 @@ import type { Translation } from "@/components/avatar";
 import { ScripturePopup } from "@/components/scripture-popup";
 import { Sheet } from "@/components/sheet";
 import { checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
+import { TRANSLATION_META } from "@/lib/scripture/types";
 
 export function DayPreviewSheet({
   open,
@@ -23,11 +24,14 @@ export function DayPreviewSheet({
   onClose: () => void;
 }) {
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
+  const [chapterOpen, setChapterOpen] = useState(false);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
+  const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
   if (!open || !entry) return null;
 
   const isGraceDay = entry.day >= 29;
+  const canReadChapter = TRANSLATION_META[translation].fullText;
 
   return (
     <Sheet open={open} onClose={onClose} labelledBy="day-preview-title" className="day-preview-sheet">
@@ -57,6 +61,17 @@ export function DayPreviewSheet({
           </div>
         ) : null}
 
+        {!isGraceDay && canReadChapter ? (
+          <button
+            type="button"
+            className="secondary-link day-preview-chapter-btn"
+            ref={chapterTriggerRef}
+            onClick={() => setChapterOpen(true)}
+          >
+            Read Matthew {entry.chapter} <span aria-hidden="true">→</span>
+          </button>
+        ) : null}
+
         {isRead ? (
           <div className="day-preview-status read-status">
             <span className="status-badge read-badge" aria-hidden="true">✓</span>
@@ -77,6 +92,17 @@ export function DayPreviewSheet({
           onClose={() => {
             setQuickVerseOpen(false);
             quickVerseTriggerRef.current?.focus();
+          }}
+        />
+      )}
+      {chapterOpen && !isGraceDay && (
+        <ScripturePopup
+          passageRef={`Matthew ${entry.chapter}`}
+          translation={translation}
+          onTranslationChange={onTranslationChange}
+          onClose={() => {
+            setChapterOpen(false);
+            chapterTriggerRef.current?.focus();
           }}
         />
       )}

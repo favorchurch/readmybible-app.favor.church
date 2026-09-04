@@ -95,7 +95,8 @@ export type ParsedReference = {
   bookCode: string;
   chapter: number;
   verseStart: number;
-  verseEnd: number;
+  /** null means the reference covers the rest of the chapter. */
+  verseEnd: number | null;
 };
 
 export type ScriptureResult = {

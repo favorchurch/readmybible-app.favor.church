@@ -12,6 +12,7 @@ import type { useToday } from "@/components/use-today";
 import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
 import { GRACE_DATES, longDate, planEntryForChapter } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
+import { TRANSLATION_META } from "@/lib/scripture/types";
 
 const AVATAR_KEYS = [
   "gender",
@@ -62,7 +63,9 @@ export function TodayScreen({
   onTranslationChange: (translation: Translation) => void;
 }) {
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
+  const [chapterOpen, setChapterOpen] = useState(false);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
+  const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
   const entry = today.entry;
   const alreadyRead = entry ? chapters.includes(entry.chapter) : false;
@@ -77,6 +80,7 @@ export function TodayScreen({
 
   const dayOneEntry = planEntryForChapter(1);
   const quickVerseEntry = today.displayPhase === "pre-launch" ? dayOneEntry : entry;
+  const canReadChapter = TRANSLATION_META[profile.translation].fullText;
 
   const quickVersePopup = quickVerseOpen && quickVerseEntry && (
     <ScripturePopup
@@ -305,6 +309,17 @@ export function TodayScreen({
                 <span className="eyebrow">QUICK VERSE</span>
                 <strong>{entry.keyPassage}</strong>
               </button>
+              {canReadChapter && (
+                <button
+                  type="button"
+                  className="quick-verse-button"
+                  ref={chapterTriggerRef}
+                  onClick={() => setChapterOpen(true)}
+                >
+                  <span className="eyebrow">READ FULL CHAPTER</span>
+                  <strong>Matthew {entry.chapter}</strong>
+                </button>
+              )}
               <button className="primary-button today-reading-button" onClick={() => onStart(entry.chapter)}>
                 <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
                 <span className="button-arrow" aria-hidden="true">→</span>
@@ -371,6 +386,17 @@ export function TodayScreen({
       </div>
       <p className="daily-note">Read anywhere. Grow together.</p>
       {quickVersePopup}
+      {chapterOpen && entry && (
+        <ScripturePopup
+          passageRef={`Matthew ${entry.chapter}`}
+          translation={profile.translation}
+          onTranslationChange={onTranslationChange}
+          onClose={() => {
+            setChapterOpen(false);
+            chapterTriggerRef.current?.focus();
+          }}
+        />
+      )}
     </main>
   );
 }
