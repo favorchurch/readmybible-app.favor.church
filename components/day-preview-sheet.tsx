@@ -47,7 +47,10 @@ export function DayPreviewSheet({
               onClick={() => setQuickVerseOpen(true)}
             >
               <span className="eyebrow">KEY PASSAGE</span>
-              <strong>{entry.keyPassage}</strong>
+              <span className="day-preview-verse-row">
+                <strong>{entry.keyPassage}</strong>
+                <span className="day-preview-verse-arrow" aria-hidden="true">→</span>
+              </span>
             </button>
           </div>
         ) : null}
