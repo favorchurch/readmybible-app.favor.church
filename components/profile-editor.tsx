@@ -295,7 +295,7 @@ export function ProfileEditor({
           </p>
         </details>
         <div className="profile-brand-footer" data-section="profile-brand-footer">
-          <Image src="/favor-logo-white.png" alt="Favor Church" width={28} height={31} />
+          <Image src="/favor-logo-white.png" alt="Favor Church" width={40} height={44} />
           <span>Read My Bible is a Favor Church ministry.</span>
         </div>
     </Sheet>
