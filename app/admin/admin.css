@@ -28,6 +28,9 @@
   font-size: 13px;
   color: var(--navy);
   list-style: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .admin-progress-note summary::-webkit-details-marker { display: none; }
 .admin-progress-note summary::before { content: "▸ "; } /* decorative */
@@ -58,7 +61,9 @@
   margin-bottom: 12px;
 }
 .admin-csv-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: 800;
   font-size: 13px;
   text-decoration: underline;
@@ -83,9 +88,20 @@
 .admin-section-toggle { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; cursor: pointer; color: var(--navy); display: flex; align-items: center; gap: 6px; }
 .admin-section-toggle::before { content: "▸"; font-size: 10px; } /* decorative */
 details[open] > summary .admin-section-toggle::before { content: "▾"; }
-summary { list-style: none; cursor: pointer; }
+summary { list-style: none; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
 summary::-webkit-details-marker { display: none; }
-.admin-section-summary { padding: 10px 12px; background: rgba(23,41,67,.04); border-bottom: 1px solid var(--line); font-weight: 800; }
+.admin-section-summary {
+  padding: 10px 12px;
+  background: rgba(23,41,67,.04);
+  border-bottom: 1px solid var(--line);
+  font-weight: 800;
+  /* Override the generic `summary` rule's inline-flex row: this summary
+     stacks a name line above a `<small>` count line, so it needs a
+     block-level, column flex box, not a centered row. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
 .admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 12px; }
 .admin-nested { margin: 0; padding: 0 0 0 16px; }
 

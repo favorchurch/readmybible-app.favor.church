@@ -349,7 +349,9 @@
 }
 
 .connect-portal-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   margin-top: 24px;
   font-size: 13px;
 }

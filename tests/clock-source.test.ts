@@ -15,6 +15,16 @@ const CLOCK_SOURCE_FILE = join("lib", "dev-clock.ts");
 const USE_TODAY_DEFINITION_FILE = join("components", "use-today.ts");
 const ALLOWED_USE_TODAY_CALL_SITES = [join("components", "app-shell.tsx")];
 
+// Screens and other top-level client components must take "today" as a prop
+// (see components/use-today.ts and Amendment 6); they must never reach for
+// the clock themselves. `lib/dev-clock.ts` and `components/use-today.ts` are
+// the only allowed date sources -- this list intentionally has nothing in it
+// today. If a screen ever needs a genuine `new Date(` (e.g. a one-off
+// timestamp with no bearing on "today"), add it here by exact path WITH a
+// comment explaining why it isn't a today-source, instead of loosening the
+// pattern below.
+const ALLOWED_DATE_CONSTRUCTION_SITES: string[] = [];
+
 function walk(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -27,6 +37,14 @@ function walk(dir: string): string[] {
 }
 
 const files = SCAN_DIRS.flatMap(walk);
+
+const screenFiles = walk(join("components", "screens"));
+const topLevelComponentFiles = readdirSync("components", { withFileTypes: true })
+  .filter((entry) => entry.isFile() && /\.tsx$/.test(entry.name))
+  .map((entry) => join("components", entry.name));
+const dateSourceScopeFiles = [...new Set([...screenFiles, ...topLevelComponentFiles])].filter(
+  (path) => path !== USE_TODAY_DEFINITION_FILE,
+);
 
 describe("clock source of truth", () => {
   it("never reads the clock from a <script> tag, the DOM, or a regex scrape of serialized markup", () => {
@@ -54,6 +72,48 @@ describe("clock source of truth", () => {
       // NEXT_PUBLIC_ mirror of it is the other half of the lane B scrape.
       if (/process\.env\.(NEXT_PUBLIC_)?DEV_MOCK_TODAY\b/.test(text)) {
         violations.push(`${path}: reads DEV_MOCK_TODAY outside lib/dev-clock.ts`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it("screens and top-level components never construct a date or read a date-ish attribute themselves", () => {
+    // Review round 1 (m3-verdict.md finding 1): the check above only catches
+    // the exact symptom that shipped -- a <script>-tag scrape, a
+    // devMockToday-mentioning regex, a raw env read. It missed the actual
+    // rule (Amendment 6): "today" comes from the `today` prop, full stop.
+    // This asserts the property directly: outside lib/dev-clock.ts and
+    // components/use-today.ts, no screen or top-level component may call
+    // `new Date(`, `Date.now(`, `Intl.DateTimeFormat(`, or read a date-ish
+    // DOM attribute (`data-today`, `data-date`, `datetime`) via
+    // `getAttribute` or `.dataset`, however that read is spelled.
+    const DATE_ISH_ATTRS = ["data-today", "data-date", "datetime"];
+    const DATE_ISH_DATASET_KEYS = ["today", "date"]; // camelCase of data-today / data-date
+
+    const violations: string[] = [];
+    for (const path of dateSourceScopeFiles) {
+      const text = readFileSync(path, "utf8");
+
+      if (/\bnew Date\(/.test(text) && !ALLOWED_DATE_CONSTRUCTION_SITES.includes(path)) {
+        violations.push(`${path}: constructs new Date(...) instead of taking today as a prop`);
+      }
+      if (/\bDate\.now\(/.test(text)) {
+        violations.push(`${path}: reads Date.now() instead of taking today as a prop`);
+      }
+      if (/\bIntl\.DateTimeFormat\(/.test(text)) {
+        violations.push(`${path}: uses Intl.DateTimeFormat(...) instead of taking today as a prop`);
+      }
+      for (const attr of DATE_ISH_ATTRS) {
+        const re = new RegExp(`getAttribute\\(\\s*["'\`]${attr}["'\`]`);
+        if (re.test(text)) {
+          violations.push(`${path}: reads the "${attr}" attribute via getAttribute instead of a prop`);
+        }
+      }
+      for (const key of DATE_ISH_DATASET_KEYS) {
+        const re = new RegExp(`\\.dataset(?:\\.${key}\\b|\\[\\s*["'\`]${key}["'\`]\\s*\\])`, "i");
+        if (re.test(text)) {
+          violations.push(`${path}: reads dataset.${key} instead of a prop`);
+        }
       }
     }
     expect(violations).toEqual([]);

@@ -28,9 +28,13 @@ const LINE_COLORS = ["#d96c57", "#7b9caf", "#e7a72f", "#91a88b", "#9c84ab", "#17
 // module's server-only DB loaders into this "use client" component's bundle.
 const PLAN_START = "2026-10-01";
 
-/** Pre-launch (or otherwise dateless) series: every point missing or dated before the plan starts. */
-function isPreLaunchEmpty(series: TopLevelSeries[]): boolean {
-  if (series.length === 0) return false;
+/**
+ * True when every series has no on-or-after-launch data point (points
+ * missing or all dated before the plan starts). Vacuously true for an empty
+ * series list -- the caller below already returns its own empty-scope
+ * message before reaching this check, so that case never renders from here.
+ */
+function isPreLaunchOnly(series: TopLevelSeries[]): boolean {
   return series.every((s) => s.points.length === 0 || s.points.every((p) => p.date < PLAN_START));
 }
 
@@ -42,7 +46,7 @@ export function HierarchyChart({ series }: { series: TopLevelSeries[] }) {
       </p>
     );
   }
-  if (isPreLaunchEmpty(series)) {
+  if (isPreLaunchOnly(series)) {
     return (
       <p className="admin-chart-empty" data-section="admin-chart-empty">
         The chart starts filling in on October 1.

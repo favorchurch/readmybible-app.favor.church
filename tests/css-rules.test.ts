@@ -241,11 +241,19 @@ describe("css-rules", () => {
       return text.replace(/\/\*\s*serif-exception\b[^*]*\*\//gi, SENTINEL);
     }
 
+    // A rule only "joins the sans system" if it actually declares
+    // font-family (or the `font` shorthand, which sets the same property) --
+    // being merely named in typography.css for an unrelated declaration
+    // (e.g. `.stage-row > span { white-space: nowrap; }`) overrides nothing.
+    const DECLARES_FONT_FAMILY = /\b(?:font-family|font)\s*:/i;
+    const GEORGIA_DECL = /\b(?:font-family|font)\s*:[^;]*\bGeorgia\b/i;
+
     const typographySelectors = new Set<string>();
     for (const path of CSS_FILES) {
       if (path !== "app/styles/typography.css") continue;
       const raw = readFileSync(path, "utf8");
       for (const rule of tokenize(stripComments(raw))) {
+        if (!DECLARES_FONT_FAMILY.test(rule.decls)) continue;
         for (const sel of rule.selector.split(",")) {
           typographySelectors.add(sel.replace(/\s+/g, " ").trim());
         }
@@ -257,7 +265,7 @@ describe("css-rules", () => {
       if (path === "app/styles/typography.css") continue;
       const raw = readFileSync(path, "utf8");
       for (const rule of tokenize(stripComments(markException(raw)))) {
-        if (!/font-family\s*:[^;]*\bGeorgia\b/i.test(rule.decls)) continue;
+        if (!GEORGIA_DECL.test(rule.decls)) continue;
         if (rule.decls.includes(SENTINEL)) continue;
         for (const sel of rule.selector.split(",")) {
           const normalized = sel.replace(/\s+/g, " ").trim();
