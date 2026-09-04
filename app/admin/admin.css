@@ -4,7 +4,38 @@
 
 .admin-screen { max-width: 1120px; margin: 0 auto; }
 
-.admin-scope-line { color: var(--ink-muted); font-size: 13px; margin: -8px 0 24px; }
+.admin-scope-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.admin-scope-card h2 { font-size: 16px; margin: 0 0 8px; font-weight: 500; }
+.admin-scope-card p { margin: 0 0 6px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
+.admin-scope-card p:last-child { margin-bottom: 0; }
+
+.admin-progress-note {
+  margin: 0 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  padding: 12px 16px;
+}
+.admin-progress-note summary {
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--navy);
+  list-style: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.admin-progress-note summary::-webkit-details-marker { display: none; }
+.admin-progress-note summary::before { content: "▸ "; } /* decorative */
+.admin-progress-note[open] summary::before { content: "▾ "; } /* decorative */
+.admin-progress-note p { margin: 10px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
 
 .admin-section-block {
   margin-top: 32px;
@@ -17,7 +48,7 @@
   padding: 16px;
   margin-bottom: 28px;
 }
-.admin-chart-card h2 { font-family: Georgia, serif; font-size: 18px; margin: 0 0 12px; font-weight: 500; }
+.admin-chart-card h2 { font-size: 18px; margin: 0 0 12px; font-weight: 500; }
 .admin-chart { position: relative; height: 320px; width: 100%; }
 .admin-chart-empty { color: var(--ink-muted); font-size: 13px; }
 
@@ -30,7 +61,9 @@
   margin-bottom: 12px;
 }
 .admin-csv-link {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: 800;
   font-size: 13px;
   text-decoration: underline;
@@ -45,28 +78,57 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.admin-table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 13px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .admin-table th, .admin-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.admin-table th { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 800; }
+.admin-table th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 800; }
 .admin-table tr:last-child td { border-bottom: 0; }
 .admin-table .admin-row-group td:first-child { padding-left: 30px; }
 .admin-table .admin-row-section td { background: rgba(23,41,67,.04); font-weight: 800; }
 
 .admin-section-toggle { border: 0; background: none; padding: 0; font: inherit; font-weight: 800; cursor: pointer; color: var(--navy); display: flex; align-items: center; gap: 6px; }
-.admin-section-toggle::before { content: "▸"; font-size: 10px; }
+.admin-section-toggle::before { content: "▸"; font-size: 10px; } /* decorative */
 details[open] > summary .admin-section-toggle::before { content: "▾"; }
-summary { list-style: none; cursor: pointer; }
+summary { list-style: none; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; }
 summary::-webkit-details-marker { display: none; }
-.admin-section-summary { padding: 10px 12px; background: rgba(23,41,67,.04); border-bottom: 1px solid var(--line); font-weight: 800; }
-.admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 11px; }
+.admin-section-summary {
+  padding: 10px 12px;
+  background: rgba(23,41,67,.04);
+  border-bottom: 1px solid var(--line);
+  font-weight: 800;
+  /* Override the generic `summary` rule's inline-flex row: this summary
+     stacks a name line above a `<small>` count line, so it needs a
+     block-level, column flex box, not a centered row. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.admin-section-summary small { display: block; font-weight: 500; color: var(--ink-muted); font-size: 12px; }
 .admin-nested { margin: 0; padding: 0 0 0 16px; }
 
-.admin-stage-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; background: var(--sage); color: #fffaf0; }
+.admin-stage-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 800; background: var(--sage); color: #fffaf0; }
 
 .admin-no-access { max-width: 560px; margin: 60px auto; text-align: center; }
-.admin-no-access h1 { font-family: Georgia, serif; font-weight: 500; }
+.admin-no-access h1 { font-weight: 500; }
 .admin-no-access p { color: var(--ink-muted); }
+
+.admin-group-cards { display: grid; gap: 10px; padding: 10px 12px 14px; }
+.admin-group-card {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  padding: 12px 14px;
+}
+.admin-group-card-name { display: block; font-size: 15px; margin-bottom: 8px; color: var(--navy); }
+.admin-group-card dl { margin: 0; display: grid; gap: 6px; }
+.admin-group-card dl > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.admin-group-card dt { font-size: 12px; color: var(--ink-muted); }
+.admin-group-card dd { margin: 0; font-size: 13px; font-weight: 800; color: var(--navy); text-align: right; }
+
+@media (max-width: 767px) {
+  .admin-table-scroll { display: none; }
+}
 
 @media (min-width: 768px) {
   .admin-chart { height: 380px; }
+  .admin-group-cards { display: none; }
 }

@@ -155,10 +155,29 @@ export function RotatableHome({
         </div>
       </div>
       <div className="rotate-hint">
-        <span>↔</span> Drag to rotate 360°{" "}
-        <button type="button" onClick={() => setRotation(-28)}>
-          Reset view
-        </button>
+        <span className="rotate-glyph" aria-hidden="true">↔</span>
+        <span className="rotate-text">Drag, swipe, or use the arrows to look around.</span>
+        <div className="rotate-actions">
+          <button
+            type="button"
+            className="rotate-btn"
+            aria-label="Rotate left"
+            onClick={() => setRotation((value) => value - 18)}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            className="rotate-btn"
+            aria-label="Rotate right"
+            onClick={() => setRotation((value) => value + 18)}
+          >
+            →
+          </button>
+          <button type="button" className="rotate-reset-btn" onClick={() => setRotation(-28)}>
+            Reset view
+          </button>
+        </div>
       </div>
       {completed && <div className="home3d-complete">✦ 10 coins added</div>}
     </div>

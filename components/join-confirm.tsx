@@ -37,6 +37,9 @@ export function JoinConfirm({ code, groupName }: { code: string; groupName: stri
 
   return (
     <>
+      <p className="onboarding-note">
+        Joining here adds you to this Connect Group in Favor&apos;s records.
+      </p>
       <button className="primary-button" onClick={handleJoin} disabled={pending}>
         <strong>{pending ? "Joining…" : "Join group"}</strong>
       </button>

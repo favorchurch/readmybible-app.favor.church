@@ -1,0 +1,182 @@
+.page-title { margin-top: 43px; }
+.page-title.compact { margin-bottom: 28px; }
+.rewards-sub {
+  color: var(--ink-muted);
+  font-size: 15px;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.shelf-cabinet {
+  max-width: 720px;
+  margin: 24px auto;
+  border: 1px solid var(--line);
+  padding: 25px 14px 0;
+  background: #e5c58c;
+  box-shadow: inset 10px 0 25px rgba(90,54,30,.12), inset -10px 0 25px rgba(90,54,30,.12);
+  border-radius: var(--radius-md);
+}
+
+.shelf-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  min-height: 150px;
+  gap: 6px;
+}
+.shelf-row.two {
+  grid-template-columns: repeat(2, minmax(90px, 145px));
+  justify-content: center;
+}
+
+.wood-shelf {
+  height: 13px;
+  background: #9c6948;
+  border-top: 3px solid #7b4e36;
+  margin: 0 -14px 24px;
+  box-shadow: 0 5px 6px rgba(67,42,27,.22);
+}
+
+.reward {
+  text-align: center;
+  min-width: 0;
+}
+.reward > strong, .reward > span { display: block; }
+.reward > strong {
+  font-family: Georgia, serif;
+  font-size: 13px;
+  margin-top: 7px;
+  color: var(--navy);
+  font-weight: 700;
+}
+.reward > span {
+  font-size: 12px;
+  margin: 3px 0 10px;
+  color: #3b4b60;
+  font-weight: 700;
+}
+
+/* Silhouette outline treatment for unearned / pre-launch */
+.reward.unearned .shelf-award,
+.reward.pre-launch-silhouette .shelf-award {
+  background: rgba(255, 255, 255, .75);
+  border: 2px dashed rgba(23, 41, 67, .45);
+  color: var(--navy);
+  box-shadow: 0 2px 8px rgba(90, 54, 30, .08);
+}
+.reward.unearned .shelf-award *,
+.reward.pre-launch-silhouette .shelf-award * {
+  color: var(--navy);
+}
+.reward.unearned > span,
+.reward.pre-launch-silhouette > span {
+  color: #3b4b60;
+}
+
+/* Earned shine animation (one-time, transform/opacity only) */
+@keyframes rewardShine {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reward.earned-shine .shelf-award {
+  animation: rewardShine var(--dur-slow) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .reward:hover .shelf-award {
+    transform: translateY(-2px);
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+}
+
+.medal {
+  width: 68px;
+  height: 82px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #a96c45;
+  color: #fff4d5;
+  clip-path: polygon(20% 0,80% 0,100% 22%,88% 78%,50% 100%,12% 78%,0 22%);
+  font-size: 22px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.2);
+}
+.medal span { font-size: 12px; font-weight: 900; }
+.medal.silver { background: #93a2a5; }
+.medal.gold { background: var(--gold); }
+.medal.violet { background: var(--violet); }
+.medal.navy { background: var(--navy); width: 80px; height: 92px; }
+
+.next-reward {
+  max-width: 720px;
+  margin: 22px auto 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 14px;
+}
+.mini-medal {
+  width: 43px;
+  height: 49px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  clip-path: polygon(20% 0,80% 0,100% 22%,88% 78%,50% 100%,12% 78%,0 22%);
+}
+.mini-medal.gold { background: var(--gold); }
+.next-reward h2 { margin: 0; font-family: Georgia, serif; font-size: 18px; font-weight: 500; }
+.next-reward span { color: var(--ink-muted); font-size: 12px; }
+.next-reward strong { font-size: 12px; }
+.next-reward .eyebrow { margin-bottom: 2px; font-size: 12px; }
+
+@media (min-width: 760px) {
+  .shelf-cabinet { padding-left: 34px; padding-right: 34px; }
+  .wood-shelf { margin-left: -34px; margin-right: -34px; }
+}
+
+/* Wider desktop shelf (frame width, 2 rows becoming 1 row of 5 at 1024px+) */
+@media (min-width: 1024px) {
+  .shelf-cabinet {
+    max-width: 1040px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .shelf-stage {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: end;
+    gap: 16px;
+  }
+  .shelf-row.one,
+  .shelf-row.two {
+    display: contents;
+  }
+  .middle-shelf {
+    display: none;
+  }
+  .bottom-shelf {
+    grid-column: 1 / -1;
+    margin-left: -40px;
+    margin-right: -40px;
+    margin-bottom: 24px;
+  }
+  .next-reward {
+    max-width: 1040px;
+  }
+}

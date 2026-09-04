@@ -3,7 +3,7 @@
  *
  * Ported from connect.favor.church's redisClient.ts pattern. Redis is
  * effectively required in production (session/group/campus reads are cached
- * here) but the app must never hang or 500 because Redis had a bad moment —
+ * here) but the app must never hang or 500 because Redis had a bad moment:
  * every command degrades to a cache miss instead of throwing.
  *
  * Key prefix is REDIS_KEY_PREFIX if set, otherwise derived from VERCEL_ENV:

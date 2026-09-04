@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { AppShell, type AppShellProps } from "@/components/app-shell";
 import { defaultAvatarConfig, isAvatarConfig, type Translation } from "@/components/avatar";
+import { devMockToday } from "@/lib/dev-clock";
 import { getCampusBoard, getGroupStats, getPersonReadingState } from "@/lib/data/stats";
 import { getCampusName, getRoster } from "@/lib/rock/client";
 import { getSessionContext } from "@/lib/session";
@@ -52,6 +53,7 @@ export default async function Page() {
     groupStats,
     campusBoard,
     appBaseUrl: process.env.APP_BASE_URL ?? "",
+    devMockToday: devMockToday(),
   };
 
   return <AppShell {...props} />;

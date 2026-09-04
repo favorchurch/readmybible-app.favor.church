@@ -99,6 +99,12 @@ export function groupRatio(checkins: number, members: number): number {
   return Math.min(1, Math.max(0, ratio));
 }
 
+/** Ratio and stage together for a checkin/member count, the shape a completion screen shows. */
+export function groupStateFor(checkins: number, members: number): { ratio: number; stage: Stage } {
+  const ratio = groupRatio(checkins, members);
+  return { ratio, stage: stageFor(ratio) };
+}
+
 /** Home stage for a given ratio (highest threshold met, at or below 1). */
 export function stageFor(ratio: number): Stage {
   const clamped = Math.min(1, Math.max(0, ratio));
@@ -120,6 +126,18 @@ export function nextStageProgress(ratio: number): { stage: Stage; pct: number } 
   const progressed = clamped - prev.ratio;
   const pct = span > 0 ? Math.round((progressed / span) * 100) : 100;
   return { stage: next.stage, pct: Math.min(100, Math.max(0, pct)) };
+}
+
+/**
+ * The stage change between two ratios, or null when both ratios map to the
+ * same stage (a ratio can move within a stage's range without a stage-up).
+ * Callers pass server-authoritative before/after ratios, never a cached
+ * page snapshot, so the transition reflects the check-in that just happened.
+ */
+export function stageTransition(beforeRatio: number, afterRatio: number): { from: Stage; to: Stage } | null {
+  const from = stageFor(beforeRatio);
+  const to = stageFor(afterRatio);
+  return from === to ? null : { from, to };
 }
 
 export type GroupStanding = {

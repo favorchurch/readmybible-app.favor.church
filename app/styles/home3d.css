@@ -1,0 +1,421 @@
+/* Rotatable Connect Home collection */
+.home3d-wrap {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  background: #cfdce0;
+  border-bottom: 1px solid var(--line);
+  isolation: isolate;
+}
+
+.home3d-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #bcd0d7 0%, #e7dfc8 68%, #91a88b 69%, #75936f 100%); }
+.home3d-sky:before { content: ""; position: absolute; width: 74px; height: 74px; border-radius: 50%; top: 28px; right: 38px; background: #e9b243; box-shadow: 0 0 0 13px rgba(255,243,190,.15); }
+.home3d-sky i { position: absolute; width: 95px; height: 18px; left: 8%; top: 49px; border-radius: 50%; background: rgba(255,250,240,.65); }
+.home3d-sky i + i { width: 53px; left: auto; right: 26%; top: 92px; opacity: .7; }
+.home3d-sky > span { position: absolute; inset: auto -10% 0; height: 31%; border-radius: 50% 50% 0 0; background: #789471; }
+.home3d-viewport { position: absolute; inset: 0 0 32px; perspective: 850px; cursor: grab; touch-action: none; user-select: none; outline: none; }
+.home3d-viewport:active { cursor: grabbing; }
+.home3d-viewport:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
+.home3d-turntable { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 68%; will-change: transform; transition: transform .08s linear; }
+.home3d-viewport:active .home3d-turntable { transition: none; }
+.home3d-ground { position: absolute; width: 245px; height: 245px; left: 50%; top: 61%; transform: translate(-50%,-50%) rotateX(90deg) translateZ(-20px); transform-style: preserve-3d; border-radius: 50%; background: #819d76; box-shadow: inset 0 0 0 2px rgba(23,41,67,.08), 0 18px 38px rgba(23,41,67,.2); }
+.path3d { position: absolute; width: 45px; height: 130px; left: 50%; top: 54%; transform: translateX(-50%); border-radius: 60% 60% 20% 20%; background: #d6bf91; }
+.shrub { position: absolute; width: 38px; height: 28px; border-radius: 50%; background: #496f58; box-shadow: 14px 4px 0 #5f8066; }.shrub-one { left: 25px; top: 55px; }.shrub-two { right: 35px; top: 106px; transform: scale(.75); }
+.home3d-model { --w: 142px; --h: 105px; --d: 106px; --wall-front: #bd715a; --wall-side: #9e594b; --wall-light: #d18569; position: absolute; width: var(--w); height: var(--h); left: 50%; top: 54%; transform: translate(-50%,-50%); transform-style: preserve-3d; transition: width .35s, height .35s, top .35s; }
+.building-face { position: absolute; left: 50%; top: 50%; border: 2px solid #26364a; backface-visibility: hidden; box-shadow: inset 0 0 20px rgba(255,255,255,.07); }
+.face-front, .face-back { width: var(--w); height: var(--h); }
+.face-front { transform: translate(-50%,-50%) translateZ(calc(var(--d) / 2)); background: var(--wall-front); z-index: 2; }
+.face-back { transform: translate(-50%,-50%) rotateY(180deg) translateZ(calc(var(--d) / 2)); background: var(--wall-side); }
+.face-left, .face-right { width: var(--d); height: var(--h); background: var(--wall-side); }
+.face-left { transform: translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+.face-right { transform: translate(-50%,-50%) rotateY(90deg) translateZ(calc(var(--w) / 2)); background: var(--wall-light); }
+.face-top { width: var(--w); height: var(--d); transform: translate(-50%,-50%) rotateX(90deg) translateZ(calc(var(--h) / 2)); background: #8c4f46; }
+.window3d, .side-window, .upper-windows span { position: absolute; background: #f6dda0; border: 3px solid #26364a; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
+.window3d { width: 27px; height: 31px; top: 27px; }.window-left { left: 13px; }.window-right { right: 13px; }.window3d i:before, .window3d i:after { content: ""; position: absolute; background: rgba(38,54,74,.55); }.window3d i:before { width: 2px; height: 100%; left: 50%; }.window3d i:after { height: 2px; width: 100%; top: 50%; }
+.door3d { position: absolute; width: 34px; height: 55px; bottom: -2px; left: 50%; transform: translateX(-50%); background: #e4a94e; border: 3px solid #26364a; }.door3d i { position: absolute; width: 4px; height: 4px; right: 5px; top: 50%; border-radius: 50%; background: #26364a; }
+.side-window { width: 30px; height: 31px; top: 27px; left: 50%; transform: translateX(-50%); }
+.upper-windows { display: none; }.upper-windows span { width: 23px; height: 25px; top: 20px; }.upper-windows span:nth-child(1) { left: 13px; }.upper-windows span:nth-child(2) { left: 50%; transform: translateX(-50%); }.upper-windows span:nth-child(3) { right: 13px; }
+.roof3d { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.roof3d > span { position: absolute; width: calc(var(--w) + 24px); height: 76px; left: 50%; top: -33px; background: #26364a; border: 2px solid #172943; transform-origin: center bottom; }
+.roof-front { transform: translateX(-50%) rotateX(48deg) translateZ(24px); }
+.roof-back { transform: translateX(-50%) rotateX(-48deg) translateZ(-24px); background: #344b65 !important; }
+.chimney3d { display: block; position: absolute; width: 18px; height: 49px; right: 20px; top: -42px; transform: translateZ(16px); background: #7b5548; border: 2px solid #26364a; }.chimney3d i, .chimney3d b { position: absolute; display: block; width: 18px; height: 49px; background: #68473f; border: 2px solid #26364a; left: -12px; top: 4px; transform: rotateY(90deg); transform-origin: right; }.chimney3d b { width: 23px; height: 6px; left: -4px; top: -5px; transform: none; background: #26364a; }
+.balcony3d { display: none; position: absolute; width: 110px; height: 35px; left: 50%; top: 47%; transform: translateX(-50%) translateZ(calc(var(--d) / 2 + 9px)); border: 3px solid #26364a; border-top: 0; }.balcony3d span { position: absolute; left: -7px; right: -7px; bottom: -8px; height: 9px; background: #d29b57; border: 2px solid #26364a; }
+.home3d-model.tent { --w: 132px; --h: 64px; --d: 108px; top: 63%; }.tent .building-face { opacity: 0; }.tent .roof3d > span { display: block; height: 112px; top: -53px; background: #d28d55; }.tent .roof-front { transform: translateX(-50%) rotateX(57deg) translateZ(19px); }.tent .roof-back { transform: translateX(-50%) rotateX(-57deg) translateZ(-19px); background: #b86c50 !important; }.tent .chimney3d { display: none; }
+.home3d-model.trailer { --w: 174px; --h: 76px; --d: 82px; --wall-front: #d7c395; --wall-side: #aaae99; --wall-light: #e7d4a9; top: 58%; }.trailer .roof3d, .trailer .chimney3d { display: none; }.trailer .face-top { background: #b8b59e; }.trailer:after, .trailer:before { content: ""; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #26364a; border: 6px solid #d9d1bf; bottom: -20px; transform: translateZ(22px); }.trailer:before { left: 16px; }.trailer:after { right: 16px; }
+.home3d-model.apartment { --w: 136px; --h: 170px; --d: 105px; --wall-front: #a28eaf; --wall-side: #796e89; --wall-light: #b4a2bd; top: 53%; }.apartment .roof3d, .apartment .chimney3d { display: none; }.apartment .upper-windows { display: block; }.apartment .window3d { top: 112px; }.apartment .side-window { top: 95px; }.apartment .face-top { background: #776d84; }
+.home3d-model.house3d { --w: 170px; --h: 115px; --d: 118px; --wall-front: #d2ad70; --wall-side: #a57e55; --wall-light: #e1bd80; }.house3d .roof3d > span { width: calc(var(--w) + 30px); }
+.home3d-model.mansion { --w: 212px; --h: 140px; --d: 126px; --wall-front: #d8c89d; --wall-side: #a99b7d; --wall-light: #eadcaf; top: 55%; }.mansion .roof3d > span { width: calc(var(--w) + 34px); background: #7f718c; }.mansion .roof-back { background: #675e73 !important; }.mansion .upper-windows, .mansion .balcony3d { display: block; }.mansion .window3d { top: 88px; }.mansion .side-window { top: 64px; }.mansion .chimney3d { right: 28px; }
+.rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--navy); font-size: 12px; background: rgba(255,250,240,.85); border-radius: var(--radius-sm); padding: 6px 8px; }
+.rotate-hint .rotate-glyph { font-size: 16px; line-height: 1; color: var(--navy); }
+.rotate-hint .rotate-text { font-size: 12px; color: var(--navy); }
+.rotate-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+/* 44px touch-target constraint (Global Constraint 11); these buttons are not
+   the plan's one named exception (calendar cells at 40px). */
+.rotate-hint button { border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(255,250,240,.85); padding: 4px 8px; font-size: 12px; color: var(--navy); cursor: pointer; line-height: 1.2; min-height: 44px; }
+.rotate-btn { min-width: 44px; }
+@media (hover: hover) and (pointer: fine) {
+  .rotate-hint button:hover { background: var(--paper); border-color: var(--line-strong); }
+}
+.rotate-hint button:active { transform: translateY(1px); }
+.home3d-complete { position: absolute; z-index: 7; top: 14px; left: 14px; background: var(--gold); color: var(--navy); padding: 7px 10px; font-size: 12px; box-shadow: 4px 4px 0 rgba(23,41,67,.16); animation: pop .5s cubic-bezier(.2,1.5,.4,1); }
+.home-note { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 12px; }
+.journey-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.journey-heading h2 { margin: 0; font-family: var(--font-display); font-size: 25px; line-height: 1; }.journey-heading > span { max-width: 145px; text-align: right; color: var(--ink-muted); font-size: 12px; line-height: 1.35; }
+.stages button { position: relative; z-index: 1; min-width: 0; padding: 0; border: 0; background: transparent; text-align: center; cursor: pointer; }
+.stages button > span { width: 30px; height: 30px; margin: auto; display: grid; place-items: center; border-radius: 50%; background: #dfd6c7; border: 3px solid var(--cream); font-size: 10px; font-weight: 900; transition: transform .18s, box-shadow .18s; } /* decorative */
+.stages button.done > span { background: var(--sage); color: white; }.stages button.next > span { background: var(--gold); color: var(--navy); }.stages button.selected > span { transform: scale(1.18); box-shadow: 0 0 0 2px var(--navy); }.stages button.selected small { color: var(--navy); font-weight: 900; }
+
+@media (min-width: 760px) {
+  .big-home-card .home3d-wrap { grid-row: span 4; height: 340px; }
+}
+
+@media (max-width: 370px) {
+  .home3d-wrap { height: 310px; }.home3d-model { transform: translate(-50%,-50%) scale(.88); }.rotate-hint { bottom: 7px; }
+}
+
+
+/* Cleaner compact 3D cabin on the Today screen. */
+.home-card > .home3d-wrap.compact { height: 250px; border-bottom: 1px solid var(--line); }
+.home3d-wrap.compact .home3d-viewport { bottom: 29px; }
+.home3d-wrap.compact .home3d-model { top: 56%; transform: translate(-50%,-50%) scale(.9); }
+.home3d-wrap.compact .home3d-ground { width: 225px; height: 225px; top: 64%; }
+.home3d-wrap.compact .rotate-hint { font-size: 12px; }
+.home3d-wrap.compact .rotate-hint button { display: none; }
+.home3d-wrap.compact .home3d-complete { top: 12px; left: 12px; }
+
+/* More convincing roof geometry and softer architectural finish. */
+.roof3d:before,
+.roof3d:after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  width: calc(var(--w) - 4px);
+  height: 55px;
+  left: 50%;
+  top: -27px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: var(--wall-front);
+  border-bottom: 2px solid #26364a;
+}
+.roof3d:before { transform: translateX(-50%) translateZ(calc(var(--d) / 2 + 1px)); }
+.roof3d:after { transform: translateX(-50%) rotateY(180deg) translateZ(calc(var(--d) / 2 + 1px)); background: var(--wall-side); }
+.roof3d > span { border-radius: 2px; box-shadow: 0 8px 14px rgba(23,41,67,.12); }
+.building-face { border-width: 1.5px; }
+.home3d-model.cabin3d { --wall-front: #c9775d; --wall-side: #9c5a4c; --wall-light: #db8b6a; }
+.home3d-model.cabin3d .roof3d > span { background: #293b56; }
+.home3d-model.cabin3d .roof-back { background: #3b506c !important; }
+
+@media (min-width: 760px) {
+  .home-card > .home3d-wrap.compact { grid-row: span 2; height: 260px; }
+}
+
+@media (max-width: 430px) {
+  .section-heading { align-items: center; }
+  .section-heading h2 { font-size: 20px; max-width: 245px; }
+  .section-heading button { flex: 0 0 auto; }
+  .hero-copy h1, .page-title h1, .connect-title h1 { letter-spacing: .016em; line-height: 1.1; }
+}
+
+/* Mobile corrections from review: clear chapter number and stable roof. */
+.reading-main h2 b {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--font-sans);
+  font-size: .66em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.home3d-model.cabin3d .roof3d,
+.home3d-model.house3d .roof3d,
+.home3d-model.mansion .roof3d {
+  display: none;
+}
+
+.home3d-model.cabin3d .face-top,
+.home3d-model.house3d .face-top,
+.home3d-model.mansion .face-top {
+  overflow: visible;
+  background: #293b56;
+  border-color: #172943;
+  box-shadow: 0 10px 18px rgba(23,41,67,.2);
+}
+
+.home3d-model.cabin3d .face-top:after,
+.home3d-model.house3d .face-top:after,
+.home3d-model.mansion .face-top:after {
+  content: "";
+  position: absolute;
+  inset: -13px;
+  background: inherit;
+  border: 2px solid #172943;
+  clip-path: polygon(9% 0, 91% 0, 100% 100%, 0 100%);
+}
+
+.home3d-model.mansion .face-top { background: #766985; }
+
+/* Distinct architecture for every progression stage. */
+.tent-detail,
+.trailer-detail,
+.cabin-detail,
+.apartment-detail,
+.house-detail,
+.mansion-detail { display: none; }
+
+.home3d-model { top: 45%; }
+.home3d-wrap.compact .home3d-model { top: 49%; }
+.home3d-ground { transform: translate(-50%,-50%) rotateX(90deg) translateZ(-34px); }
+
+/* Tent: a closed triangular prism, so every rotation has a complete shell. */
+.home3d-model.tent { --w: 150px; --h: 100px; --d: 108px; top: 51%; }
+.tent .building-face,
+.tent .roof3d,
+.tent .chimney3d { display: none; }
+.tent .tent-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.tent-gable { position: absolute; display: block; width: 150px; height: 100px; left: 50%; top: 50%; clip-path: polygon(50% 0,100% 100%,0 100%); background: #d77858; filter: drop-shadow(0 2px 0 #26364a); backface-visibility: visible; }
+.tent-gable-front { transform: translate(-50%,-50%) translateZ(54px); }
+.tent-gable-back { transform: translate(-50%,-50%) rotateY(180deg) translateZ(54px); background: #b85f4d; }
+.tent-slope { position: absolute; display: block; width: 125px; height: 108px; left: 50%; top: 50%; background: #c96f53; border: 2px solid #26364a; box-shadow: 0 8px 14px rgba(23,41,67,.16); backface-visibility: visible; }
+.tent-slope-left { transform: translate(-50%,-50%) translateX(-37.5px) rotateZ(-53.13deg) rotateX(90deg); background: #b9604c; }
+.tent-slope-right { transform: translate(-50%,-50%) translateX(37.5px) rotateZ(53.13deg) rotateX(90deg); background: #dc825e; }
+.tent-flap { position: absolute; display: block; z-index: 3; width: 48px; height: 67px; left: 50%; top: 38px; transform: translateX(-50%) translateZ(56px); clip-path: polygon(50% 0,100% 100%,0 100%); background: #26364a; }
+.tent-flap:after { content: ""; position: absolute; inset: 8px 7px 0; clip-path: inherit; background: #edb55c; }
+
+/* Trailer: long rounded camper body, wheels, stripe and tow hitch. */
+.home3d-model.trailer { --w: 192px; --h: 82px; --d: 80px; top: 49%; --wall-front: #ded1ab; --wall-side: #aaa98e; --wall-light: #efe1ba; }
+.trailer .face-front,
+.trailer .face-back { border-radius: 31px 31px 8px 8px; overflow: hidden; }
+.trailer .face-left,
+.trailer .face-right { border-radius: 16px 16px 6px 6px; }
+.trailer:before,
+.trailer:after { display: none; }
+.trailer .trailer-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.trailer-stripe { position: absolute; display: block; width: 188px; height: 13px; left: 50%; top: 45px; background: #d16f56; clip-path: polygon(0 18%,100% 0,100% 70%,0 100%); }
+.trailer-stripe-near { transform: translateX(-50%) translateZ(42px); }
+.trailer-stripe-far { transform: translateX(-50%) rotateY(180deg) translateZ(42px); background: #b95f4d; }
+.trailer-hitch { position: absolute; display: block; width: 42px; height: 9px; left: 100%; bottom: 4px; transform: translateZ(8px); background: #26364a; clip-path: polygon(0 20%,82% 20%,100% 100%,78% 100%,68% 55%,0 55%); }
+.trailer .wheel { position: absolute; display: block; width: 35px; height: 35px; bottom: -27px; border: 7px solid #d6cdb8; border-radius: 50%; background: #26364a; box-shadow: inset 0 0 0 3px #6f766f; backface-visibility: visible; }
+.trailer .wheel-near-left { left: 26px; transform: translateZ(43px); }.trailer .wheel-near-right { right: 26px; transform: translateZ(43px); }
+.trailer .wheel-far-left { left: 26px; transform: rotateY(180deg) translateZ(43px); }.trailer .wheel-far-right { right: 26px; transform: rotateY(180deg) translateZ(43px); }
+.trailer .door3d { left: 76%; height: 62px; background: #a8b4ab; }.trailer .window-left { left: 16px; width: 46px; }.trailer .window-right { right: 69px; width: 38px; }
+.trailer .face-back:before,
+.trailer .face-back:after { content: ""; position: absolute; width: 42px; height: 29px; top: 23px; background: #f6dda0; border: 3px solid #26364a; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
+.trailer .face-back:before { left: 24px; }.trailer .face-back:after { right: 24px; }
+
+/* Cabin: log walls with a closed, symmetrical gable roof. */
+.home3d-model.cabin3d { --w: 154px; --h: 108px; --d: 112px; top: 44%; }
+.cabin3d .face-front { background: repeating-linear-gradient(0deg,#b96b46 0 15px,#8b4f38 15px 18px); }
+.cabin3d .face-back { background: repeating-linear-gradient(0deg,#754334 0 15px,#54332b 15px 18px); }
+.cabin3d .face-left { background: repeating-linear-gradient(0deg,#804936 0 15px,#603a30 15px 18px); }
+.cabin3d .face-right { background: repeating-linear-gradient(0deg,#cc7950 0 15px,#99533b 15px 18px); }
+.home3d-model.cabin3d .face-top,
+.home3d-model.cabin3d .face-top:after { background: transparent; border: 0; box-shadow: none; }
+.cabin3d .cabin-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.cabin-gable { position: absolute; display: block; width: 154px; height: 54px; left: 50%; top: -54px; clip-path: polygon(50% 0,100% 100%,0 100%); background: repeating-linear-gradient(0deg,#a75e41 0 15px,#744333 15px 18px); filter: drop-shadow(0 2px 0 #172943); backface-visibility: visible; }
+.cabin-gable-front { transform: translateX(-50%) translateZ(57px); }
+.cabin-gable-back { transform: translateX(-50%) rotateY(180deg) translateZ(57px); background: #704235; }
+.cabin-roof-plane { position: absolute; display: block; width: 94px; height: 136px; left: 50%; top: -27px; background: #293b56; border: 2px solid #172943; box-shadow: 0 10px 14px rgba(23,41,67,.2); backface-visibility: visible; }
+.cabin-roof-left { transform: translate(-50%,-50%) translateX(-38.5px) rotateZ(-35.05deg) rotateX(90deg); background: #354b67; }
+.cabin-roof-right { transform: translate(-50%,-50%) translateX(38.5px) rotateZ(35.05deg) rotateX(90deg); }
+.cabin3d .face-back:before,
+.cabin3d .face-back:after { content: ""; position: absolute; width: 25px; height: 29px; top: 31px; background: #f6dda0; border: 3px solid #26364a; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
+.cabin3d .face-back:before { left: 22px; }.cabin3d .face-back:after { right: 22px; }
+
+/* Apartment: tall urban block with stacked projecting balconies. */
+.home3d-model.apartment { --w: 142px; --h: 176px; --d: 108px; top: 34%; }
+.apartment .apartment-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.apartment .apartment-detail span { position: absolute; display: block; width: 118px; height: 9px; left: 50%; transform: translateX(-50%) translateZ(63px); background: #e4d7b9; border: 2px solid #26364a; }
+.apartment .apartment-detail span:nth-child(1) { top: 39px; }.apartment .apartment-detail span:nth-child(2) { top: 78px; }.apartment .apartment-detail span:nth-child(3) { top: 117px; }
+.apartment .face-front { background: linear-gradient(90deg,#9485a3 0 12%,#aa98b5 12% 88%,#887a97 88%); }
+.apartment .face-back:before { content: ""; position: absolute; width: 22px; height: 24px; left: 25px; top: 24px; background: #f6dda0; border: 3px solid #26364a; box-shadow: 64px 0 0 -3px #f6dda0,64px 0 0 0 #26364a,0 48px 0 -3px #f6dda0,0 48px 0 0 #26364a,64px 48px 0 -3px #f6dda0,64px 48px 0 0 #26364a,0 96px 0 -3px #f6dda0,0 96px 0 0 #26364a,64px 96px 0 -3px #f6dda0,64px 96px 0 0 #26364a; }
+
+/* House: broad suburban frontage with garage and porch. */
+.home3d-model.house3d { --w: 188px; --h: 116px; --d: 120px; top: 43%; }
+.house3d .house-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.house3d .garage { position: absolute; display: block; width: 70px; height: 57px; left: 9px; bottom: 0; transform: translateZ(62px); background: repeating-linear-gradient(0deg,#e5d8b9 0 12px,#c1aa82 12px 14px); border: 3px solid #26364a; }
+.house3d .porch { position: absolute; display: block; width: 67px; height: 10px; right: 5px; bottom: -9px; transform: translateZ(70px); background: #93634d; border: 2px solid #26364a; }
+.house3d .window-left { display: none; }.house3d .door3d { left: 71%; }
+.house3d .face-back:before { content: ""; position: absolute; width: 53px; height: 51px; left: 25px; bottom: -2px; background: linear-gradient(90deg,#f6dda0 0 47%,#26364a 47% 53%,#f6dda0 53%); border: 3px solid #26364a; }
+.house3d .face-back:after { content: ""; position: absolute; width: 29px; height: 31px; right: 28px; top: 29px; background: #f6dda0; border: 3px solid #26364a; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
+
+/* Mansion: symmetrical facade, wings, balcony and four columns. */
+.home3d-model.mansion { --w: 224px; --h: 144px; --d: 128px; top: 38%; }
+.mansion .balcony3d { top: 16px; height: 27px; }
+.mansion .mansion-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.mansion .mansion-detail span { position: absolute; display: block; width: 9px; height: 82px; top: 52px; transform: translateZ(69px); background: #fff0c9; border: 2px solid #8c7b64; box-shadow: 0 -7px 0 #d9c89e, 0 7px 0 #bba77e; }
+.mansion .mansion-detail span:nth-child(1) { left: 27px; }.mansion .mansion-detail span:nth-child(2) { left: 70px; }.mansion .mansion-detail span:nth-child(3) { right: 70px; }.mansion .mansion-detail span:nth-child(4) { right: 27px; }
+.mansion .face-front { background: linear-gradient(90deg,#c7b88f 0 18%,#e1d2aa 18% 82%,#c7b88f 82%); }
+.mansion .face-back:before { content: ""; position: absolute; width: 26px; height: 29px; left: 33px; top: 28px; background: #f6dda0; border: 3px solid #26364a; box-shadow: 62px 0 0 -3px #f6dda0,62px 0 0 0 #26364a,124px 0 0 -3px #f6dda0,124px 0 0 0 #26364a; }
+.mansion .face-back:after { content: ""; position: absolute; width: 58px; height: 61px; left: 50%; bottom: -2px; transform: translateX(-50%); background: linear-gradient(90deg,#f6dda0 0 47%,#26364a 47% 53%,#f6dda0 53%); border: 3px solid #26364a; }
+
+@media (max-width: 430px) {
+  .home3d-wrap.compact .home3d-model { top: 48%; }
+  .home3d-wrap.compact .home3d-model.apartment { top: 34%; }
+  .home3d-wrap.compact .home3d-model.mansion { top: 37%; }
+}
+
+
+/* The House now uses the Cabin's complete pitched-roof construction. */
+.home3d-model.house3d .face-top,
+.home3d-model.house3d .face-top:after {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.home3d-model.house3d { top: 50%; }
+.house3d .cabin-detail {
+  display: block;
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.house3d .cabin-gable {
+  width: 188px;
+  height: 62px;
+  top: -62px;
+  background: #d2ad70;
+}
+.house3d .cabin-gable-front { transform: translateX(-50%) translateZ(62px); }
+.house3d .cabin-gable-back { transform: translateX(-50%) rotateY(180deg) translateZ(62px); background: #a57e55; }
+.house3d .cabin-roof-plane {
+  width: 114px;
+  height: 146px;
+  top: -31px;
+  background: #293b56;
+}
+.house3d .cabin-roof-left {
+  transform: translate(-50%,-50%) translateX(-47px) rotateZ(-33.4deg) rotateX(90deg);
+  background: #354b67;
+}
+.house3d .cabin-roof-right {
+  transform: translate(-50%,-50%) translateX(47px) rotateZ(33.4deg) rotateX(90deg);
+}
+
+/* A larger, more ceremonial final Mansion with pediment, balcony and steps. */
+.home3d-model.mansion {
+  --w: 260px;
+  --h: 160px;
+  --d: 144px;
+  top: 55%;
+}
+.home3d-model.mansion .face-top,
+.home3d-model.mansion .face-top:after {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.mansion .cabin-detail {
+  display: block;
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.mansion .cabin-gable {
+  width: 260px;
+  height: 60px;
+  top: -60px;
+  background: #d8c89d;
+}
+.mansion .cabin-gable-front { transform: translateX(-50%) translateZ(74px); }
+.mansion .cabin-gable-back { transform: translateX(-50%) rotateY(180deg) translateZ(74px); background: #a99b7d; }
+.mansion .cabin-roof-plane {
+  width: 144px;
+  height: 170px;
+  top: -30px;
+  background: #766985;
+  border-color: #3e3a51;
+}
+.mansion .cabin-roof-left {
+  transform: translate(-50%,-50%) translateX(-65px) rotateZ(-24.8deg) rotateX(90deg);
+  background: #655d7c;
+}
+.mansion .cabin-roof-right {
+  transform: translate(-50%,-50%) translateX(65px) rotateZ(24.8deg) rotateX(90deg);
+}
+.mansion .chimney3d { display: none; }
+.mansion .face-front {
+  background: linear-gradient(90deg,#bdac83 0 16%,#e4d5ad 16% 84%,#bdac83 84%);
+}
+.mansion .window3d { top: 103px; width: 31px; height: 34px; }
+.mansion .window-left { left: 29px; }
+.mansion .window-right { right: 29px; }
+.mansion .upper-windows span { width: 29px; height: 29px; top: 25px; }
+.mansion .upper-windows span:nth-child(1) { left: 31px; }
+.mansion .upper-windows span:nth-child(3) { right: 31px; }
+.mansion .door3d { width: 44px; height: 70px; }
+.mansion .side-window { top: 75px; width: 34px; height: 36px; }
+.mansion .balcony3d {
+  width: 150px;
+  height: 34px;
+  top: 19px;
+  transform: translateX(-50%) translateZ(82px);
+}
+.mansion .mansion-detail span {
+  width: 11px;
+  height: 94px;
+  top: 57px;
+  transform: translateZ(81px);
+  box-shadow: 0 -8px 0 #d9c89e, 0 8px 0 #bba77e;
+}
+.mansion .mansion-detail span:nth-child(1) { left: 32px; }
+.mansion .mansion-detail span:nth-child(2) { left: 84px; }
+.mansion .mansion-detail span:nth-child(3) { right: 84px; }
+.mansion .mansion-detail span:nth-child(4) { right: 32px; }
+.mansion .mansion-detail:before {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 154px;
+  height: 48px;
+  left: 50%;
+  top: -42px;
+  transform: translateX(-50%) translateZ(78px);
+  clip-path: polygon(50% 0,100% 100%,0 100%);
+  background: #e4d5ad;
+  filter: drop-shadow(0 3px 0 #8c7b64);
+}
+.mansion .mansion-detail:after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 122px;
+  height: 24px;
+  left: 50%;
+  bottom: -24px;
+  transform: translateX(-50%) translateZ(87px);
+  background: repeating-linear-gradient(0deg,#b7a37d 0 6px,#e5d7b4 6px 10px);
+  border: 2px solid #8c7b64;
+  clip-path: polygon(10% 0,90% 0,100% 100%,0 100%);
+}
+.mansion .face-back:before {
+  left: 33px;
+  box-shadow: 84px 0 0 -3px #f6dda0,84px 0 0 0 #26364a,168px 0 0 -3px #f6dda0,168px 0 0 0 #26364a;
+}
+.mansion .face-back:after { width: 68px; height: 70px; }
+.home3d-turntable:has(.mansion) .home3d-ground {
+  width: 292px;
+  height: 292px;
+  top: 72%;
+}
+
+/* Seat every stage on the horizontal ground plane, including wheels and porches. */
+.home3d-model.tent { top: 56%; }
+.home3d-model.trailer { top: 51%; }
+.home3d-model.cabin3d { top: 55%; }
+.home3d-model.apartment { top: 45%; }
+.home3d-model.house3d { top: 51%; }
+
+@media (max-width: 370px) {
+  .home3d-model.mansion { transform: translate(-50%,-50%) scale(.84); }
+}
+
+
+/* The compact Today preview uses the same cabin scale and ground contact as Connect. */
+.home-card > .home3d-wrap.compact .home3d-model.cabin3d {
+  top: 55%;
+  transform: translate(-50%,-50%);
+}
+.home-card > .home3d-wrap.compact .home3d-ground {
+  width: 245px;
+  height: 245px;
+}

@@ -1,0 +1,112 @@
+* { box-sizing: border-box; }
+html { background: #ded8cc; }
+body { margin: 0; background: #ded8cc; color: var(--navy); font-family: var(--font-sans); }
+button { color: inherit; font: inherit; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+.app-shell { min-height: 100dvh; max-width: 1120px; margin: auto; background: var(--cream); position: relative; overflow-x: hidden; }
+.paper-noise { position: fixed; inset: 0; pointer-events: none; z-index: 20; opacity: .16; background-image: radial-gradient(rgba(23,41,67,.35) .45px, transparent .55px); background-size: 5px 5px; mix-blend-mode: multiply; }
+.screen { min-height: 100dvh; padding: 22px 18px 116px; animation: pageIn var(--dur-base) var(--ease-out); }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; max-width: 1040px; margin: auto; }
+.brand { font-family: Impact, "Arial Narrow", sans-serif; display: flex; align-items: end; gap: 5px; font-stretch: condensed; font-weight: 900; letter-spacing: 0; line-height: .84; font-size: 23px; white-space: nowrap; }
+.brand span { display: block; color: var(--coral); }
+.header-person { display: flex; align-items: center; gap: 9px; padding: 0; border: 0; background: transparent; text-align: right; cursor: pointer; font-size: 12px; font-weight: 700; }
+.header-person > span { display: grid; gap: 1px; }.header-person small { color: var(--coral); font-size: 12px; font-weight: 800; }
+.avatar { --avatar-color: var(--coral); --skin: #d99a70; --hair: #172943; --avatar-bg: #efd8bd; display: inline-block; width: 50px; height: 50px; border-radius: 50%; position: relative; background: var(--avatar-bg); overflow: hidden; flex: 0 0 auto; box-shadow: inset 0 0 0 2px rgba(23,41,67,.08); }
+.avatar-small { width: 34px; height: 34px; }
+.avatar-coral { --avatar-color: var(--coral); }.avatar-blue { --avatar-color: var(--blue); }.avatar-gold { --avatar-color: var(--gold); }.avatar-sage { --avatar-color: var(--sage); }.avatar-violet { --avatar-color: var(--violet); }
+.skin-light { --skin: #f0c7a2; }.skin-golden { --skin: #dba06d; }.skin-warm { --skin: #b97856; }.skin-deep { --skin: #78482f; }
+.avatar-back-hair { position: absolute; z-index: 1; width: 67%; height: 59%; left: 16.5%; top: 7%; border-radius: 48% 48% 42% 42%; background: transparent; }
+.avatar-ears { position: absolute; z-index: 3; width: 64%; height: 15%; left: 18%; top: 39%; border-radius: 50%; background: var(--skin); }
+.avatar-face { position: absolute; z-index: 4; width: 52%; height: 45%; left: 24%; top: 21%; border-radius: 44% 44% 48% 48%; background: var(--skin); }
+.avatar-face i { position: absolute; width: 4%; aspect-ratio: 1; border-radius: 50%; background: var(--navy); top: 44%; left: 28%; }.avatar-face i + i { left: 68%; }
+.avatar-face b { position: absolute; width: 16%; height: 7%; left: 42%; bottom: 15%; border-bottom: 1px solid rgba(23,41,67,.55); border-radius: 50%; }
+.avatar-hair { position: absolute; z-index: 5; width: 70%; height: 37%; background: var(--hair); border-radius: 62% 46% 48% 22%; left: 15%; top: 5%; transform: rotate(-5deg); }
+.avatar-body { position: absolute; z-index: 2; width: 82%; height: 51%; border-radius: 50% 50% 0 0; background: var(--avatar-color); left: 9%; bottom: -26%; }
+
+.hair-curls .avatar-hair { width: 64%; height: 33%; left: 18%; top: 7%; border-radius: 48%; transform: none; box-shadow: -8px 3px 0 -2px var(--hair),8px 3px 0 -2px var(--hair),-4px -4px 0 -2px var(--hair),5px -5px 0 -2px var(--hair); }
+.hair-curls .avatar-back-hair { background: var(--hair); width: 72%; height: 51%; left: 14%; top: 10%; }
+.hair-bob .avatar-back-hair { background: var(--hair); width: 72%; height: 59%; left: 14%; top: 7%; border-radius: 45% 45% 24% 24%; }
+.hair-bob .avatar-hair { width: 67%; height: 34%; left: 16%; border-radius: 58% 48% 34% 20%; }
+.hair-bun .avatar-hair { width: 65%; height: 34%; left: 18%; top: 7%; border-radius: 60% 54% 30% 30%; transform: none; }
+.hair-bun .avatar-hair:after { content: ""; position: absolute; width: 34%; aspect-ratio: 1; left: 33%; top: -42%; border-radius: 50%; background: var(--hair); }
+.hair-bald .avatar-hair { width: 27%; height: 26%; left: 12%; top: 18%; border-radius: 80% 18% 55% 18%; transform: rotate(-14deg); }
+.hair-bald .avatar-hair:after { content: ""; position: absolute; width: 100%; height: 100%; left: 184%; top: 10%; border-radius: 18% 80% 18% 55%; background: var(--hair); transform: rotate(26deg); }
+.hair-waves .avatar-back-hair { background: var(--hair); width: 76%; height: 62%; left: 12%; top: 6%; border-radius: 50% 50% 30% 30%; }
+.hair-waves .avatar-hair { width: 69%; height: 39%; left: 15%; top: 4%; border-radius: 55% 58% 45% 30%; transform: rotate(4deg); }
+.hair-graybun { --hair: #7c8588; }
+.hair-graybun .avatar-back-hair { background: var(--hair); width: 65%; height: 48%; left: 18%; top: 11%; border-radius: 44%; }
+.hair-graybun .avatar-hair { width: 62%; height: 31%; left: 19%; top: 10%; border-radius: 60% 60% 30% 30%; transform: none; }
+.hair-graybun .avatar-hair:after { content: ""; position: absolute; width: 38%; aspect-ratio: 1; left: 31%; top: -48%; border-radius: 50%; background: var(--hair); }
+.avatar-beard { position: absolute; z-index: 5; width: 48%; height: 28%; left: 26%; top: 46%; border-radius: 15% 15% 48% 48%; background: var(--hair); clip-path: polygon(0 0,18% 19%,50% 8%,82% 19%,100% 0,91% 69%,50% 100%,9% 69%); }
+.avatar-glasses { position: absolute; z-index: 7; width: 18%; height: 14%; left: 26%; top: 38%; border: 1.5px solid var(--navy); border-radius: 34%; }
+.avatar-glasses:before { content: ""; position: absolute; width: 100%; height: 100%; left: 148%; top: -1.5px; border: 1.5px solid var(--navy); border-radius: 34%; }
+.avatar-glasses:after { content: ""; position: absolute; width: 48%; height: 1.5px; left: 100%; top: 43%; background: var(--navy); }
+.gender-male .avatar-face { width: 55%; left: 22.5%; border-radius: 40% 40% 45% 45%; }
+.gender-female .avatar-face { border-radius: 48% 48% 52% 52%; }
+.face-narrow .avatar-face { width: 43%; left: 28.5%; border-radius: 47% 47% 50% 50%; }
+.face-normal .avatar-face { width: 52%; left: 24%; }
+.face-round .avatar-face { width: 61%; height: 49%; left: 19.5%; top: 20%; border-radius: 50%; }
+.avatar-preview { width: 112px; height: 112px; box-shadow: inset 0 0 0 3px rgba(23,41,67,.1), 0 10px 24px rgba(23,41,67,.12); }
+.eyebrow { margin: 0 0 8px; letter-spacing: .18em; font-size: 11px; font-weight: 900; color: var(--coral); } /* decorative */
+.hero-copy .eyebrow { font-size: 12px; }
+.hero-copy, .page-title, .connect-title { max-width: 720px; margin: 44px auto 22px; }
+.hero-copy h1, .page-title h1, .connect-title h1 { font-family: Georgia, serif; margin: 0; font-size: clamp(38px, 9vw, 64px); line-height: .98; font-weight: 500; letter-spacing: -.045em; }
+.hero-copy > p:last-child, .page-title > p:last-child, .connect-title > p:last-child { color: var(--ink-muted); font-size: 15px; line-height: 1.55; margin: 16px 0 0; }
+
+.primary-button { width: 100%; min-height: 55px; border: 0; padding: 0 17px; display: flex; justify-content: space-between; align-items: center; background: var(--navy); color: #fff; border-radius: 3px; cursor: pointer; font-weight: 800; font-size: 14px; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }.primary-button:active { transform: scale(.98); }.primary-button:disabled { opacity: .55; cursor: not-allowed; }.primary-button span { font-size: 20px; }
+
+/* Interaction baseline (Task 3): hover only for fine-pointer devices that can
+   actually hover; every control also gets :focus-visible (the generic
+   button:focus-visible rule above covers plain <button>s; non-button
+   controls get their own below), :active press feedback, and a :disabled
+   state that drops the hover lift without needing extra markup. */
+@media (hover: hover) and (pointer: fine) {
+  .primary-button:not(:disabled):hover { background: #223d60; }
+  .secondary-link:hover { color: var(--coral); }
+  .header-person:hover .avatar { box-shadow: inset 0 0 0 2px rgba(23, 41, 67, .08), 0 0 0 2px var(--line-strong); }
+  .close-button:hover { color: var(--coral); }
+  .picker-option:not(.selected):hover { border-color: var(--line-strong); }
+  .bottom-nav button:not(.active):hover { color: var(--navy); }
+  .calendar-grid > button:hover { background: #ffe9dc; }
+}
+
+.secondary-link:focus-visible,
+.header-person:focus-visible,
+.close-button:focus-visible,
+.picker-option:focus-visible,
+.calendar-grid > button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.secondary-link:active,
+.header-person:active,
+.close-button:active,
+.picker-option:active,
+.bottom-nav button:active,
+.calendar-grid > button:active {
+  transform: translateY(1px);
+}
+
+.progress-track { width: 100%; height: 9px; background: #e2d9c9; border-radius: 20px; overflow: hidden; }.progress-track span { display: block; height: 100%; background: var(--gold); border-radius: inherit; transition: width .7s cubic-bezier(.2,.8,.2,1); }.progress-track.pale span { background: var(--sage); }
+
+@media (min-width: 760px) {
+  .screen { padding: 32px 42px 125px; }
+  .topbar { padding: 0; }
+  .hero-copy, .page-title, .connect-title { text-align: center; margin-top: 62px; }
+}
+
+@media (max-width: 370px) {
+  .screen { padding-left: 14px; padding-right: 14px; }.hero-copy h1, .page-title h1, .connect-title h1 { font-size: 35px; }
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.secondary-link { display: flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; margin: 22px auto 0; max-width: 720px; color: var(--navy); font-size: 12px; font-weight: 700; text-decoration: underline; }
+.error-note { color: var(--coral); font-size: 12px; font-weight: 700; margin: 10px 0 0; }
+
+/* 44px touch floor (Task 12): the header avatar button and the profile card
+   link-button measured 35px and 21px tall. */
+.header-person { min-height: 44px; }

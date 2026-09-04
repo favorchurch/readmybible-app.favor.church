@@ -1,14 +1,14 @@
 /**
  * Rock RMS role and group type IDs. These are PRODUCTION values from
  * rock.favor.church. rock-preview.favor.church has a separate, unsynced
- * database and these IDs are NOT guaranteed to match there — do not assume
+ * database and these IDs are NOT guaranteed to match there: do not assume
  * preview parity when testing against it.
  */
 
 /** GroupTypeId for a Connect Group (GT25). */
 export const GROUP_TYPE_CONNECT_GROUP = 25;
 
-/** GroupTypeId for a Connect section (GT24) — leaders/departments/clusters/regions. */
+/** GroupTypeId for a Connect section (GT24): leaders, departments, clusters, regions. */
 export const GROUP_TYPE_SECTION = 24;
 
 /** GroupRoleId values within a Connect Group (GT25). */

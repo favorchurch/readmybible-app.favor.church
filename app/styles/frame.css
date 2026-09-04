@@ -1,0 +1,68 @@
+/*
+ * Page-frame vocabulary (Task 3). A frame sets the outer content width for a
+ * screen; frame__main / frame__rail are its two grid children when a rail
+ * exists. Additive breakpoints: 480, 768, 1024 (the existing 360-389 range
+ * keeps behaving via the pre-existing max-width: 370px rules elsewhere).
+ */
+
+.frame {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.frame--focused {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.frame__span {
+  grid-column: 1 / -1;
+}
+
+.frame--rail {
+  display: block;
+}
+
+.frame--rail > .frame__main {
+  min-width: 0;
+}
+
+/* A screen's <header class="topbar"> is sometimes a direct child of
+   .frame--rail (Connect, Progress) rather than nested one level up
+   (Today). As a bare grid item it inherits its centering margin: auto
+   from base.css, and a grid item with inline auto margins sizes to
+   fit-content instead of stretching -- the same trap Task 9 hit and
+   fixed locally in connect.css. Progress hit it again at phone widths,
+   where its rail container is a flex column and the header shrinks to
+   its content and centers. Fixed once here, at every width, so it cannot
+   recur per screen. grid-column is inert outside the grid breakpoint. */
+.frame--rail > .topbar {
+  grid-column: 1 / -1;
+  margin-inline: 0;
+}
+
+@media (min-width: 1024px) {
+  .frame--rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  /* No rail content: collapse to a single column instead of reserving an
+     empty second track (the bug this frame exists to prevent). */
+  .frame--rail:not(:has(> .frame__rail)),
+  .frame--rail:has(> .frame__rail:empty) {
+    grid-template-columns: 1fr;
+  }
+
+  /* The fixed .bottom-nav floats over the last ~100px of the viewport.
+     Progress already reserved extra scroll clearance for this
+     (app/styles/progress.css); applied here to every screen with a rail so
+     Today and a leader's Connect get the same clearance once, not per
+     screen. */
+  .screen:has(> .frame--rail),
+  .frame--rail.screen {
+    padding-bottom: 140px;
+  }
+}

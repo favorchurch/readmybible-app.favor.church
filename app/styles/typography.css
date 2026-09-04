@@ -1,0 +1,104 @@
+/* Minimal sans-serif type system */
+.hero-copy h1,
+.page-title h1,
+.connect-title h1,
+.reading-main h2,
+.section-heading h2,
+.stage-row,
+.big-home-info h2,
+.reward > strong,
+.next-reward h2,
+.chapter-ring b,
+.stat-copy h2,
+.modal-sheet h2,
+.passage-note {
+  font-family: var(--font-display);
+}
+
+.hero-copy h1,
+.page-title h1,
+.connect-title h1 {
+  font-weight: 700;
+  letter-spacing: -.055em;
+}
+
+.reading-main h2,
+.section-heading h2,
+.big-home-info h2,
+.next-reward h2,
+.stat-copy h2,
+.modal-sheet h2 {
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.daily-note,
+.gentle-note {
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* Agharti is a lowercase-only display treatment. */
+.hero-copy h1,
+.page-title h1,
+.connect-title h1,
+.reading-main h2,
+.section-heading h2,
+.big-home-info h2,
+.next-reward h2,
+.stat-copy h2,
+.modal-sheet h2,
+.journey-heading h2 {
+  text-transform: lowercase;
+}
+
+.brand,
+.chapter-mark,
+.reading-prompt > span {
+  font-family: var(--font-display);
+}
+
+.brand { text-transform: lowercase; letter-spacing: 0; }
+
+
+/* Typography refinement: Agharti is reserved for large display moments. */
+body { letter-spacing: .008em; line-height: 1.4; }
+
+.hero-copy h1,
+.page-title h1,
+.connect-title h1 {
+  font-family: var(--font-display);
+  text-transform: lowercase;
+  line-height: 1.08;
+  letter-spacing: .012em;
+  word-spacing: .06em;
+}
+
+.reading-main h2,
+.section-heading h2,
+.stage-row,
+.big-home-info h2,
+.reward > strong,
+.next-reward h2,
+.chapter-ring b,
+.stat-copy h2,
+.modal-sheet h2,
+.passage-note,
+.journey-heading h2 {
+  font-family: var(--font-sans);
+  text-transform: none;
+  letter-spacing: -.018em;
+  line-height: 1.2;
+}
+
+.section-heading h2 { max-width: 270px; font-size: 21px; }
+.reading-main h2 { letter-spacing: -.03em; }
+.stage-row { align-items: baseline; gap: 20px; font-size: 13px; line-height: 1.25; }
+.stage-row > span,
+.stage-row > strong { white-space: nowrap; }
+.stage-row span + span:before { letter-spacing: .08em; margin-right: 5px; }
+.home-info { padding-top: 17px; }
+.home-info .progress-track { margin-top: 11px; }
+.stage-row.detail { margin-top: 10px; letter-spacing: .01em; }
