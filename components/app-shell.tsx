@@ -140,6 +140,12 @@ export function AppShell(props: AppShellProps) {
     setFlowStep(1);
   }
 
+  function replayCelebration(chapter: number) {
+    setFlowChapter(chapter);
+    setFlowGroupResult(null);
+    setFlowStep(2);
+  }
+
   async function finishReading() {
     if (flowChapter === null) return;
     setPending(true);
@@ -230,6 +236,7 @@ export function AppShell(props: AppShellProps) {
           roster={props.roster}
           profile={profile}
           onStart={startReading}
+          onReplayCelebration={replayCelebration}
           onEditProfile={() => setProfileOpen(true)}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}

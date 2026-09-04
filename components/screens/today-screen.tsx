@@ -43,6 +43,7 @@ export function TodayScreen({
   roster,
   profile,
   onStart,
+  onReplayCelebration,
   onEditProfile,
   onViewConnect,
   onViewProgress,
@@ -58,6 +59,7 @@ export function TodayScreen({
   roster: RosterMemberView[];
   profile: UserProfile;
   onStart: (chapter: number) => void;
+  onReplayCelebration: (chapter: number) => void;
   onEditProfile: () => void;
   onViewConnect: () => void;
   onViewProgress: () => void;
@@ -321,7 +323,10 @@ export function TodayScreen({
                   <strong>Matthew {entry.chapter}</strong>
                 </button>
               )}
-              <button className="primary-button today-reading-button" onClick={() => onStart(entry.chapter)}>
+              <button
+                className="primary-button today-reading-button"
+                onClick={() => (alreadyRead ? onReplayCelebration(entry.chapter) : onStart(entry.chapter))}
+              >
                 <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
                 <span className="button-arrow" aria-hidden="true">→</span>
               </button>
