@@ -15,17 +15,25 @@
   line-height: 1.45;
 }
 
+/* The version pill reads as part of the reference, so it sits immediately
+   after the title rather than pushed to the sheet's far edge. line-height: 1
+   collapses the h2's box to its glyphs so `align-items: center` lines the pill
+   up on the title's ink instead of on Georgia's leading. */
 .scripture-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  /* .close-button floats right at 44px, and a flex container will not overlap a
+     float -- it shrinks. Clearing it reclaims the full content width, which is
+     what lets the title and the pill share one row on a 430px phone. */
+  clear: right;
 }
+.scripture-heading h2 { line-height: 1; }
 .translation-select {
   margin: 0;
   flex-shrink: 0;
-  padding: 10px 26px 10px 12px;
+  padding: 10px 22px 10px 10px;
   min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 22px;
