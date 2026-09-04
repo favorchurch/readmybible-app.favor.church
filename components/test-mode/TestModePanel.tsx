@@ -19,7 +19,7 @@ export function TestModePanel({
   state: TestModeState;
   onChange: (next: TestModeState) => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
     <div className="test-mode-panel" data-section="test-mode-panel" role="region" aria-label="Test mode">
