@@ -15,17 +15,20 @@
   line-height: 1.45;
 }
 
-.translation-badge {
+.translation-select {
   display: inline-block;
   margin: 8px 0 14px;
-  padding: 3px 9px;
+  padding: 7px 28px 7px 12px;
+  min-height: 32px;
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--paper);
   color: var(--ink-muted);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .08em;
+  cursor: pointer;
 }
 .scripture-sheet .secondary-link { display: inline-block; margin-top: 18px; }
 .passage-attribution {

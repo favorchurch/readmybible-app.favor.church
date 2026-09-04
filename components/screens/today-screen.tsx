@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { Avatar, avatarSeedFor, defaultAvatarConfig, type UserProfile } from "@/components/avatar";
+import { Avatar, avatarSeedFor, defaultAvatarConfig, type Translation, type UserProfile } from "@/components/avatar";
 import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScripturePopup } from "@/components/scripture-popup";
@@ -44,6 +44,7 @@ export function TodayScreen({
   onEditProfile,
   onViewConnect,
   onViewProgress,
+  onTranslationChange,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -58,6 +59,7 @@ export function TodayScreen({
   onEditProfile: () => void;
   onViewConnect: () => void;
   onViewProgress: () => void;
+  onTranslationChange: (translation: Translation) => void;
 }) {
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +82,7 @@ export function TodayScreen({
     <ScripturePopup
       passageRef={quickVerseEntry.keyPassage}
       translation={profile.translation}
+      onTranslationChange={onTranslationChange}
       onClose={() => {
         setQuickVerseOpen(false);
         quickVerseTriggerRef.current?.focus();

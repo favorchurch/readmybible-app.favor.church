@@ -153,6 +153,10 @@ export function AppShell(props: AppShellProps) {
     }
   }
 
+  function handleTranslationChange(translation: Translation) {
+    void handleSaveProfile({ ...profile, translation });
+  }
+
   async function handleSaveProfile(next: UserProfile) {
     setSavingProfile(true);
     setOptimisticProfile(next);
@@ -227,6 +231,7 @@ export function AppShell(props: AppShellProps) {
           onEditProfile={() => setProfileOpen(true)}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
+          onTranslationChange={handleTranslationChange}
         />
       )}
       {tab === "connect" && (
@@ -263,6 +268,7 @@ export function AppShell(props: AppShellProps) {
           profile={profile}
           onCatchUp={startReading}
           onEditProfile={() => setProfileOpen(true)}
+          onTranslationChange={handleTranslationChange}
         />
       )}
       <BottomNav tab={tab} onSelect={selectTab} />

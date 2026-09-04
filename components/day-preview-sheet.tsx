@@ -12,12 +12,14 @@ export function DayPreviewSheet({
   entry,
   isRead = false,
   translation = "NET",
+  onTranslationChange,
   onClose,
 }: {
   open: boolean;
   entry: PlanEntry | null;
   isRead?: boolean;
   translation?: Translation;
+  onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
@@ -71,6 +73,7 @@ export function DayPreviewSheet({
         <ScripturePopup
           passageRef={entry.keyPassage}
           translation={translation}
+          onTranslationChange={onTranslationChange}
           onClose={() => {
             setQuickVerseOpen(false);
             quickVerseTriggerRef.current?.focus();

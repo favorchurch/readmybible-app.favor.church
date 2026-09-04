@@ -4,16 +4,19 @@ import { useEffect, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
+import { TRANSLATIONS } from "@/lib/scripture/types";
 
 type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
 
 export function ScripturePopup({
   passageRef,
   translation,
+  onTranslationChange,
   onClose,
 }: {
   passageRef: string;
   translation: Translation;
+  onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
   const [state, setState] = useState<{ text: string | null; bibleComUrl: string; attribution: string } | "loading" | "error">("loading");
@@ -43,7 +46,18 @@ export function ScripturePopup({
       </button>
       <p className="eyebrow">QUICK VERSE</p>
       <h2 id="scripture-title">{passageRef}</h2>
-      <span className="translation-badge">{translation}</span>
+      <select
+        className="translation-select"
+        aria-label="Bible translation"
+        value={translation}
+        onChange={(event) => onTranslationChange(event.target.value as Translation)}
+      >
+        {TRANSLATIONS.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
       {state === "loading" && <p className="passage-note">Loading…</p>}
       {state === "error" && <p className="passage-note">Read this one at Bible.com.</p>}
       {state !== "loading" && state !== "error" && (
