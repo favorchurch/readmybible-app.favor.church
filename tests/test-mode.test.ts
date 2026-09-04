@@ -150,4 +150,21 @@ describe("guardWrite", () => {
 
     expect(action).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["a valid-shaped code", "ABCD"],
+    ["an invalid code", "ZZZZ"],
+  ])("does not call a join action for %s in test mode", async (_label, code) => {
+    const action = vi.fn(async (input: { code: string }) => ({
+      ok: true as const,
+      groupId: input.code.length,
+      outcome: "joined" as const,
+    }));
+    const guarded = guardWrite(true, action);
+
+    const result = await guarded({ code });
+
+    expect(action).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
 });
