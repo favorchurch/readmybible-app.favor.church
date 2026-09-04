@@ -34,11 +34,26 @@ describe("clock source of truth", () => {
     for (const path of files) {
       if (path === CLOCK_SOURCE_FILE) continue;
       const text = readFileSync(path, "utf8");
-      if (/getElementsByTagName\(\s*["']script["']\s*\)/.test(text) || /document\.scripts\b/.test(text)) {
+      // Any way of reaching <script> elements, not just the one spelling the
+      // historical scrape happened to use.
+      if (
+        /(getElementsByTagName|querySelectorAll|querySelector)\(\s*["'`]script\b/.test(text) ||
+        /document\.scripts\b/.test(text)
+      ) {
         violations.push(`${path}: reads <script> tags directly`);
       }
-      if (/devMockToday\s*\[\^0-9\]/.test(text)) {
-        violations.push(`${path}: regex-scrapes devMockToday out of serialized markup`);
+      // Any regex literal or RegExp source that searches for the serialized
+      // clock value, whatever the surrounding pattern looks like.
+      if (
+        /\/(?!\*)[^/\n]*\b(devMockToday|DEV_MOCK_TODAY)\b[^/\n]*\/[gimsuy]*/.test(text) ||
+        /RegExp\([^)]*(devMockToday|DEV_MOCK_TODAY)/.test(text)
+      ) {
+        violations.push(`${path}: regex-scrapes the clock value out of serialized markup`);
+      }
+      // The env var is read in exactly one place. A client-side
+      // NEXT_PUBLIC_ mirror of it is the other half of the lane B scrape.
+      if (/process\.env\.(NEXT_PUBLIC_)?DEV_MOCK_TODAY\b/.test(text)) {
+        violations.push(`${path}: reads DEV_MOCK_TODAY outside lib/dev-clock.ts`);
       }
     }
     expect(violations).toEqual([]);
