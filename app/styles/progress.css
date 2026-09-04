@@ -312,6 +312,7 @@
   font-weight: 700;
 }
 .progress-profile-copy button {
+  min-height: 44px; /* 44px touch floor (Task 12) */
   margin-top: 13px;
   padding: 0 0 3px;
   border: 0;

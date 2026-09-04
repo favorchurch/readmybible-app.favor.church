@@ -50,6 +50,7 @@
 .catchup-copy h2 { margin: 0; font-size: 14px; line-height: 1.2; }
 .catchup-copy > span { display: block; margin-top: 4px; color: var(--ink-muted); font-size: 12px; line-height: 1.35; }
 .catchup-card > button {
+  min-height: 44px; /* 44px touch floor (Task 12) */
   padding: 8px 0 4px;
   border: 0;
   border-bottom: 1px solid currentColor;
