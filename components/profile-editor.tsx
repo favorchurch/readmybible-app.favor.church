@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type Translation, type UserProfile } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
@@ -293,6 +294,10 @@ export function ProfileEditor({
             your private reading details.
           </p>
         </details>
+        <div className="profile-brand-footer" data-section="profile-brand-footer">
+          <Image src="/favor-logo-white.png" alt="Favor Church" width={28} height={31} />
+          <span>Read My Bible is a Favor Church ministry.</span>
+        </div>
     </Sheet>
   );
 }
