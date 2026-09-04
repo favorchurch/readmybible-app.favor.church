@@ -38,3 +38,8 @@ yarn-error.log*
 
 # typescript incremental build info
 tsconfig.tsbuildinfo
+
+# office run scratch and generated graphs
+/.office/
+/graphify-out/
+/.worktrees/

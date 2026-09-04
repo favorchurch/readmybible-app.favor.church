@@ -31,7 +31,7 @@ export default async function Page() {
 
   const profileRow = profileRows[0];
   const avatar = isAvatarConfig(profileRow?.avatar) ? profileRow.avatar : defaultAvatarConfig;
-  const translation = (profileRow?.translation as Translation | undefined) ?? "NET";
+  const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
   const props: AppShellProps = {
     displayName: profileRow?.displayName || session.displayName,

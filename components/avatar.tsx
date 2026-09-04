@@ -1,3 +1,8 @@
+import type { Translation } from "@/lib/scripture/types";
+
+/** Ten versions, per D1 -- lib/scripture/types.ts is the source of truth so this can't drift from it. */
+export type { Translation };
+
 export type HairStyle =
   | "crop"
   | "curls"
@@ -24,7 +29,6 @@ export type Gender = "male" | "female";
 export type FacialHair = "none" | "mustache" | "stubble" | "beard";
 export type GlassesStyle = "none" | "round" | "wayfarer";
 export type AvatarColor = "coral" | "blue" | "gold" | "sage" | "violet";
-export type Translation = "NET" | "ESV" | "CSB" | "NIV" | "NLT";
 
 export type UserProfile = {
   displayName: string;

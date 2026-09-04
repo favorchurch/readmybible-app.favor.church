@@ -49,6 +49,14 @@
     align-items: start;
   }
 
+  /* The rail carries secondary info next to a much taller main column, so it
+     reads better optically centred against that column than pinned to its top.
+     Scoped to the rail alone -- .frame__main keeps align-items: start, since a
+     centred main column would drift as its own content grows. */
+  .frame--rail > .frame__rail {
+    align-self: center;
+  }
+
   /* No rail content: collapse to a single column instead of reserving an
      empty second track (the bug this frame exists to prevent). */
   .frame--rail:not(:has(> .frame__rail)),

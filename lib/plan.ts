@@ -59,6 +59,25 @@ export function planEntryForChapter(chapter: number): PlanEntry | undefined {
   return PLAN.find((entry) => entry.chapter === chapter);
 }
 
+export function clampReadingChapter(chapter: number, todayChapter: number): number {
+  return Math.min(Math.max(chapter, 1), todayChapter + 1);
+}
+
+export function isChapterRead(chapter: number, chapters: readonly number[]): boolean {
+  return chapters.includes(chapter);
+}
+
+export function syncViewedChapter(
+  entryChapter: number | null,
+  syncedChapter: number,
+  viewedChapter: number,
+): { syncedChapter: number; viewedChapter: number } {
+  if (entryChapter !== null && entryChapter !== syncedChapter) {
+    return { syncedChapter: entryChapter, viewedChapter: entryChapter };
+  }
+  return { syncedChapter, viewedChapter };
+}
+
 export function planEntryForDate(date: string): PlanEntry | undefined {
   return PLAN.find((entry) => entry.date === date);
 }

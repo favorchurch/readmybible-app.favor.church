@@ -16,6 +16,7 @@ function okSession(overrides: Partial<Extract<SessionContext, { status: "ok" }>>
     campusId: null,
     isLeader: false,
     isAdminScope: false,
+    defaultTranslation: "NET",
     ...overrides,
   };
 }

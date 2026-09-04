@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CAMPUS_TIMEZONES, DEFAULT_CAMPUS_TIMEZONE, timezoneForCampus } from "@/lib/campus-timezones";
+import { CAMPUS_TIMEZONES, DEFAULT_CAMPUS_TIMEZONE, defaultTranslationForCampus, timezoneForCampus } from "@/lib/campus-timezones";
 
 describe("timezoneForCampus", () => {
   it("maps each known campus id to its IANA timezone", () => {
@@ -16,5 +16,21 @@ describe("timezoneForCampus", () => {
 
   it("has exactly the three known campuses", () => {
     expect(Object.keys(CAMPUS_TIMEZONES)).toHaveLength(3);
+  });
+});
+
+describe("defaultTranslationForCampus", () => {
+  it("defaults Seoul (campus 3) to KRV", () => {
+    expect(defaultTranslationForCampus(3)).toBe("KRV");
+  });
+
+  it("defaults every other known campus to NET", () => {
+    expect(defaultTranslationForCampus(1)).toBe("NET");
+    expect(defaultTranslationForCampus(2)).toBe("NET");
+  });
+
+  it("defaults an unknown or null campus to NET", () => {
+    expect(defaultTranslationForCampus(999)).toBe("NET");
+    expect(defaultTranslationForCampus(null)).toBe("NET");
   });
 });

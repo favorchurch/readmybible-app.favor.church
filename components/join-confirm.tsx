@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { joinByCode } from "@/app/actions/joinByCode";
+import { guardWrite, useTestMode } from "@/components/test-mode";
 import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 export function JoinConfirm({ code, groupName }: { code: string; groupName: string }) {
   const router = useRouter();
+  const testMode = useTestMode();
+  const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -17,7 +20,7 @@ export function JoinConfirm({ code, groupName }: { code: string; groupName: stri
   async function handleJoin() {
     setPending(true);
     setError(null);
-    const result = await joinByCode({ code });
+    const result = await guardedJoinByCode({ code });
     setPending(false);
     if (result.ok) {
       setSuccess(true);

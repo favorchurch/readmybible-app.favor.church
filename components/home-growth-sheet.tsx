@@ -2,6 +2,7 @@
 
 import { Sheet } from "@/components/sheet";
 import { homeStages, stageIndex } from "@/components/rotatable-home";
+import { StageMini } from "@/components/stage-mini";
 import type { Stage } from "@/lib/game";
 
 export function HomeGrowthSheet({
@@ -57,6 +58,7 @@ export function HomeGrowthSheet({
                     </div>
                     <span className="growth-stage-note">{stage.note}</span>
                   </div>
+                  <StageMini name={stage.name} size={53} className="growth-stage-mini" />
                 </li>
               );
             })}

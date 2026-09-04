@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
+import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
 import {
@@ -15,6 +16,15 @@ import {
 } from "@/components/avatar";
 import { CompletionFlow } from "@/components/completion-flow";
 import { ProfileEditor } from "@/components/profile-editor";
+import {
+  TestModePanel,
+  guardWrite,
+  simulatedChapters,
+  simulatedGroupRatio,
+  simulatedTodayState,
+  useTestMode,
+  dateForSimulatedDay,
+} from "@/components/test-mode";
 import { useToday } from "@/components/use-today";
 import { BottomNav, type Tab } from "@/components/screens/bottom-nav";
 import { ConnectScreen } from "@/components/screens/connect-screen";
@@ -59,7 +69,18 @@ function toUserProfile(displayName: string, avatar: AvatarConfig, translation: T
 
 export function AppShell(props: AppShellProps) {
   const router = useRouter();
-  const today = useToday(props.devMockToday);
+  const realToday = useToday(props.devMockToday);
+  const testMode = useTestMode();
+  const simulatedToday = useMemo(
+    () => simulatedTodayState(dateForSimulatedDay(testMode.state.day, testMode.state.phase), realToday.timezone),
+    [testMode.state.day, testMode.state.phase, realToday.timezone],
+  );
+  const today = testMode.active ? simulatedToday : realToday;
+  const guardedCheckIn = useMemo(() => guardWrite(testMode.active, checkIn), [testMode.active]);
+  const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
+  const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
+  const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
+  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(testMode.active, getOrCreateJoinCode), [testMode.active]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -82,11 +103,27 @@ export function AppShell(props: AppShellProps) {
   const [checkInError, setCheckInError] = useState<string | null>(null);
   const [flowGroupResult, setFlowGroupResult] = useState<CheckInGroupState | null>(null);
 
-  const chapters = useMemo(() => Array.from(new Set(props.chapters)), [props.chapters]);
+  const chapters = useMemo(() => {
+    if (testMode.active) return simulatedChapters(testMode.state.completionPct);
+    return Array.from(new Set(props.chapters));
+  }, [testMode.active, testMode.state.completionPct, props.chapters]);
   const chaptersRead = chapters.length;
   const coins = coinsFor(chaptersRead);
   const currentStreak = computeStreak(props.readingDates, today.todayLocal);
   const groupName = props.activeGroup?.groupName ?? null;
+
+  const groupStats = useMemo((): GroupStats | null => {
+    if (!testMode.active) return props.groupStats;
+    const ratio = simulatedGroupRatio(testMode.state.groupPct);
+    const memberCount = props.groupStats?.memberCount ?? 1;
+    return {
+      checkinCount: Math.round(ratio * memberCount),
+      memberCount,
+      ratio,
+      readersTodayIds: props.groupStats?.readersTodayIds ?? [],
+    };
+  }, [testMode.active, testMode.state.groupPct, props.groupStats]);
+  const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
@@ -102,19 +139,29 @@ export function AppShell(props: AppShellProps) {
     setFlowStep(1);
   }
 
+  function replayCelebration(chapter: number) {
+    setFlowChapter(chapter);
+    setFlowGroupResult(null);
+    setFlowStep(2);
+  }
+
   async function finishReading() {
     if (flowChapter === null) return;
     setPending(true);
     setCheckInError(null);
-    const result = await checkIn({ chapter: flowChapter, timezone: today.timezone });
+    const result = await guardedCheckIn({ chapter: flowChapter, timezone: today.timezone });
     setPending(false);
     if (result.ok) {
       setFlowGroupResult(result.group);
       setFlowStep(2);
       router.refresh();
     } else {
-      setCheckInError("Something went wrong on our side. Try again in a bit.");
+      setCheckInError(result.error || "Something went wrong on our side. Try again in a bit.");
     }
+  }
+
+  function handleTranslationChange(translation: Translation) {
+    void handleSaveProfile({ ...profile, translation });
   }
 
   async function handleSaveProfile(next: UserProfile) {
@@ -126,7 +173,7 @@ export function AppShell(props: AppShellProps) {
       /* Profile still works for this session without device storage. */
     }
     const { displayName, translation, ...avatar } = next;
-    const result = await saveProfile({ displayName, translation, avatar });
+    const result = await guardedSaveProfile({ displayName, translation, avatar });
     setSavingProfile(false);
     setProfileOpen(false);
     if (result.ok) router.refresh();
@@ -134,7 +181,7 @@ export function AppShell(props: AppShellProps) {
 
   async function handleChooseGroup(groupId: number) {
     setPending(true);
-    await chooseGroup({ groupId });
+    await guardedChooseGroup({ groupId });
     setPending(false);
     router.refresh();
   }
@@ -142,7 +189,7 @@ export function AppShell(props: AppShellProps) {
   async function handleJoinCode(code: string) {
     setJoinError(null);
     setPending(true);
-    const result = await joinByCode({ code });
+    const result = await guardedJoinByCode({ code });
     setPending(false);
     if (result.ok) {
       router.refresh();
@@ -175,6 +222,7 @@ export function AppShell(props: AppShellProps) {
   return (
     <div className="app-shell">
       <div className="paper-noise" />
+      {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
       {tab === "today" && (
         <TodayScreen
           today={today}
@@ -183,25 +231,28 @@ export function AppShell(props: AppShellProps) {
           catchUpChapter={catchUpChapter}
           streakDays={currentStreak}
           groupName={groupName}
-          groupStats={props.groupStats}
+          groupStats={groupStats}
           roster={props.roster}
           profile={profile}
           onStart={startReading}
+          onReplayCelebration={replayCelebration}
           onEditProfile={() => setProfileOpen(true)}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
+          onTranslationChange={handleTranslationChange}
         />
       )}
       {tab === "connect" && (
         <ConnectScreen
           groupName={groupName}
           campusName={props.campusName}
-          isLeader={props.isLeader}
+          isLeader={isLeader}
           roster={props.roster}
-          groupStats={props.groupStats}
+          groupStats={groupStats}
           appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
+          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           today={today}
         />
       )}
@@ -226,6 +277,7 @@ export function AppShell(props: AppShellProps) {
           profile={profile}
           onCatchUp={startReading}
           onEditProfile={() => setProfileOpen(true)}
+          onTranslationChange={handleTranslationChange}
         />
       )}
       <BottomNav tab={tab} onSelect={selectTab} />

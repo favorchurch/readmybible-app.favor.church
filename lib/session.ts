@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { AUTH0_CLAIM_NAMESPACE, auth0 } from "@/lib/auth0";
+import { defaultTranslationForCampus } from "@/lib/campus-timezones";
 import {
   getMemberships,
   getPerson,
@@ -12,6 +13,7 @@ import {
   type RockGroupMember,
 } from "@/lib/rock/client";
 import { ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER } from "@/lib/rock/constants";
+import type { Translation } from "@/lib/scripture/types";
 
 const AUTH0_NAMESPACE = AUTH0_CLAIM_NAMESPACE;
 
@@ -38,6 +40,8 @@ export type SessionContext =
       campusId: number | null;
       isLeader: boolean;
       isAdminScope: boolean;
+      /** Used only when no profile row exists yet, i.e. before the reader has saved a translation choice of their own. */
+      defaultTranslation: Translation;
     };
 
 function getAdminPersonIds(): number[] {
@@ -120,5 +124,6 @@ export async function getSessionContext(): Promise<SessionContext> {
     campusId,
     isLeader: memberships.some((m) => m.isLeader),
     isAdminScope,
+    defaultTranslation: defaultTranslationForCampus(campusId),
   };
 }

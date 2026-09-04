@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getPassage, isTranslation } from "@/lib/scripture";
+import { getPassage, isTranslation, TRANSLATIONS } from "@/lib/scripture";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "ref is required" }, { status: 400 });
   }
   if (!isTranslation(translation)) {
-    return NextResponse.json({ error: "t must be one of NET, ESV, CSB, NIV, NLT" }, { status: 400 });
+    return NextResponse.json({ error: `t must be one of ${TRANSLATIONS.join(", ")}` }, { status: 400 });
   }
 
   const result = await getPassage(ref, translation);

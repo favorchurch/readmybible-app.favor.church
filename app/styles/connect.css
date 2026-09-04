@@ -35,6 +35,9 @@
   font-weight: 500;
 }
 
+.stage-name-row { display: inline-flex; align-items: center; gap: 6px; }
+.stage-name-mini { flex-shrink: 0; }
+
 .coin-chip {
   border: 1px solid var(--line);
   padding: 8px 12px;
@@ -53,13 +56,23 @@
 
 .upgrade-copy {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 7px 17px 0;
   font-size: 12px;
 }
 
+.upgrade-copy-text {
+  display: flex;
+  flex-direction: column;
+}
+
 .upgrade-copy span {
   color: var(--ink-muted);
+}
+
+.upgrade-copy-mini {
+  flex-shrink: 0;
 }
 
 .home-growth-action {
@@ -443,8 +456,8 @@
 .growth-stage-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--paper);
@@ -504,6 +517,8 @@
   color: var(--ink-muted);
   margin-top: 2px;
 }
+
+.growth-stage-mini { flex-shrink: 0; }
 
 .reading-visibility-body {
   font-size: 14px;

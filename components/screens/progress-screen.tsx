@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Avatar, type UserProfile } from "@/components/avatar";
+import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import { Header } from "@/components/screens/header";
@@ -30,6 +30,7 @@ export function ProgressScreen({
   profile,
   onCatchUp,
   onEditProfile,
+  onTranslationChange,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -42,6 +43,7 @@ export function ProgressScreen({
   profile: UserProfile;
   onCatchUp: (chapter: number) => void;
   onEditProfile: () => void;
+  onTranslationChange: (translation: Translation) => void;
 }) {
   const completedDays = useMemo(() => new Set(chapters), [chapters]);
   const next = nextMedal(chaptersRead);
@@ -303,6 +305,7 @@ export function ProgressScreen({
         entry={selectedEntry}
         isRead={previewIsRead}
         translation={profile.translation}
+        onTranslationChange={onTranslationChange}
         onClose={() => setPreviewOpen(false)}
       />
     </main>

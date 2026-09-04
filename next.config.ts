@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(import.meta.dirname),
   },
+  // lib/scripture/store.ts builds its fs path from a `version` variable, not
+  // a string literal, so Next's automatic file-tracing can miss the data
+  // files on a serverless deploy -- this makes the inclusion explicit.
+  outputFileTracingIncludes: {
+    "/api/scripture": ["./lib/scripture/data/**/*"],
+  },
 };
 
 export default nextConfig;

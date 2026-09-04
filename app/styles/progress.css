@@ -396,6 +396,10 @@
   flex-direction: column;
   gap: 4px;
 }
+.day-preview-verse-btn .eyebrow { color: var(--coral-deep); opacity: 1; }
+.day-preview-verse-btn strong { font-family: var(--font-sans); font-weight: 800; font-size: 15px; color: var(--navy); }
+.day-preview-verse-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.day-preview-verse-arrow { color: var(--coral); font-size: 16px; font-weight: 700; }
 .day-preview-verse-btn:focus-visible {
   outline: 3px solid var(--gold);
   outline-offset: 2px;

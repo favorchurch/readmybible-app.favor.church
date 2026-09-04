@@ -1,10 +1,156 @@
-.modal-wrap { position: fixed; z-index: 100; inset: 0; display: flex; align-items: end; justify-content: center; }.modal-backdrop { position: absolute; inset: 0; border: 0; background: rgba(17,29,45,.58); backdrop-filter: blur(2px); cursor: pointer; }.modal-sheet { position: relative; width: min(100%, 550px); max-height: 92dvh; overflow-y: auto; background: var(--cream); padding: 29px 20px calc(22px + env(safe-area-inset-bottom)); border-radius: 14px 14px 0 0; box-shadow: 0 -12px 50px rgba(23,41,67,.2); animation: sheetUp .32s cubic-bezier(.2,.8,.2,1); }.modal-sheet:before { content: ""; position: absolute; top: 8px; left: 50%; width: 42px; height: 4px; background: #c9c0b2; border-radius: 4px; transform: translateX(-50%); }.close-button { float: right; border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }.modal-sheet h2 { font-family: Georgia, serif; font-size: 38px; margin: 0; font-weight: 500; }.passage-note { font-family: Georgia, serif; font-size: 16px; line-height: 1.5; color: var(--ink-muted); }.reading-prompt { border: 1px solid var(--line); background: var(--paper); padding: 15px; display: flex; align-items: center; gap: 14px; margin: 22px 0; }.reading-prompt > span { font-family: Impact, sans-serif; font-size: 42px; color: var(--coral); }.reading-prompt strong, .reading-prompt small { display: block; }.reading-prompt strong { font-size: 13px; }.reading-prompt small { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }.honor-note { text-align: center; font-size: 12px; color: var(--ink-muted); }.celebration-mark { width: 78px; height: 78px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 50%; background: var(--gold); color: white; font-size: 34px; animation: pop .5s cubic-bezier(.2,1.5,.4,1); }.centered { text-align: center; }.reward-line { text-align: center; margin: 10px 0 23px; font-size: 12px; }.reward-line b { color: #9a701c; }
-
-@media (min-width: 760px) {
-  .modal-wrap { align-items: center; }.modal-sheet { border-radius: 8px; padding: 34px; }.modal-sheet:before { display: none; }
+.modal-wrap {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: end;
+  justify-content: center;
 }
 
-.modal-sheet:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(17, 29, 45, .58);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.modal-sheet {
+  position: relative;
+  width: min(100%, 550px);
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--cream);
+  padding: 29px 20px calc(22px + env(safe-area-inset-bottom));
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -12px 50px rgba(23, 41, 67, .2);
+  animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1);
+}
+
+.modal-sheet:before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 42px;
+  height: 4px;
+  background: #c9c0b2;
+  border-radius: 4px;
+  transform: translateX(-50%);
+}
+
+.close-button {
+  float: right;
+  border: 0;
+  background: none;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-sheet h2 {
+  font-family: Georgia, serif;
+  font-size: 38px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.passage-note {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.reading-prompt {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0;
+}
+
+.reading-prompt>span {
+  font-family: Impact, sans-serif;
+  font-size: 42px;
+  color: var(--coral);
+}
+
+.reading-prompt strong,
+.reading-prompt small {
+  display: block;
+}
+
+.reading-prompt strong {
+  font-size: 13px;
+}
+
+.reading-prompt small {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.honor-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.celebration-mark {
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: white;
+  font-size: 34px;
+  animation: pop .5s cubic-bezier(.2, 1.5, .4, 1);
+}
+
+.centered {
+  text-align: center;
+}
+
+.reward-line {
+  text-align: center;
+  margin: 10px 0 23px;
+  font-size: 12px;
+}
+
+.reward-line b {
+  color: #9a701c;
+}
+
+@media (min-width: 760px) {
+  .modal-wrap {
+    align-items: center;
+  }
+
+  .modal-sheet {
+    border-radius: 8px;
+    padding: 34px;
+  }
+
+  .modal-sheet:before {
+    display: none;
+  }
+}
+
+.modal-sheet:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: -3px;
+}
 
 .catchup-modal-note {
   max-width: 330px;
@@ -15,16 +161,155 @@
   line-height: 1.45;
 }
 
-.translation-badge {
-  display: inline-block;
-  margin: 8px 0 14px;
-  padding: 3px 9px;
+/* The version pill reads as part of the reference, so it sits immediately
+   after the title rather than pushed to the sheet's far edge. line-height: 1
+   collapses the h2's box to its glyphs so `align-items: center` lines the pill
+   up on the title's ink instead of on Georgia's leading. */
+.scripture-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  /* .close-button floats right at 44px, and a flex container will not overlap a
+     float -- it shrinks. Clearing it reclaims the full content width, which is
+     what lets the title and the pill share one row on a 430px phone. */
+  clear: right;
+}
+
+.scripture-heading h2 {
+  line-height: 1;
+}
+
+.translation-select {
+  margin: 0;
+  flex-shrink: 0;
+  padding: 10px 22px 10px 10px;
+  min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 22px;
   background: var(--paper);
   color: var(--ink-muted);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .08em;
+  cursor: pointer;
 }
-.scripture-sheet .secondary-link { display: inline-block; margin-top: 18px; }
+
+.passage-text {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  font-weight: 400;
+  /* serif-exception */
+}
+
+.passage-attribution {
+  margin-top: 24px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.link-groups {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* The chapter link belongs to the passage above it; the source groups below are a
+   separate band, so give the first group extra room beneath it. */
+.link-groups>.link-group:first-child {
+  margin-bottom: 24px;
+}
+
+/* The chapter link trails the passage it belongs to, so it sits at the end of
+   the row rather than under the passage's first word. */
+.link-groups>.link-group:first-child .link-group-row {
+  justify-content: flex-end;
+}
+
+.scripture-sheet .link-group .eyebrow {
+  margin-bottom: 4px;
+}
+
+.scripture-sheet .link-disclosure>summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.scripture-sheet .link-disclosure>summary::-webkit-details-marker {
+  display: none;
+}
+
+.scripture-sheet .link-disclosure>summary:after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--ink-muted);
+  border-bottom: 2px solid var(--ink-muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform .18s ease-out;
+}
+
+.scripture-sheet .link-disclosure[open]>summary:after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.scripture-sheet .link-disclosure>summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.link-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.link-group-row.inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+}
+
+.scripture-sheet .link-group-row .inline-link {
+  display: inline-block;
+  padding: 4px 6px;
+  color: var(--navy);
+  /* set below for the source groups */
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+
+.scripture-sheet .link-group-row .inline-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* COMMENTARIES and APPS are secondary to the passage and the chapter link, so they
+   sit at --ink-muted (5.04:1 on --cream, above the 4.5:1 body floor). The underline
+   and the arrow carry the link affordance, not the colour. */
+.link-group+.link-group .inline-link {
+  color: var(--ink-muted);
+}
+
+@media (hover: hover) {
+  .scripture-sheet .link-group-row .inline-link:hover {
+    text-decoration-thickness: 2px;
+  }
+}

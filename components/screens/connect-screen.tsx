@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
+import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { Avatar, avatarSeedFor, type UserProfile } from "@/components/avatar";
 import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
@@ -10,6 +10,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
+import { StageMini } from "@/components/stage-mini";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
@@ -23,6 +24,7 @@ export function ConnectScreen({
   appBaseUrl,
   profile,
   onEditProfile,
+  onGetOrCreateJoinCode,
   today,
 }: {
   groupName: string | null;
@@ -33,6 +35,7 @@ export function ConnectScreen({
   appBaseUrl: string;
   profile: UserProfile;
   onEditProfile: () => void;
+  onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   today: TodayState;
 }) {
   const phase = today.displayPhase;
@@ -55,7 +58,7 @@ export function ConnectScreen({
   useEffect(() => {
     if (!isLeader) return;
     let cancelled = false;
-    getOrCreateJoinCode().then((result) => {
+    onGetOrCreateJoinCode().then((result) => {
       if (cancelled) return;
       if (result.ok) setJoinCode(result.code);
       else setCodeError(result.error);
@@ -63,7 +66,7 @@ export function ConnectScreen({
     return () => {
       cancelled = true;
     };
-  }, [isLeader]);
+  }, [isLeader, onGetOrCreateJoinCode]);
 
   useEffect(() => {
     if (!joinCode) return;
@@ -100,15 +103,21 @@ export function ConnectScreen({
             <div className="big-home-info">
               <div>
                 <p className="eyebrow">CURRENT HOME</p>
-                <h2>{stage}</h2>
+                <h2 className="stage-name-row">
+                  {stage}
+                  <StageMini name={stage} size={53} className="stage-name-mini" />
+                </h2>
                 <span className="home-note">{homeStages[selectedStage].note}</span>
               </div>
               <div className="coin-chip">◉ {groupCoins}</div>
             </div>
             <ProgressBar value={nextStage?.pct ?? 100} max={100} />
             <div className="upgrade-copy">
-              <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
-              <span>Next group upgrade</span>
+              <div className="upgrade-copy-text">
+                <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
+                <span>Next group upgrade</span>
+              </div>
+              {nextStage && <StageMini name={nextStage.stage} size={38} className="upgrade-copy-mini" />}
             </div>
             <div className="home-growth-action">
               <button

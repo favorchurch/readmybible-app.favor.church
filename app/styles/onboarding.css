@@ -35,3 +35,7 @@
 .reading-data-note summary::before { content: "▸ "; } /* decorative */
 .reading-data-note[open] summary::before { content: "▾ "; } /* decorative */
 .reading-data-note p { margin: 10px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
+
+.profile-brand-footer { margin-top: 18px; display: flex; align-items: center; gap: 10px; background: var(--navy); border-radius: 4px; padding: 12px 14px; }
+.profile-brand-footer img { width: 40px; height: 44px; flex: 0 0 auto; }
+.profile-brand-footer span { font-size: 13px; color: #fff; line-height: 1.4; }

@@ -108,11 +108,14 @@ Breakpoints are additive: 480, 768, 1024px, on top of the existing 360 to 389px 
 
 Every other Georgia declaration in the codebase is a leftover the sans system in `typography.css`
 overrides by naming the selector; `tests/css-rules.test.ts` fails the build if a new one appears
-unlisted and unmarked. One selector is a deliberate exception instead of an oversight:
-`.quick-verse-button strong` (`app/styles/today.css`), the chapter and verse reference inside the
-Quick Verse control (for example "Matthew 8:23-27"). It stays serif to read as a scripture citation,
-distinct from the app's own sans-serif chrome around it, and is marked in its declaration with
-`/* serif-exception */` so the guard test recognizes it as settled rather than missed.
+unlisted and unmarked. Two selectors are deliberate exceptions instead of an oversight:
+1. `.quick-verse-button strong` (`app/styles/today.css`), the chapter and verse reference inside the
+   Quick Verse control (for example "Matthew 8:23-27").
+2. `.passage-text` (`app/styles/sheet.css`), the Scripture passage body inside the Quick Verse popup.
+
+Both stay serif to read as Scripture citations or body text, distinct from the app's own
+sans-serif chrome around them, and are marked in their declarations with `/* serif-exception */`
+so the guard test recognizes them as settled rather than missed.
 
 The floor is enforced by `tests/css-rules.test.ts`: no `font-size` at 11px or below unless the
 declaration's line carries `/* decorative */`.
