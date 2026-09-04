@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
-import { isTranslation } from "@/lib/scripture/types";
+import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
 import { fetchEsv } from "@/lib/scripture/providers/esv";
 import { bookOrdinal, fetchNet, stripVerseMarkup } from "@/lib/scripture/providers/net";
 import { fetchNlt } from "@/lib/scripture/providers/nlt";
@@ -60,8 +60,9 @@ describe("bibleComUrl", () => {
 });
 
 describe("isTranslation", () => {
-  it("accepts the five supported translations", () => {
-    for (const t of ["NET", "ESV", "CSB", "NIV", "NLT"]) {
+  it("accepts all ten supported translations (D1)", () => {
+    expect(TRANSLATIONS).toHaveLength(10);
+    for (const t of TRANSLATIONS) {
       expect(isTranslation(t)).toBe(true);
     }
   });
@@ -70,6 +71,22 @@ describe("isTranslation", () => {
     expect(isTranslation("KJV")).toBe(false);
     expect(isTranslation(null)).toBe(false);
     expect(isTranslation(undefined)).toBe(false);
+  });
+});
+
+describe("TRANSLATION_META", () => {
+  it("has a metadata record for every translation with a non-empty display name, attribution, and bible.com id", () => {
+    for (const t of TRANSLATIONS) {
+      const meta = TRANSLATION_META[t];
+      expect(meta.displayName.length).toBeGreaterThan(0);
+      expect(meta.attribution.length).toBeGreaterThan(0);
+      expect(meta.bibleComId).toBeGreaterThan(0);
+    }
+  });
+
+  it("flags only NET and KRV as full-text, per D3", () => {
+    const fullText = TRANSLATIONS.filter((t) => TRANSLATION_META[t].fullText);
+    expect(fullText.sort()).toEqual(["KRV", "NET"]);
   });
 });
 

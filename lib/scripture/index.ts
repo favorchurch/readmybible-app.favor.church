@@ -32,6 +32,12 @@ async function fetchPassageText(translation: Translation, parsed: ParsedReferenc
       return fetchCsb(parsed);
     case "NIV":
       return fetchNiv(parsed);
+    // MSG, NKJV, NASB, AMP, KRV have no runtime provider (D2/D3: this whole
+    // fetch path is being replaced by bundled text in T8) -- same "no
+    // provider configured" degrade to null every other case already falls
+    // back to.
+    default:
+      return null;
   }
 }
 

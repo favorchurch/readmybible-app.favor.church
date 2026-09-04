@@ -4,7 +4,7 @@
  * ever passes in Matthew references (see lib/plan.ts), but the parser
  * doesn't assume that -- it resolves any of the 66 canonical books by name.
  */
-import { BIBLE_COM_VERSION_ID, type ParsedReference, type Translation } from "@/lib/scripture/types";
+import { TRANSLATION_META, type ParsedReference, type Translation } from "@/lib/scripture/types";
 
 const BOOK_CODES: Record<string, string> = {
   genesis: "GEN",
@@ -96,6 +96,6 @@ export function parseReference(ref: string): ParsedReference | null {
 }
 
 export function bibleComUrl(parsed: ParsedReference, translation: Translation): string {
-  const versionId = BIBLE_COM_VERSION_ID[translation];
+  const versionId = TRANSLATION_META[translation].bibleComId;
   return `https://www.bible.com/bible/${versionId}/${parsed.bookCode}.${parsed.chapter}.${translation}`;
 }

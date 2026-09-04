@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 
-import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type Translation, type UserProfile } from "@/components/avatar";
+import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type UserProfile } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
+import { TRANSLATIONS } from "@/lib/scripture/types";
 
 const hairChoices: Array<{ value: HairStyle; label: string }> = [
   { value: "bald", label: "Bald" },
@@ -31,7 +32,7 @@ const facialHairChoices: Array<{ value: FacialHair; label: string }> = [
   { value: "stubble", label: "Stubble" },
   { value: "beard", label: "Beard" },
 ];
-const translationChoices: Translation[] = ["NET", "ESV", "CSB", "NIV", "NLT"];
+const translationChoices = TRANSLATIONS;
 
 function ColorChoices({
   label,

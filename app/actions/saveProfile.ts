@@ -4,9 +4,8 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { TRANSLATIONS } from "@/lib/scripture/types";
 import { getSessionContext } from "@/lib/session";
-
-const translations = ["NET", "ESV", "CSB", "NIV", "NLT"] as const;
 
 // Mirrors the type unions in components/avatar.tsx -- keep in sync with those.
 const genders = ["male", "female"] as const;
@@ -54,7 +53,7 @@ const avatarSchema = z
 const inputSchema = z.object({
   displayName: z.string().trim().min(1).max(24),
   avatar: avatarSchema,
-  translation: z.enum(translations),
+  translation: z.enum(TRANSLATIONS),
 });
 
 export type SaveProfileResult = { ok: true } | { ok: false; error: string };
