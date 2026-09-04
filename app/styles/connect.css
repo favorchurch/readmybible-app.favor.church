@@ -56,13 +56,23 @@
 
 .upgrade-copy {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 7px 17px 0;
   font-size: 12px;
 }
 
+.upgrade-copy-text {
+  display: flex;
+  flex-direction: column;
+}
+
 .upgrade-copy span {
   color: var(--ink-muted);
+}
+
+.upgrade-copy-mini {
+  flex-shrink: 0;
 }
 
 .home-growth-action {

@@ -111,8 +111,11 @@ export function ConnectScreen({
             </div>
             <ProgressBar value={nextStage?.pct ?? 100} max={100} />
             <div className="upgrade-copy">
-              <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
-              <span>Next group upgrade</span>
+              <div className="upgrade-copy-text">
+                <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
+                <span>Next group upgrade</span>
+              </div>
+              {nextStage && <StageMini name={nextStage.stage} size={32} className="upgrade-copy-mini" />}
             </div>
             <div className="home-growth-action">
               <button
