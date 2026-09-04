@@ -81,6 +81,20 @@ export function simulatedGroupRatio(groupPct: number): number {
   return Math.min(Math.max(groupPct, 0), 100) / 100;
 }
 
+/** Synthetic reading history for a roster member in test mode. */
+export function simulatedMemberHistory(
+  _memberId: number,
+  completionPct: number,
+  todayLocal: string,
+): { chapters: number[]; readingDates: string[] } {
+  const chapters = simulatedChapters(completionPct);
+  const readingDates = chapters
+    .filter((ch) => ch <= PLAN.length)
+    .map((ch) => PLAN[ch - 1].date)
+    .filter((d) => d <= todayLocal);
+  return { chapters, readingDates };
+}
+
 type WriteResult = { ok: true } | { ok: false; error: string };
 
 /**
