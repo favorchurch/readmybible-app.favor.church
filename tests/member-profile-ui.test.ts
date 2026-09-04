@@ -10,10 +10,12 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import { ConnectScreen } from "@/components/screens/connect-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
+import { ProgressScreen } from "@/components/screens/progress-screen";
 import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
+import type { GroupStanding } from "@/lib/game";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -221,5 +223,76 @@ describe("TodayScreen tent people toggle", () => {
     expect(html).toContain('class="tent-toggle-button"');
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain("Gather group");
+  });
+});
+
+describe("ProgressScreen campus groups", () => {
+  const sampleCampusBoard: GroupStanding[] = [
+    {
+      groupId: 1,
+      name: "Makati Adults",
+      ratio: 0.45,
+      readersToday: 10,
+    },
+    {
+      groupId: 2,
+      name: "BGC Youth",
+      ratio: 0.15,
+      readersToday: 5,
+    },
+  ];
+
+  it("renders campus groups full-width with StageMini, ProgressBar, and status copy", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: mockTodayState,
+        chapters: [1, 2, 3, 4, 5],
+        chaptersRead: 5,
+        coins: 50,
+        streakDays: 5,
+        groupName: "Makati Adults",
+        campusName: "Favor Manila",
+        campusBoard: sampleCampusBoard,
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    // Full-width section with frame__span
+    expect(html).toContain('class="leaderboard-card frame__span"');
+    expect(html).toContain('data-section="campus-groups"');
+    expect(html).toContain("FAVOR MANILA CONNECT GROUPS");
+
+    // Group cards with StageMini, ProgressBar, and readable status
+    expect(html).toContain("Makati Adults");
+    expect(html).toContain("BGC Youth");
+    expect(html).toContain("45% complete · Apartment");
+    expect(html).toContain("15% complete · Trailer");
+    expect(html).toContain("stage-mini");
+    expect(html).toContain("progress-track");
+  });
+
+  it("handles reduced-value case when campusBoard is empty", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: mockTodayState,
+        chapters: [],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusName: "Favor Manila",
+        campusBoard: [],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain("No groups on the board yet. October&#x27;s coming.");
+    expect(html).not.toContain("campus-group-card");
   });
 });

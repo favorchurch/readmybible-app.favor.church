@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
 import { ProgressBar } from "@/components/progress-bar";
+import { StageMini } from "@/components/stage-mini";
 import { Header } from "@/components/screens/header";
 import { REWARD_TITLES } from "@/components/screens/rewards-screen";
 import type { useToday } from "@/components/use-today";
@@ -191,45 +192,32 @@ export function ProgressScreen({
 
       <div className="frame__rail">
         {isPreLaunch ? (
-          <>
-            <section className="plan-facts-card" data-section="plan-facts">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">THE PLAN</p>
-                  <h2>Matthew in October</h2>
-                </div>
+          <section className="plan-facts-card" data-section="plan-facts">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">THE PLAN</p>
+                <h2>Matthew in October</h2>
               </div>
-              <div className="plan-facts-grid">
-                <div className="plan-fact-item">
-                  <b className="plan-fact-value">28</b>
-                  <span className="plan-fact-label">chapters</span>
-                </div>
-                <div className="plan-fact-item">
-                  <b className="plan-fact-value">1</b>
-                  <span className="plan-fact-label">chapter a day</span>
-                </div>
-                <div className="plan-fact-item">
-                  <b className="plan-fact-value">October 1 to 28</b>
-                  <span className="plan-fact-label">reading days</span>
-                </div>
-                <div className="plan-fact-item">
-                  <b className="plan-fact-value">October 29 to 31</b>
-                  <span className="plan-fact-label">catch-up days</span>
-                </div>
+            </div>
+            <div className="plan-facts-grid">
+              <div className="plan-fact-item">
+                <b className="plan-fact-value">28</b>
+                <span className="plan-fact-label">chapters</span>
               </div>
-            </section>
-
-            <section className="leaderboard-card">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
-                  <h2>Groups on the same journey</h2>
-                </div>
+              <div className="plan-fact-item">
+                <b className="plan-fact-value">1</b>
+                <span className="plan-fact-label">chapter a day</span>
               </div>
-              <p className="gentle-note">Cheer them on.</p>
-              <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
-            </section>
-          </>
+              <div className="plan-fact-item">
+                <b className="plan-fact-value">October 1 to 28</b>
+                <span className="plan-fact-label">reading days</span>
+              </div>
+              <div className="plan-fact-item">
+                <b className="plan-fact-value">October 29 to 31</b>
+                <span className="plan-fact-label">catch-up days</span>
+              </div>
+            </div>
+          </section>
         ) : (
           <>
             <section className="stats-card">
@@ -275,30 +263,42 @@ export function ProgressScreen({
                 </strong>
               </section>
             )}
-
-            <section className="leaderboard-card">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
-                  <h2>Groups on the same journey</h2>
-                </div>
-              </div>
-              <p className="gentle-note">Cheer them on.</p>
-              {campusBoard.length === 0 ? (
-                <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
-              ) : (
-                <ul className="leaderboard-list">
-                  {campusBoard.map((g) => (
-                    <li key={g.groupId}>
-                      {g.name} · {Math.round(g.ratio * 100)}% · {stageFor(g.ratio)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
           </>
         )}
       </div>
+
+      <section className="leaderboard-card frame__span" data-section="campus-groups">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
+            <h2>Groups on the same journey</h2>
+          </div>
+        </div>
+        <p className="gentle-note">Cheer them on.</p>
+        {campusBoard.length === 0 ? (
+          <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
+        ) : (
+          <div className="campus-groups-grid">
+            {campusBoard.map((g) => {
+              const currentStage = stageFor(g.ratio);
+              const pct = Math.round(g.ratio * 100);
+              return (
+                <article className="campus-group-card" key={g.groupId}>
+                  <div className="campus-group-header">
+                    <StageMini name={currentStage} size={42} className="campus-group-mini" />
+                    <div className="campus-group-info">
+                      <strong>{g.name}</strong>
+                      <span className="campus-group-status">{pct}% complete · {currentStage}</span>
+                    </div>
+                    <div className="campus-group-pct">{pct}%</div>
+                  </div>
+                  <ProgressBar value={pct} max={100} />
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <DayPreviewSheet
         open={previewOpen}
