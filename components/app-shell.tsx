@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
+import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
 import {
@@ -79,6 +80,7 @@ export function AppShell(props: AppShellProps) {
   const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
   const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
+  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(testMode.active, getOrCreateJoinCode), [testMode.active]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -244,6 +246,7 @@ export function AppShell(props: AppShellProps) {
           appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
+          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           today={today}
         />
       )}
