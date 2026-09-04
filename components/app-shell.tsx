@@ -134,7 +134,6 @@ export function AppShell(props: AppShellProps) {
   }, [chapters, today]);
 
   function startReading(chapter: number) {
-    if (testMode.active) return;
     setCheckInError(null);
     setFlowChapter(chapter);
     setFlowStep(1);
