@@ -11,7 +11,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
 import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
-import { GRACE_DATES, longDate, planEntryForChapter } from "@/lib/plan";
+import { clampReadingChapter, GRACE_DATES, isChapterRead, longDate, planEntryForChapter } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
 import { TRANSLATION_META } from "@/lib/scripture/types";
 
@@ -65,13 +65,18 @@ export function TodayScreen({
   onViewProgress: () => void;
   onTranslationChange: (translation: Translation) => void;
 }) {
+  const entry = today.entry;
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
   const [chapterOpen, setChapterOpen] = useState(false);
+  const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
   const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const entry = today.entry;
-  const alreadyRead = entry ? chapters.includes(entry.chapter) : false;
+  const viewedChapter = entry ? clampReadingChapter(viewed, entry.chapter) : 1;
+  const viewedEntry = planEntryForChapter(viewedChapter);
+  const viewingUnavailable = Boolean(entry && viewedChapter > entry.chapter);
+  const todayAlreadyRead = entry ? isChapterRead(entry.chapter, chapters) : false;
+  const alreadyRead = entry ? isChapterRead(viewedChapter, chapters) : false;
   const catchUpEntry = catchUpChapter ? planEntryForChapter(catchUpChapter) : null;
   const catchUpDone = catchUpChapter ? chapters.includes(catchUpChapter) : true;
   const ratio = groupStats?.ratio ?? 0;
@@ -82,7 +87,7 @@ export function TodayScreen({
   const memberCount = groupStats?.memberCount ?? roster.length;
 
   const dayOneEntry = planEntryForChapter(1);
-  const quickVerseEntry = today.displayPhase === "pre-launch" ? dayOneEntry : entry;
+  const quickVerseEntry = today.displayPhase === "pre-launch" ? dayOneEntry : viewedEntry;
   const canReadChapter = TRANSLATION_META[profile.translation].fullText;
 
   const quickVersePopup = quickVerseOpen && quickVerseEntry && (
@@ -286,51 +291,89 @@ export function TodayScreen({
         <div className="frame__main">
           <section className="hero-copy">
             <p className="eyebrow">DAY {today.dayLabel} OF {TOTAL_CHAPTERS}</p>
-            <h1>{alreadyRead ? "You made space for the Word today." : "Make space for the Word today."}</h1>
+            <h1>{todayAlreadyRead ? "You made space for the Word today." : "Make space for the Word today."}</h1>
           </section>
 
           {entry && (
-            <section className={`reading-card ${alreadyRead ? "is-complete" : ""}`} data-section="reading-card">
-              <div className="reading-topline">
-                <span>{alreadyRead ? "TODAY'S READING · COMPLETE" : "TODAY'S READING"}</span>
-                <span className="streak">● {streakDays} day streak</span>
-              </div>
-              <div className="reading-main">
-                <div>
-                  <span className="book-label">GOSPEL OF</span>
-                  <h2>Matthew {entry.chapter}</h2>
-                  <p>Earns 10 coins for your group&apos;s home.</p>
-                </div>
-                <div className="chapter-mark">{String(entry.chapter).padStart(2, "0")}</div>
-              </div>
-              <button
-                type="button"
-                className="quick-verse-button"
-                ref={quickVerseTriggerRef}
-                onClick={() => setQuickVerseOpen(true)}
-              >
-                <span className="eyebrow">QUICK VERSE</span>
-                <strong>{entry.keyPassage}</strong>
-              </button>
-              {canReadChapter && (
+            <>
+              <nav className="reading-navigation" aria-label="Reading chapter navigation">
                 <button
                   type="button"
-                  className="quick-verse-button"
-                  ref={chapterTriggerRef}
-                  onClick={() => setChapterOpen(true)}
+                  aria-label="Previous chapter"
+                  disabled={viewedChapter === 1}
+                  onClick={() => setViewed(clampReadingChapter(viewedChapter - 1, entry.chapter))}
                 >
-                  <span className="eyebrow">READ FULL CHAPTER</span>
-                  <strong>Matthew {entry.chapter}</strong>
+                  <span aria-hidden="true">←</span>
                 </button>
+                <button
+                  type="button"
+                  aria-label="Next chapter"
+                  disabled={viewedChapter === entry.chapter + 1}
+                  onClick={() => setViewed(clampReadingChapter(viewedChapter + 1, entry.chapter))}
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              </nav>
+
+              {viewingUnavailable ? (
+                <section className="day-preview-status upcoming-status" data-section="reading-unavailable" aria-live="polite">
+                  <p className="eyebrow">NOT AVAILABLE YET</p>
+                  <h2>Matthew {viewedChapter} isn&apos;t available yet.</h2>
+                  <p>We&apos;ll open this chapter when its reading day arrives.</p>
+                </section>
+              ) : (
+                viewedEntry && (
+                  <section
+                    className={`reading-card ${alreadyRead ? "is-complete" : ""}`}
+                    data-section="reading-card"
+                    aria-live="polite"
+                  >
+                    <div className="reading-topline">
+                      <span>
+                        {viewedChapter === entry.chapter ? "TODAY'S READING" : `DAY ${viewedEntry.day}`}
+                        {alreadyRead ? " · COMPLETE" : ""}
+                      </span>
+                      <span className="streak">● {streakDays} day streak</span>
+                    </div>
+                    <div className="reading-main">
+                      <div>
+                        <span className="book-label">GOSPEL OF</span>
+                        <h2>Matthew {viewedChapter}</h2>
+                        <p>Earns 10 coins for your group&apos;s home.</p>
+                      </div>
+                      <div className="chapter-mark">{String(viewedChapter).padStart(2, "0")}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="quick-verse-button"
+                      ref={quickVerseTriggerRef}
+                      onClick={() => setQuickVerseOpen(true)}
+                    >
+                      <span className="eyebrow">QUICK VERSE</span>
+                      <strong>{viewedEntry.keyPassage}</strong>
+                    </button>
+                    {canReadChapter && (
+                      <button
+                        type="button"
+                        className="quick-verse-button"
+                        ref={chapterTriggerRef}
+                        onClick={() => setChapterOpen(true)}
+                      >
+                        <span className="eyebrow">READ FULL CHAPTER</span>
+                        <strong>Matthew {viewedChapter}</strong>
+                      </button>
+                    )}
+                    <button
+                      className="primary-button today-reading-button"
+                      onClick={() => (alreadyRead ? onReplayCelebration(viewedChapter) : onStart(viewedChapter))}
+                    >
+                      <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
+                      <span className="button-arrow" aria-hidden="true">→</span>
+                    </button>
+                  </section>
+                )
               )}
-              <button
-                className="primary-button today-reading-button"
-                onClick={() => (alreadyRead ? onReplayCelebration(entry.chapter) : onStart(entry.chapter))}
-              >
-                <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
-                <span className="button-arrow" aria-hidden="true">→</span>
-              </button>
-            </section>
+            </>
           )}
 
           {catchUpChapter && catchUpEntry && (

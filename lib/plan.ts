@@ -59,6 +59,14 @@ export function planEntryForChapter(chapter: number): PlanEntry | undefined {
   return PLAN.find((entry) => entry.chapter === chapter);
 }
 
+export function clampReadingChapter(chapter: number, todayChapter: number): number {
+  return Math.min(Math.max(chapter, 1), todayChapter + 1);
+}
+
+export function isChapterRead(chapter: number, chapters: readonly number[]): boolean {
+  return chapters.includes(chapter);
+}
+
 export function planEntryForDate(date: string): PlanEntry | undefined {
   return PLAN.find((entry) => entry.date === date);
 }
