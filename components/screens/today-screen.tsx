@@ -7,6 +7,7 @@ import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScripturePopup } from "@/components/scripture-popup";
+import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
@@ -65,6 +66,9 @@ export function TodayScreen({
 }) {
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
   const [chapterOpen, setChapterOpen] = useState(false);
+  const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
   const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -353,9 +357,47 @@ export function TodayScreen({
                   <p className="eyebrow">OUR CONNECT</p>
                   <h2>We&apos;re building this together</h2>
                 </div>
+                <button
+                  type="button"
+                  className="tent-toggle-button"
+                  data-section="tent-toggle"
+                  onClick={() => setTentPeopleOpen((v) => !v)}
+                  aria-pressed={tentPeopleOpen}
+                  aria-label={tentPeopleOpen ? "Hide group around home" : "Show group around home"}
+                >
+                  {tentPeopleOpen ? "Hide group" : "Gather group"}
+                </button>
               </div>
               <div className="home-card">
-                <HomeIllustration stage={stageIndex(stage)} />
+                <div className="home-scene-wrap">
+                  <HomeIllustration stage={stageIndex(stage)} />
+                  {tentPeopleOpen && (
+                    <div className="tent-people-overlay" aria-label="Group members gathered around the home">
+                      {roster.map((m) => {
+                        const seed = avatarSeedFor(m.personId);
+                        return (
+                          <button
+                            type="button"
+                            key={m.personId}
+                            className="tent-person-chip"
+                            onClick={() => {
+                              setSelectedMember(m);
+                              setProfileSheetOpen(true);
+                            }}
+                            title={m.name}
+                            aria-label={`View ${m.name}'s profile`}
+                          >
+                            <div className="tent-person-avatar">
+                              <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} small />
+                              {m.readToday && <b className="tent-person-check" aria-hidden="true">✓</b>}
+                            </div>
+                            <span className="tent-person-name">{m.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 <div className="home-info">
                   <div className="stage-row" style={{ justifyContent: "flex-end" }}>
                     {nextStage && (
@@ -402,6 +444,12 @@ export function TodayScreen({
           }}
         />
       )}
+      <MemberProfileSheet
+        open={profileSheetOpen}
+        onClose={() => setProfileSheetOpen(false)}
+        member={selectedMember}
+        todayLocal={today.todayLocal}
+      />
     </main>
   );
 }

@@ -10,6 +10,115 @@
 .section-block { max-width: 720px; margin: 36px auto 0; }.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }.section-heading h2 { font-family: Georgia, serif; margin: 0; font-weight: 500; font-size: 24px; }.section-heading button { border: 0; background: none; font-size: 12px; text-decoration: underline; font-weight: 800; cursor: pointer; padding: 8px 0; }
 .home-card { margin-top: 15px; border: 1px solid var(--line); background: var(--paper); border-radius: 5px; overflow: hidden; }
 
+.tent-toggle-button {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--coral-deep);
+  background: #fdf0eb;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  cursor: pointer;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tent-toggle-button:hover {
+    background: #fae4dc;
+    border-color: var(--coral);
+  }
+}
+
+.tent-toggle-button:active {
+  transform: scale(0.97);
+}
+
+.home-scene-wrap {
+  position: relative;
+}
+
+.tent-people-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(23, 41, 67, 0) 0%, rgba(23, 41, 67, 0.45) 30%, rgba(23, 41, 67, 0.75) 100%);
+  max-height: 140px;
+  overflow-y: auto;
+  animation: sheetUp 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tent-person-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 250, 240, 0.95);
+  border: 1px solid rgba(23, 41, 67, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--ink);
+  font-family: inherit;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform var(--dur-fast), background var(--dur-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tent-person-chip:hover {
+    transform: translateY(-2px);
+    background: #fff;
+    border-color: var(--gold);
+  }
+}
+
+.tent-person-chip:active {
+  transform: translateY(0);
+}
+
+.tent-person-avatar {
+  position: relative;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.tent-person-check {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sage);
+  color: #fff;
+  font-size: 9px; /* decorative */
+  border: 1.5px solid var(--paper);
+}
+
+.tent-person-name {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .home-info { padding: 14px 16px 17px; }.stage-row { display: flex; justify-content: space-between; margin-bottom: 9px; font-family: Georgia, serif; font-size: 15px; }.stage-name-row { display: inline-flex; align-items: center; gap: 6px; }.home-info-mini { flex-shrink: 0; }.stage-row > span + span:before { content: "Next · "; font-family: Arial, sans-serif; color: var(--ink-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }.stage-row.detail { font-family: Arial, sans-serif; font-size: 12px; color: var(--ink-muted); margin: 7px 0 0; }.stage-row.detail strong { color: var(--navy); }
 
 .people-today { max-width: 720px; margin: 17px auto 0; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--line); padding-bottom: 24px; }.avatar-stack { display: flex; min-width: 98px; }.avatar-stack .avatar { margin-right: -14px; border: 2px solid var(--cream); }.people-today strong, .people-today span { display: block; }.people-today strong { font-size: 12px; }.people-today span { color: var(--ink-muted); font-size: 12px; margin-top: 3px; }.daily-note { text-align: center; color: var(--coral); font-family: Georgia, serif; font-style: italic; margin: 22px 0 0; font-size: 13px; }

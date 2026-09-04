@@ -11,6 +11,7 @@ import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
 import { StageMini } from "@/components/stage-mini";
+import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
@@ -52,6 +53,8 @@ export function ConnectScreen({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [growthSheetOpen, setGrowthSheetOpen] = useState(false);
   const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!isLeader) return;
@@ -187,25 +190,47 @@ export function ConnectScreen({
 
                 if (phase === "pre-launch" || phase === "grace" || phase === "closed") {
                   return (
-                    <article className="member-card" key={m.personId}>
+                    <button
+                      type="button"
+                      className="member-card"
+                      key={m.personId}
+                      onClick={() => {
+                        setSelectedMember(m);
+                        setProfileSheetOpen(true);
+                      }}
+                      aria-haspopup="dialog"
+                      aria-label={`View ${m.name}'s profile`}
+                      title={m.name}
+                    >
                       <div className="member-avatar">
                         <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
                       </div>
                       <strong>{m.name}</strong>
-                    </article>
+                    </button>
                   );
                 }
 
                 // Active phase: check glyph + word Read for read state; waiting state at readable contrast without grayscale
                 return (
-                  <article className={`member-card ${m.readToday ? "read" : "waiting"}`} key={m.personId}>
+                  <button
+                    type="button"
+                    className={`member-card ${m.readToday ? "read" : "waiting"}`}
+                    key={m.personId}
+                    onClick={() => {
+                      setSelectedMember(m);
+                      setProfileSheetOpen(true);
+                    }}
+                    aria-haspopup="dialog"
+                    aria-label={`View ${m.name}'s profile: ${m.readToday ? "Read" : "Waiting"}`}
+                    title={m.name}
+                  >
                     <div className="member-avatar">
                       <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
                       {m.readToday && <b>✓</b>}
                     </div>
                     <strong>{m.name}</strong>
                     <span>{m.readToday ? "Read" : "Waiting"}</span>
-                  </article>
+                  </button>
                 );
               })}
             </div>
@@ -263,6 +288,12 @@ export function ConnectScreen({
       <ReadingVisibilityNote
         open={visibilityOpen}
         onClose={() => setVisibilityOpen(false)}
+      />
+      <MemberProfileSheet
+        open={profileSheetOpen}
+        onClose={() => setProfileSheetOpen(false)}
+        member={selectedMember}
+        todayLocal={today.todayLocal}
       />
     </main>
   );
