@@ -27,6 +27,9 @@
   font-size: 13px;
   color: var(--navy);
   list-style: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .reading-data-note summary::-webkit-details-marker { display: none; }
 .reading-data-note summary::before { content: "▸ "; } /* decorative */

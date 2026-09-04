@@ -1,5 +1,5 @@
 .translation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
-.translation-choices button { border: 1px solid var(--line); background: var(--paper); padding: 8px 14px; border-radius: 3px; font-weight: 800; font-size: 12px; cursor: pointer; }
+.translation-choices button { min-height: 44px; border: 1px solid var(--line); background: var(--paper); padding: 8px 14px; border-radius: 3px; font-weight: 800; font-size: 12px; cursor: pointer; }
 .translation-choices button.selected { border-color: var(--coral); color: var(--coral); background: #fff5eb; }
 .profile-field small { display: block; margin-top: 6px; font-size: 12px; color: var(--ink-muted); }
 
@@ -17,9 +17,9 @@
 .hair-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .hair-choices button { min-width: 0; min-height: 78px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .hair-choices button > span:last-child { font-size: 12px; font-weight: 800; }.hair-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
-.color-choices { display: grid; grid-template-columns: repeat(5, 42px); gap: 10px; }
-.color-choices button { width: 42px; height: 42px; padding: 0; border: 3px solid var(--cream); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
-.color-choices button.selected { box-shadow: 0 0 0 3px var(--navy); transform: scale(.92); }
+.color-choices { display: grid; grid-template-columns: repeat(5, 44px); gap: 10px; }
+.color-choices button { width: 44px; height: 44px; padding: 0; border: 3px solid var(--cream); border-radius: 50%; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.color-choices button.selected { box-shadow: 0 0 0 3px var(--navy); }
 .profile-save { margin-top: 5px; }
 
 @media (min-width: 760px) {
@@ -64,7 +64,7 @@
 .face-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 .face-choices button { min-width: 0; min-height: 76px; padding: 8px 3px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .face-choices button > span:last-child { font-size: 12px; font-weight: 800; }.face-choices button.selected { border: 2px solid var(--coral); background: #fff4ed; color: var(--coral); }
-.color-choices { grid-template-columns: repeat(auto-fit, 42px); }
+.color-choices { grid-template-columns: repeat(auto-fit, 44px); }
 
 /* A reward shelf that grows from small medals into substantial trophies. */
 .shelf-award { --award: #a96c45; --award-dark: #76462f; position: relative; margin: auto; color: #fff7dc; filter: drop-shadow(0 4px 2px rgba(80,46,28,.18)); }

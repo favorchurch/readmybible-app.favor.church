@@ -89,6 +89,7 @@ describe("clock source of truth", () => {
     // `getAttribute` or `.dataset`, however that read is spelled.
     const DATE_ISH_ATTRS = ["data-today", "data-date", "datetime"];
     const DATE_ISH_DATASET_KEYS = ["today", "date"]; // camelCase of data-today / data-date
+    const DATE_ISH_ATTRS_FOR_SELECTORS = ["data-today", "data-date"];
 
     const violations: string[] = [];
     for (const path of dateSourceScopeFiles) {
@@ -113,6 +114,17 @@ describe("clock source of truth", () => {
         const re = new RegExp(`\\.dataset(?:\\.${key}\\b|\\[\\s*["'\`]${key}["'\`]\\s*\\])`, "i");
         if (re.test(text)) {
           violations.push(`${path}: reads dataset.${key} instead of a prop`);
+        }
+      }
+      // Round 2 (m3-verdict-round2.md minor 2a): a `.textContent` read off a
+      // `[data-today]`/`[data-date]` selector match slipped past the
+      // getAttribute/dataset checks above -- the violation is *selecting* a
+      // date-ish element at all, regardless of which property is read off it
+      // afterwards.
+      for (const attr of DATE_ISH_ATTRS_FOR_SELECTORS) {
+        const re = new RegExp(`\\b(?:querySelector|querySelectorAll|closest|matches)\\(\\s*["'\`][^"'\`]*\\b${attr}\\b[^"'\`]*["'\`]`);
+        if (re.test(text)) {
+          violations.push(`${path}: selects a "${attr}" element via querySelector/querySelectorAll/closest/matches instead of a prop`);
         }
       }
     }
