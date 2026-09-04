@@ -357,11 +357,7 @@ export function TodayScreen({
               <div className="home-card">
                 <HomeIllustration stage={stageIndex(stage)} />
                 <div className="home-info">
-                  <div className="stage-row">
-                    <span className="stage-name-row">
-                      <StageMini name={stage} size={38} className="home-info-mini" aria-hidden />
-                      <span>{stage}</span>
-                    </span>
+                  <div className="stage-row" style={{ justifyContent: "flex-end" }}>
                     {nextStage && (
                       <span className="stage-name-row">
                         <StageMini name={nextStage.stage} size={38} className="home-info-mini" aria-hidden />
