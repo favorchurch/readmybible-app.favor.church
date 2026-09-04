@@ -11,7 +11,14 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
 import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
-import { clampReadingChapter, GRACE_DATES, isChapterRead, longDate, planEntryForChapter } from "@/lib/plan";
+import {
+  clampReadingChapter,
+  GRACE_DATES,
+  isChapterRead,
+  longDate,
+  planEntryForChapter,
+  syncViewedChapter,
+} from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
 import { TRANSLATION_META } from "@/lib/scripture/types";
 
@@ -68,11 +75,18 @@ export function TodayScreen({
   const entry = today.entry;
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
   const [chapterOpen, setChapterOpen] = useState(false);
+  const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
   const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const viewedChapter = entry ? clampReadingChapter(viewed, entry.chapter) : 1;
+  const syncedView = syncViewedChapter(entry?.chapter ?? null, syncedChapter, viewed);
+  if (entry && syncedView.syncedChapter !== syncedChapter) {
+    setSyncedChapter(syncedView.syncedChapter);
+    setViewed(syncedView.viewedChapter);
+  }
+
+  const viewedChapter = entry ? clampReadingChapter(syncedView.viewedChapter, entry.chapter) : 1;
   const viewedEntry = planEntryForChapter(viewedChapter);
   const viewingUnavailable = Boolean(entry && viewedChapter > entry.chapter);
   const todayAlreadyRead = entry ? isChapterRead(entry.chapter, chapters) : false;

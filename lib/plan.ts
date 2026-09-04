@@ -67,6 +67,17 @@ export function isChapterRead(chapter: number, chapters: readonly number[]): boo
   return chapters.includes(chapter);
 }
 
+export function syncViewedChapter(
+  entryChapter: number | null,
+  syncedChapter: number,
+  viewedChapter: number,
+): { syncedChapter: number; viewedChapter: number } {
+  if (entryChapter !== null && entryChapter !== syncedChapter) {
+    return { syncedChapter: entryChapter, viewedChapter: entryChapter };
+  }
+  return { syncedChapter, viewedChapter };
+}
+
 export function planEntryForDate(date: string): PlanEntry | undefined {
   return PLAN.find((entry) => entry.date === date);
 }
