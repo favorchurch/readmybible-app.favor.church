@@ -1,9 +1,16 @@
 export function Brand() {
   return (
-    <div className="brand" aria-label="Read My Bible">
+    <a
+      href="https://favor.church/readmybible"
+      className="brand"
+      aria-label="Read My Bible"
+      target="_blank"
+      rel="noreferrer"
+    >
       <span>READ</span>
       <span>MY</span>
       <span>BIBLE</span>
-    </div>
+    </a>
   );
 }
+
