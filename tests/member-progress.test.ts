@@ -118,6 +118,19 @@ describe("recentFiveDayStreak", () => {
     expect(marks.at(-1)?.read).toBe(true);
   });
 
+  it("does not show pre-campaign dates during launch week", () => {
+    const marks = recentFiveDayStreak(["2026-10-02"], "2026-10-02");
+
+    expect(marks.map((mark) => mark.date)).toEqual([
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-04",
+      "2026-10-05",
+    ]);
+    expect(marks.filter((mark) => mark.read)).toHaveLength(1);
+  });
+
   it("returns 5 empty marks for pre-launch dates before October 1", () => {
     const marks = recentFiveDayStreak([], "2026-09-20");
     expect(marks).toHaveLength(5);

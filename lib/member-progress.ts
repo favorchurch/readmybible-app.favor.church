@@ -73,8 +73,9 @@ function labelsForDate(dateKey: string): { label: string; longLabel: string } {
 export function recentFiveDayStreak(dates: string[], todayLocal: string): StreakMark[] {
   const dateSet = new Set(dates);
 
-  // If pre-launch (before 2026-10-01), display Oct 1 to Oct 5
-  if (todayLocal < "2026-10-01") {
+  // Before the first five campaign days are available, display Oct 1 to Oct 5
+  // rather than showing dates outside the journey.
+  if (todayLocal < "2026-10-05") {
     return [1, 2, 3, 4, 5].map((d) => {
       const date = `2026-10-${String(d).padStart(2, "0")}`;
       const labels = labelsForDate(date);
