@@ -99,3 +99,32 @@ export function bibleComUrl(parsed: ParsedReference, translation: Translation): 
   const versionId = TRANSLATION_META[translation].bibleComId;
   return `https://www.bible.com/bible/${versionId}/${parsed.bookCode}.${parsed.chapter}.${translation}`;
 }
+
+export type OutboundLink = { label: string; url: string };
+
+/**
+ * D5: real, deep-linked destinations only, never scraped text. Every URL
+ * shape here was confirmed live against Matthew 1 and Matthew 5 (#45) --
+ * readscripture.org has no web reader (app-only product, confirmed by
+ * crawling its own link inventory), so it links to its homepage rather
+ * than a fabricated chapter URL.
+ */
+export function bibleLinkGroup(parsed: ParsedReference, translation: Translation): OutboundLink[] {
+  return [
+    { label: "Bible.com", url: bibleComUrl(parsed, translation) },
+    { label: "Olive Tree", url: `https://www.olivetree.com/bible?query=${encodeURIComponent(`${parsed.book} ${parsed.chapter}`)}` },
+    { label: "ReadScripture", url: "https://readscripture.org/" },
+  ];
+}
+
+export function commentaryLinkGroup(parsed: ParsedReference): OutboundLink[] {
+  const bookSlug = parsed.book.toLowerCase().replace(/\s+/g, "-");
+  const bookPath = parsed.book.replace(/\s+/g, "-");
+  return [
+    { label: "Enduring Word", url: `https://enduringword.com/bible-commentary/${bookSlug}-${parsed.chapter}/` },
+    { label: "Bible Hub", url: `https://biblehub.com/commentaries/${bookSlug}/${parsed.chapter}-1.htm` },
+    { label: "BibleRef", url: `https://www.bibleref.com/${bookPath}/${parsed.chapter}/${bookPath}-chapter-${parsed.chapter}.html` },
+    { label: "Blue Letter Bible", url: `https://www.blueletterbible.org/kjv/${parsed.bookCode.toLowerCase()}/${parsed.chapter}/1/` },
+    { label: "BibleProject", url: `https://bibleproject.com/bible/nasb/${bookSlug}/${parsed.chapter}/` },
+  ];
+}

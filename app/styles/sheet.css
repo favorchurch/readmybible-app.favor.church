@@ -18,10 +18,10 @@
 .translation-select {
   display: inline-block;
   margin: 8px 0 14px;
-  padding: 7px 28px 7px 12px;
-  min-height: 32px;
+  padding: 14px 30px 14px 14px;
+  min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 22px;
   background: var(--paper);
   color: var(--ink-muted);
   font-family: inherit;
@@ -30,10 +30,27 @@
   letter-spacing: .08em;
   cursor: pointer;
 }
-.scripture-sheet .secondary-link { display: inline-block; margin-top: 18px; }
 .passage-attribution {
   margin-top: 10px;
   color: var(--ink-muted);
   font-size: 12px;
   line-height: 1.45;
+}
+.link-groups { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
+.link-group-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.scripture-sheet .link-group-row .secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: 0;
+  max-width: none;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--paper);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
 }

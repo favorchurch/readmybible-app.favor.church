@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
+import { bibleLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
 type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
@@ -36,8 +37,9 @@ export function ScripturePopup({
     };
   }, [passageRef, translation]);
 
-  const bibleComUrl =
-    state !== "loading" && state !== "error" ? state.bibleComUrl : `https://www.bible.com/search/bible?q=${encodeURIComponent(passageRef)}`;
+  const parsed = parseReference(passageRef);
+  const bibleLinks = parsed ? bibleLinkGroup(parsed, translation) : [];
+  const commentaryLinks = parsed ? commentaryLinkGroup(parsed) : [];
 
   return (
     <Sheet open onClose={onClose} labelledBy="scripture-title" className="scripture-sheet">
@@ -66,9 +68,30 @@ export function ScripturePopup({
           {state.text && <p className="passage-attribution">{state.attribution}</p>}
         </>
       )}
-      <a className="secondary-link" href={bibleComUrl} target="_blank" rel="noreferrer">
-        Open in Bible.com
-      </a>
+      {parsed && (
+        <div className="link-groups">
+          <div className="link-group">
+            <p className="eyebrow">BIBLE</p>
+            <div className="link-group-row">
+              {bibleLinks.map((link) => (
+                <a key={link.label} className="secondary-link" href={link.url} target="_blank" rel="noreferrer">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="link-group">
+            <p className="eyebrow">COMMENTARIES</p>
+            <div className="link-group-row">
+              {commentaryLinks.map((link) => (
+                <a key={link.label} className="secondary-link" href={link.url} target="_blank" rel="noreferrer">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </Sheet>
   );
 }

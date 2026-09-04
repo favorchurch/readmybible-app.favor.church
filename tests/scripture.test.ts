@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getPassage } from "@/lib/scripture";
-import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
+import { bibleComUrl, bibleLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
 import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
 import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
 
@@ -54,6 +54,26 @@ describe("bibleComUrl", () => {
     const parsed = parseReference("Matthew 5:3-12")!;
     expect(bibleComUrl(parsed, "NET")).toBe("https://www.bible.com/bible/107/MAT.5.NET");
     expect(bibleComUrl(parsed, "ESV")).toBe("https://www.bible.com/bible/59/MAT.5.ESV");
+  });
+});
+
+describe("bibleLinkGroup", () => {
+  it("builds three deep links keyed to the chapter", () => {
+    const parsed = parseReference("Matthew 5:3-12")!;
+    const links = bibleLinkGroup(parsed, "NET");
+    expect(links.map((l) => l.label)).toEqual(["Bible.com", "Olive Tree", "ReadScripture"]);
+    expect(links[0].url).toBe("https://www.bible.com/bible/107/MAT.5.NET");
+    expect(links[1].url).toBe("https://www.olivetree.com/bible?query=Matthew%205");
+  });
+});
+
+describe("commentaryLinkGroup", () => {
+  it("builds five deep links keyed to the chapter", () => {
+    const parsed = parseReference("Matthew 5:3-12")!;
+    const links = commentaryLinkGroup(parsed);
+    expect(links.map((l) => l.label)).toEqual(["Enduring Word", "Bible Hub", "BibleRef", "Blue Letter Bible", "BibleProject"]);
+    expect(links[0].url).toBe("https://enduringword.com/bible-commentary/matthew-5/");
+    expect(links[3].url).toBe("https://www.blueletterbible.org/kjv/mat/5/1/");
   });
 });
 
