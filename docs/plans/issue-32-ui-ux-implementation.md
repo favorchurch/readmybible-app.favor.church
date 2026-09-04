@@ -248,7 +248,7 @@ Verify: `.office/qa/matrix.md` lists every viewport x state cell as PASS or a fi
 
 **Task 14. Docs and copy sync, Favor copy QA.** `INLINE`.
 Files: `intent/COPY.md` (add every new user-facing string by screen; update changed ones), `README.md` (remove its 6 pre-existing em dashes while editing), `intent/FLOWS.md` (only if a flow changed: the day-preview and grace dashboard are new entry points to the catch-up flow), `intent/DECISIONS.md` (append rows for D2 palette tones, D5 dev clock, favicon redesign, location picker removal), `README.md` (`DEV_MOCK_TODAY`).
-Verify: `grep -rn "—" --include=*.ts --include=*.tsx components app lib; grep -n "—" intent/COPY.md intent/DESIGN.md intent/DECISIONS.md README.md` both print nothing; `grep -rniw "fam" components app intent/COPY.md` = 0; `grep -rn "Fluro" components app intent` = 0; every `data-section` name in `components/**` appears in `intent/COPY.md` (script: list `data-section="..."` values, grep each in COPY.md, paste misses = none); gate green.
+Verify: `grep -rn "—" --include=*.ts --include=*.tsx components app lib; grep -n "—" intent/COPY.md intent/DESIGN.md intent/DECISIONS.md README.md` both print nothing; `grep -rniw "fam" components app intent/COPY.md` = 0; `grep -rn "Fluro" components app intent --exclude=INTENT.md` = 0 (Amendment 7); every `data-section` name in `components/**` appears in `intent/COPY.md` (script: list `data-section="..."` values, grep each in COPY.md, paste misses = none); gate green.
 
 **Final closeout (planner, named actions NA5 to NA8):** final gate, approval summary comment, remove the plan in a dedicated commit, push, mark PR 33 ready, merge into `main`, production smoke, report, ledger row, worktree cleanup.
 
@@ -605,3 +605,11 @@ mistakes. Forbidden in this codebase from here on:
 M3 Task 12 should add a test that fails on any `devMockToday` regex or script-tag scrape outside
 `lib/dev-clock.ts`.
 
+### Amendment 7 (2026-09-04, after M3 handoff)
+
+Task 14's Verify grep `grep -rn "Fluro" components app intent` can never return empty, because
+`intent/INTENT.md:46` is the rule "Never mention Fluro anywhere." and `intent/INTENT.md` is a frozen
+surface (section 2) that no task may edit. The grep now excludes that one file:
+`grep -rn "Fluro" components app intent --exclude=INTENT.md`. The executor confirmed the rule line is
+the only match in the tree. Same class as the em-dash carve-out for frozen docs in Constraint 10.
+No done-criterion changes (dc16 never carried the Fluro grep).
