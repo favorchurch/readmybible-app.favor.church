@@ -10,6 +10,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
+import { StageIcon } from "@/components/stage-icons";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
@@ -100,14 +101,26 @@ export function ConnectScreen({
             <div className="big-home-info">
               <div>
                 <p className="eyebrow">CURRENT HOME</p>
-                <h2>{stage}</h2>
+                <h2 className="stage-name-row">
+                  {stage}
+                  <StageIcon name={stage} size={22} className="stage-name-icon" />
+                </h2>
                 <span className="home-note">{homeStages[selectedStage].note}</span>
               </div>
               <div className="coin-chip">◉ {groupCoins}</div>
             </div>
             <ProgressBar value={nextStage?.pct ?? 100} max={100} />
             <div className="upgrade-copy">
-              <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
+              <strong className="stage-name-row">
+                {nextStage ? (
+                  <>
+                    {nextStage.pct}% to {nextStage.stage}
+                    <StageIcon name={nextStage.stage} size={16} className="stage-name-icon" />
+                  </>
+                ) : (
+                  "All stages reached"
+                )}
+              </strong>
               <span>Next group upgrade</span>
             </div>
             <div className="home-growth-action">
