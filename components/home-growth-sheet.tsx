@@ -2,7 +2,7 @@
 
 import { Sheet } from "@/components/sheet";
 import { homeStages, stageIndex } from "@/components/rotatable-home";
-import { StageIcon } from "@/components/stage-icons";
+import { StageMini } from "@/components/stage-mini";
 import type { Stage } from "@/lib/game";
 
 export function HomeGrowthSheet({
@@ -58,7 +58,7 @@ export function HomeGrowthSheet({
                     </div>
                     <span className="growth-stage-note">{stage.note}</span>
                   </div>
-                  <StageIcon name={stage.name} size={22} className="growth-stage-icon" />
+                  <StageMini name={stage.name} size={44} className="growth-stage-mini" />
                 </li>
               );
             })}

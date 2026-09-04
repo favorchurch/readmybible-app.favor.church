@@ -430,3 +430,43 @@
   height: 245px;
 }
 
+/*
+ * T14 (D9 retracted): a static, decorative miniature of the same
+ * .home3d-model used by the rotatable hero -- reuses that markup and CSS
+ * wholesale via components/home-model.tsx so a per-stage fix never has to
+ * land twice. Deliberately does NOT reuse .home3d-viewport/.home3d-turntable
+ * (line 16-24 above): those carry drag/focus/touch affordances that are
+ * wrong on something with no role, no tabIndex, and no interaction --
+ * including touch-action: none, which would create dead scroll zones over
+ * every mini inside the scrollable "How your home grows" list.
+ */
+.stage-mini {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  perspective: 850px;
+  flex-shrink: 0;
+}
+.stage-mini-turntable {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+/* Every per-stage `top`/`left`/`transform` override above is tuned for the
+   ~310-340px hero viewport and would badly mis-seat the model at mini
+   scale. (0,3,0) beats every (0,2,0) `.home3d-model.<stage>` rule above
+   regardless of source order -- the exact specificity tie this file has
+   hit before (see the D9 tent-seating fix, #36). Reset to plain centering
+   and let the turntable's scale() do the rest. */
+.stage-mini .home3d-model.tent,
+.stage-mini .home3d-model.trailer,
+.stage-mini .home3d-model.cabin3d,
+.stage-mini .home3d-model.apartment,
+.stage-mini .home3d-model.house3d,
+.stage-mini .home3d-model.mansion {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: none;
+}
+

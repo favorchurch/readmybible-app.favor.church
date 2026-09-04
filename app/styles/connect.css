@@ -36,7 +36,7 @@
 }
 
 .stage-name-row { display: inline-flex; align-items: center; gap: 8px; }
-.stage-name-icon { flex-shrink: 0; color: var(--coral); }
+.stage-name-mini { flex-shrink: 0; }
 
 .coin-chip {
   border: 1px solid var(--line);
@@ -508,8 +508,7 @@
   margin-top: 2px;
 }
 
-.growth-stage-icon { flex-shrink: 0; color: var(--navy); }
-.growth-stage-item.current .growth-stage-icon { color: #966e17; }
+.growth-stage-mini { flex-shrink: 0; }
 
 .reading-visibility-body {
   font-size: 14px;
