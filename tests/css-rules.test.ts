@@ -190,10 +190,21 @@ describe("css-rules", () => {
 
   it("keeps the tent people layout mobile-safe and the toggle selector-specific", () => {
     const today = loadAll().find(({ path }) => path === "app/styles/today.css");
-    expect(today?.raw).toContain(".section-heading .tent-toggle-button");
-    expect(today?.raw).toContain("@media (max-width: 480px)");
-    expect(today?.raw).toContain("position: static");
-    expect(today?.raw).toContain("overflow-x: auto");
+    const toggleRule = today?.rules.find(({ selector }) => selector === ".section-heading .tent-toggle-button");
+    const mobileOverlayRule = today?.rules.find(
+      ({ selector, prelude }) => selector === ".tent-people-overlay" && prelude.some((p) => /max-width:\s*480px/.test(p)),
+    );
+    expect(toggleRule?.decls).toContain("text-decoration: none");
+    expect(mobileOverlayRule?.decls).toContain("position: static");
+    expect(mobileOverlayRule?.decls).toContain("flex-wrap: nowrap");
+    expect(mobileOverlayRule?.decls).toContain("overflow-x: auto");
+  });
+
+  it("keeps the compact Today home selectors valid through the people wrapper", () => {
+    const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
+    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact")).toBe(true);
+    expect(home?.rules.some(({ selector }) => selector === ".home-card > .home-scene-wrap")).toBe(true);
+    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact .home3d-ground")).toBe(true);
   });
 
   it("has no meaningful font-size at 11px or below (or the rem equivalent) unless marked decorative", () => {

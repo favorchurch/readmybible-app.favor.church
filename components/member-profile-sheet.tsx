@@ -60,6 +60,7 @@ export function MemberProfileSheet({
               <div
                 key={mark.date}
                 className={`streak-dot ${mark.read ? "read" : "unread"}`}
+                role="img"
                 title={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
                 aria-label={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
               >

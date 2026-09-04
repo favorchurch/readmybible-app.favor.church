@@ -276,6 +276,32 @@
   position: relative;
 }
 
+.member-avatar-streak {
+  position: absolute;
+  z-index: 8;
+  top: -8px;
+  left: 50%;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-sm);
+}
+
+.member-avatar-streak i {
+  display: block;
+  width: 7px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.member-avatar-streak i.read { background: var(--sage); }
+.member-avatar-streak i.unread { background: var(--coral-soft); }
+
 .member-avatar b {
   position: absolute;
   right: -3px;

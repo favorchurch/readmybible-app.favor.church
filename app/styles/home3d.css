@@ -75,7 +75,7 @@
 
 
 /* Cleaner compact 3D cabin on the Today screen. */
-.home-card > .home3d-wrap.compact { height: 250px; border-bottom: 1px solid var(--line); }
+.home-card .home3d-wrap.compact { height: 250px; border-bottom: 1px solid var(--line); }
 .home3d-wrap.compact .home3d-viewport { bottom: 29px; }
 .home3d-wrap.compact .home3d-model { top: 56%; transform: translate(-50%,-50%) scale(.9); }
 .home3d-wrap.compact .home3d-ground { width: 225px; height: 225px; top: 64%; }
@@ -106,7 +106,8 @@
 .home3d-model.cabin3d .roof-back { background: #3b506c !important; }
 
 @media (min-width: 760px) {
-  .home-card > .home3d-wrap.compact { grid-row: span 2; height: 260px; }
+  .home-card > .home-scene-wrap { grid-row: span 2; }
+  .home-card .home3d-wrap.compact { height: 260px; }
 }
 
 @media (max-width: 430px) {
@@ -417,15 +418,15 @@
 }
 
 /* The compact Today preview uses the same scale and ground contact as Connect. */
-.home-card > .home3d-wrap.compact .home3d-model.tent {
+.home-card .home3d-wrap.compact .home3d-model.tent {
   top: 56%;
   transform: translate(-50%,-50%);
 }
-.home-card > .home3d-wrap.compact .home3d-model.cabin3d {
+.home-card .home3d-wrap.compact .home3d-model.cabin3d {
   top: 55%;
   transform: translate(-50%,-50%);
 }
-.home-card > .home3d-wrap.compact .home3d-ground {
+.home-card .home3d-wrap.compact .home3d-ground {
   width: 245px;
   height: 245px;
 }
@@ -469,4 +470,3 @@
   transform: translate(-50%, -50%);
   transition: none;
 }
-

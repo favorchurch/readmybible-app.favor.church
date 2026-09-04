@@ -13,6 +13,7 @@
 .section-heading .tent-toggle-button {
   font-size: 13px;
   font-weight: 700;
+  text-decoration: none;
   color: var(--coral-deep);
   background: #fdf0eb;
   border: 1px solid var(--line);

@@ -290,7 +290,6 @@ export function ProgressScreen({
                       <strong>{g.name}</strong>
                       <span className="campus-group-status">{pct}% complete · {currentStage}</span>
                     </div>
-                    <div className="campus-group-pct">{pct}%</div>
                   </div>
                   <ProgressBar value={pct} max={100} />
                 </article>

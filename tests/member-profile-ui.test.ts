@@ -194,6 +194,8 @@ describe("ConnectScreen roster cards", () => {
     expect(html).toContain('title="Jordan"');
     expect(html).toContain('title="Taylor"');
     expect(html).toContain('title="Sam"');
+    expect(html).toContain('class="member-avatar-streak"');
+    expect(html).toContain('aria-label="Last five reading days: 5 of 5 read"');
     expect(html).toContain('aria-label="View Jordan&#x27;s profile: Read"');
     expect(html).toContain('aria-label="View Taylor&#x27;s profile: Waiting"');
     expect(html).toContain("<strong>Jordan</strong>");

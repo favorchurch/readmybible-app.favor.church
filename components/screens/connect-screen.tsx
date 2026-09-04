@@ -11,6 +11,7 @@ import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
 import { StageMini } from "@/components/stage-mini";
+import { MemberStreakDots } from "@/components/member-streak-dots";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
@@ -203,6 +204,7 @@ export function ConnectScreen({
                       title={m.name}
                     >
                       <div className="member-avatar">
+                        <MemberStreakDots dates={m.readingDates ?? []} todayLocal={today.todayLocal} />
                         <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
                       </div>
                       <strong>{m.name}</strong>
@@ -225,6 +227,7 @@ export function ConnectScreen({
                     title={m.name}
                   >
                     <div className="member-avatar">
+                      <MemberStreakDots dates={m.readingDates ?? []} todayLocal={today.todayLocal} />
                       <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
                       {m.readToday && <b>✓</b>}
                     </div>
