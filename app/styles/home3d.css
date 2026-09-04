@@ -178,7 +178,7 @@
 .tent-slope { position: absolute; display: block; width: 125px; height: 108px; left: 50%; top: 50%; background: #c96f53; border: 2px solid #26364a; box-shadow: 0 8px 14px rgba(23,41,67,.16); backface-visibility: visible; }
 .tent-slope-left { transform: translate(-50%,-50%) translateX(-37.5px) rotateZ(-53.13deg) rotateX(90deg); background: #b9604c; }
 .tent-slope-right { transform: translate(-50%,-50%) translateX(37.5px) rotateZ(53.13deg) rotateX(90deg); background: #dc825e; }
-.tent-flap { position: absolute; display: block; z-index: 3; width: 48px; height: 67px; left: 50%; top: 38px; transform: translateX(-50%) translateZ(56px); clip-path: polygon(50% 0,100% 100%,0 100%); background: #26364a; }
+.tent-flap { position: absolute; display: block; z-index: 3; width: 48px; height: 62px; left: 50%; top: 38px; transform: translateX(-50%) translateZ(56px); clip-path: polygon(50% 0,100% 100%,0 100%); background: #26364a; }
 .tent-flap:after { content: ""; position: absolute; inset: 8px 7px 0; clip-path: inherit; background: #edb55c; }
 
 /* Trailer: long rounded camper body, wheels, stripe and tow hitch. */
@@ -410,7 +410,17 @@
 }
 
 
-/* The compact Today preview uses the same cabin scale and ground contact as Connect. */
+/* Seat the Tent cleanly on the ground plane in compact previews and Today illustration. */
+.home3d-wrap.compact .home3d-model.tent,
+.home-preview-card .home3d-model.tent {
+  top: 60.5%;
+}
+
+/* The compact Today preview uses the same scale and ground contact as Connect. */
+.home-card > .home3d-wrap.compact .home3d-model.tent {
+  top: 56%;
+  transform: translate(-50%,-50%);
+}
 .home-card > .home3d-wrap.compact .home3d-model.cabin3d {
   top: 55%;
   transform: translate(-50%,-50%);
@@ -419,3 +429,4 @@
   width: 245px;
   height: 245px;
 }
+
