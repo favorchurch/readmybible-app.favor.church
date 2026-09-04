@@ -78,26 +78,20 @@ export function ScripturePopup({
           <div className="link-group">
             <p className="eyebrow">COMMENTARIES</p>
             <div className="link-group-row inline-row">
-              {commentaryLinks.map((link, i) => (
-                <span key={link.label}>
-                  <a className="inline-link" href={link.url} target="_blank" rel="noreferrer">
-                    {link.label} ↗
-                  </a>
-                  {i < commentaryLinks.length - 1 && <span className="middot">·</span>}
-                </span>
+              {commentaryLinks.map((link) => (
+                <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">
+                  {link.label} ↗
+                </a>
               ))}
             </div>
           </div>
           <div className="link-group">
             <p className="eyebrow">APPS</p>
             <div className="link-group-row inline-row">
-              {appsLinks.map((link, i) => (
-                <span key={link.label}>
-                  <a className="inline-link" href={link.url} target="_blank" rel="noreferrer">
-                    {link.label} ↗
-                  </a>
-                  {i < appsLinks.length - 1 && <span className="middot">·</span>}
-                </span>
+              {appsLinks.map((link) => (
+                <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">
+                  {link.label} ↗
+                </a>
               ))}
             </div>
           </div>
