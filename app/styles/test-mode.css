@@ -9,7 +9,7 @@
 .test-mode-field > span { font-weight: 700; color: var(--ink-2); }
 .test-mode-field input[type="range"] { width: 100%; min-height: 44px; }
 .test-mode-phase-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.test-mode-phase-row button { min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
+.test-mode-phase-row button { min-height: 44px; min-width: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
 .test-mode-phase-row button.selected { background: var(--navy); color: #fff; border-color: var(--navy); }
 .test-mode-phase-row button:focus-visible,
 .test-mode-field input[type="range"]:focus-visible {
