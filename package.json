@@ -13,7 +13,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
-    "scripture:build": "tsx scripts/build-scripture.ts"
+    "scripture:build": "tsx scripts/build-scripture.ts",
+    "scripture:build-csb-niv": "tsx scripts/build-csb-niv.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.28.0",

@@ -120,8 +120,13 @@ describe("lib/scripture/store (bundled data on disk)", () => {
     expect(loadKeyPassage("ESV", "Matthew 1:1")).toBeNull();
   });
 
-  it("returns null for a version with no bundled data at all (CSB/NIV, sourced in #49)", () => {
-    expect(loadKeyPassage("CSB", "Matthew 1:20-21")).toBeNull();
+  it("loads CSB and NIV (2011) key passages, sourced independently of bolls.life per #49", () => {
+    const csb = loadKeyPassage("CSB", "Matthew 1:20-21");
+    const niv = loadKeyPassage("NIV", "Matthew 1:20-21");
+    expect(csb?.["20"]).toBeTruthy();
+    expect(niv?.["20"]).toBeTruthy();
+    // Distinct translations, not a duplicated/misfiled text.
+    expect(csb?.["20"]).not.toBe(niv?.["20"]);
   });
 });
 
