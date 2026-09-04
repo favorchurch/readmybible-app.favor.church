@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { Avatar, avatarSeedFor, defaultAvatarConfig, type Translation, type UserProfile } from "@/components/avatar";
 import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
+import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScripturePopup } from "@/components/scripture-popup";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -357,8 +358,16 @@ export function TodayScreen({
                 <HomeIllustration stage={stageIndex(stage)} />
                 <div className="home-info">
                   <div className="stage-row">
-                    <span>{stage}</span>
-                    {nextStage && <span>{nextStage.stage}</span>}
+                    <span className="stage-name-row">
+                      <StageMini name={stage} size={38} className="home-info-mini" aria-hidden />
+                      <span>{stage}</span>
+                    </span>
+                    {nextStage && (
+                      <span className="stage-name-row">
+                        <StageMini name={nextStage.stage} size={38} className="home-info-mini" aria-hidden />
+                        <span>{nextStage.stage}</span>
+                      </span>
+                    )}
                   </div>
                   <ProgressBar value={nextStage?.pct ?? 100} max={100} />
                   <div className="stage-row detail">
