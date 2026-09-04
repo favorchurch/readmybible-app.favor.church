@@ -103,7 +103,7 @@ export function ConnectScreen({
                 <p className="eyebrow">CURRENT HOME</p>
                 <h2 className="stage-name-row">
                   {stage}
-                  <StageMini name={stage} size={44} className="stage-name-mini" />
+                  <StageMini name={stage} size={53} className="stage-name-mini" />
                 </h2>
                 <span className="home-note">{homeStages[selectedStage].note}</span>
               </div>
@@ -115,7 +115,7 @@ export function ConnectScreen({
                 <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
                 <span>Next group upgrade</span>
               </div>
-              {nextStage && <StageMini name={nextStage.stage} size={32} className="upgrade-copy-mini" />}
+              {nextStage && <StageMini name={nextStage.stage} size={38} className="upgrade-copy-mini" />}
             </div>
             <div className="home-growth-action">
               <button

@@ -58,7 +58,7 @@ export function HomeGrowthSheet({
                     </div>
                     <span className="growth-stage-note">{stage.note}</span>
                   </div>
-                  <StageMini name={stage.name} size={44} className="growth-stage-mini" />
+                  <StageMini name={stage.name} size={53} className="growth-stage-mini" />
                 </li>
               );
             })}
