@@ -49,8 +49,10 @@
 .scripture-sheet .link-group .eyebrow { margin-bottom: 4px; }
 .link-group-row { display: flex; flex-wrap: wrap; align-items: center; }
 .link-group-row.inline-row {
-  display: block;
-  line-height: 1.6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
 }
 .scripture-sheet .link-group-row .inline-link {
   display: inline-block;
@@ -67,10 +69,6 @@
   outline: 2px solid var(--gold);
   outline-offset: 1px;
   border-radius: 4px;
-}
-.scripture-sheet .link-group-row .middot {
-  color: var(--ink-muted);
-  padding: 0 2px;
 }
 @media (hover: hover) {
   .scripture-sheet .link-group-row .inline-link:hover {
