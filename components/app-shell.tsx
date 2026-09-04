@@ -156,7 +156,7 @@ export function AppShell(props: AppShellProps) {
       setFlowStep(2);
       router.refresh();
     } else {
-      setCheckInError("Something went wrong on our side. Try again in a bit.");
+      setCheckInError(result.error || "Something went wrong on our side. Try again in a bit.");
     }
   }
 
