@@ -186,7 +186,7 @@ describe("ConnectScreen roster cards", () => {
         appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
-        onGetOrCreateJoinCode: async () => ({ ok: true, code: "TEST12" }),
+        onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
@@ -219,7 +219,7 @@ describe("ConnectScreen roster cards", () => {
         appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
-        onGetOrCreateJoinCode: async () => ({ ok: true, code: "TEST12" }),
+        onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
