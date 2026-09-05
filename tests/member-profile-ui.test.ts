@@ -186,6 +186,7 @@ describe("ConnectScreen roster cards", () => {
         appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
+        onGetOrCreateJoinCode: async () => ({ ok: true, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
@@ -218,6 +219,7 @@ describe("ConnectScreen roster cards", () => {
         appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
+        onGetOrCreateJoinCode: async () => ({ ok: true, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
@@ -246,6 +248,7 @@ describe("TodayScreen tent people toggle", () => {
         roster: sampleRoster,
         profile: testProfile,
         onStart: () => {},
+        onReplayCelebration: () => {},
         onEditProfile: () => {},
         onViewConnect: () => {},
         onViewProgress: () => {},
@@ -271,6 +274,7 @@ describe("TodayScreen tent people toggle", () => {
         roster: sampleRoster,
         profile: testProfile,
         onStart: () => {},
+        onReplayCelebration: () => {},
         onEditProfile: () => {},
         onViewConnect: () => {},
         onViewProgress: () => {},

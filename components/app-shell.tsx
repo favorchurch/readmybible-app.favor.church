@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
+import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
 import {
@@ -82,6 +83,7 @@ export function AppShell(props: AppShellProps) {
   const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
   const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
+  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(testMode.active, getOrCreateJoinCode), [testMode.active]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -128,10 +130,10 @@ export function AppShell(props: AppShellProps) {
 
   const roster = useMemo(() => {
     if (!testMode.active) return props.roster;
-    return props.roster.map((m) => {
-      const simulated = simulatedMemberHistory(m.personId, testMode.state.completionPct, today.todayLocal);
+    return props.roster.map((member) => {
+      const simulated = simulatedMemberHistory(member.personId, testMode.state.completionPct, today.todayLocal);
       return {
-        ...m,
+        ...member,
         readToday: testMode.state.completionPct > 0 && simulated.readingDates.includes(today.todayLocal),
         chapters: simulated.chapters,
         readingDates: simulated.readingDates,
@@ -148,10 +150,15 @@ export function AppShell(props: AppShellProps) {
   }, [chapters, today]);
 
   function startReading(chapter: number) {
-    if (testMode.active) return;
     setCheckInError(null);
     setFlowChapter(chapter);
     setFlowStep(1);
+  }
+
+  function replayCelebration(chapter: number) {
+    setFlowChapter(chapter);
+    setFlowGroupResult(null);
+    setFlowStep(2);
   }
 
   async function finishReading() {
@@ -165,7 +172,7 @@ export function AppShell(props: AppShellProps) {
       setFlowStep(2);
       router.refresh();
     } else {
-      setCheckInError("Something went wrong on our side. Try again in a bit.");
+      setCheckInError(result.error || "Something went wrong on our side. Try again in a bit.");
     }
   }
 
@@ -244,6 +251,7 @@ export function AppShell(props: AppShellProps) {
           roster={roster}
           profile={profile}
           onStart={startReading}
+          onReplayCelebration={replayCelebration}
           onEditProfile={() => setProfileOpen(true)}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
@@ -260,6 +268,7 @@ export function AppShell(props: AppShellProps) {
           appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
+          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           today={today}
         />
       )}

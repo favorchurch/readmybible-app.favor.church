@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
+import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { Avatar, avatarSeedFor, type UserProfile } from "@/components/avatar";
 import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
@@ -26,6 +26,7 @@ export function ConnectScreen({
   appBaseUrl,
   profile,
   onEditProfile,
+  onGetOrCreateJoinCode,
   today,
 }: {
   groupName: string | null;
@@ -36,6 +37,7 @@ export function ConnectScreen({
   appBaseUrl: string;
   profile: UserProfile;
   onEditProfile: () => void;
+  onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   today: TodayState;
 }) {
   const phase = today.displayPhase;
@@ -60,7 +62,7 @@ export function ConnectScreen({
   useEffect(() => {
     if (!isLeader) return;
     let cancelled = false;
-    getOrCreateJoinCode().then((result) => {
+    onGetOrCreateJoinCode().then((result) => {
       if (cancelled) return;
       if (result.ok) setJoinCode(result.code);
       else setCodeError(result.error);
@@ -68,7 +70,7 @@ export function ConnectScreen({
     return () => {
       cancelled = true;
     };
-  }, [isLeader]);
+  }, [isLeader, onGetOrCreateJoinCode]);
 
   useEffect(() => {
     if (!joinCode) return;

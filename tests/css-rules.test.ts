@@ -210,9 +210,10 @@ describe("css-rules", () => {
 
   it("keeps the compact Today home selectors valid through the people wrapper", () => {
     const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
+    const today = loadAll().find(({ path }) => path === "app/styles/today.css");
     expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact")).toBe(true);
-    expect(home?.rules.some(({ selector }) => selector === ".home-card > .home-scene-wrap")).toBe(true);
     expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact .home3d-ground")).toBe(true);
+    expect(today?.rules.some(({ selector }) => selector === ".home-card .home-scene-wrap")).toBe(true);
   });
 
   it("has no meaningful font-size at 11px or below (or the rem equivalent) unless marked decorative", () => {

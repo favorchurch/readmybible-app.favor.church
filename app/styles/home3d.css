@@ -106,7 +106,6 @@
 .home3d-model.cabin3d .roof-back { background: #3b506c !important; }
 
 @media (min-width: 760px) {
-  .home-card > .home-scene-wrap { grid-row: span 2; }
   .home-card .home3d-wrap.compact { height: 260px; }
 }
 
