@@ -151,4 +151,30 @@ describe("recentFiveDayStreak", () => {
     expect(marks.map((mark) => mark.future)).toEqual([false, false, true, true, true]);
     expect(marks.filter((mark) => mark.read)).toHaveLength(0);
   });
+
+  it("handles launch day with only day 1 available and future days suppressed", () => {
+    const marks = recentFiveDayStreak(["2026-10-01"], "2026-10-01");
+    expect(marks[0]).toMatchObject({
+      date: "2026-10-01",
+      day: 1,
+      read: true,
+      future: false,
+    });
+    expect(marks[1]).toMatchObject({
+      date: "2026-10-02",
+      day: 2,
+      read: false,
+      future: true,
+    });
+    expect(marks.slice(1).every((m) => m.future)).toBe(true);
+    expect(marks.slice(1).every((m) => !m.read)).toBe(true);
+  });
+
+  it("never marks future days as read even if dates array contains them", () => {
+    const marks = recentFiveDayStreak(["2026-10-01", "2026-10-03"], "2026-10-02");
+    const day3 = marks.find((m) => m.date === "2026-10-03");
+    expect(day3).toBeDefined();
+    expect(day3?.future).toBe(true);
+    expect(day3?.read).toBe(false);
+  });
 });

@@ -12,6 +12,8 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
 }));
 
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
+import { MemberStreakDots } from "@/components/member-streak-dots";
+import { ProfileEditor } from "@/components/profile-editor";
 import { ConnectScreen } from "@/components/screens/connect-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
 import { ProgressScreen } from "@/components/screens/progress-screen";
@@ -169,6 +171,23 @@ describe("MemberProfileSheet", () => {
 
     expect(html).toContain("October 3: Upcoming");
     expect(html).not.toContain("October 3: Missed");
+  });
+
+  it("labels all streak marks as upcoming during pre-launch", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MemberProfileSheet, {
+        open: true,
+        onClose: () => {},
+        member: sampleRoster[0],
+        todayLocal: "2026-09-20",
+      }),
+    );
+
+    expect(html).toContain("October 1: Upcoming");
+    expect(html).toContain("October 5: Upcoming");
+    expect(html).not.toContain("Missed");
+    expect(html).toContain("Soon");
+    expect(html).toContain("·");
   });
 
   it("never exposes verse content, prayers, or private fields", () => {
@@ -384,5 +403,61 @@ describe("ProgressScreen campus groups", () => {
 
     expect(html).toContain("No groups on the board yet. October&#x27;s coming.");
     expect(html).not.toContain("campus-group-card");
+  });
+});
+
+describe("MemberStreakDots", () => {
+  it("announces all days as upcoming during pre-launch", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MemberStreakDots, {
+        dates: [],
+        todayLocal: "2026-09-20",
+      }),
+    );
+
+    expect(html).toContain("Last five reading days: 0 of 0 read, 5 upcoming");
+    expect(html).toContain("October 1: Upcoming");
+    expect(html).toContain("October 5: Upcoming");
+    expect(html).not.toContain("Missed");
+    expect(html).not.toContain("unread");
+  });
+
+  it("excludes future days from available read count during launch week", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MemberStreakDots, {
+        dates: ["2026-10-01"],
+        todayLocal: "2026-10-02",
+      }),
+    );
+
+    expect(html).toContain("Last five reading days: 1 of 2 read, 3 upcoming");
+    expect(html).toContain("October 1: Read");
+    expect(html).toContain("October 2: Missed");
+    expect(html).toContain("October 3: Upcoming");
+    expect(html).not.toContain("October 3: Missed");
+  });
+});
+
+describe("ProfileEditor reading data disclosure", () => {
+  it("accurately describes shared journey history, read days, and 5-day streak while preserving privacy", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProfileEditor, {
+        profile: testProfile,
+        saving: false,
+        onClose: () => {},
+        onSave: () => {},
+      }),
+    );
+
+    expect(html).toContain('data-section="reading-data-note"');
+    expect(html).toContain("About your reading data");
+    expect(html).toContain("check-in history for this journey");
+    expect(html).toContain("which days you read and your recent five-day streak");
+    expect(html).toContain("Section leaders see group totals in their dashboard, not your private reading details");
+
+    expect(html).not.toContain("can see today&#x27;s check-in status");
+    expect(html).not.toContain("can see today's check-in status");
+    expect(html).not.toContain("private notes");
+    expect(html).not.toContain("verse bookmarks");
   });
 });
