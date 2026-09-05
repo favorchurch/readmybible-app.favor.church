@@ -157,6 +157,20 @@ describe("MemberProfileSheet", () => {
     expect(html).toContain("8/28 complete");
   });
 
+  it("labels launch-week dates that have not happened yet as upcoming", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MemberProfileSheet, {
+        open: true,
+        onClose: () => {},
+        member: { ...sampleRoster[0], readingDates: ["2026-10-01", "2026-10-02"] },
+        todayLocal: "2026-10-02",
+      }),
+    );
+
+    expect(html).toContain("October 3: Upcoming");
+    expect(html).not.toContain("October 3: Missed");
+  });
+
   it("never exposes verse content, prayers, or private fields", () => {
     const html = renderToStaticMarkup(
       React.createElement(MemberProfileSheet, {
@@ -291,6 +305,14 @@ describe("TodayScreen tent people toggle", () => {
       "Taylor",
       "Sam",
     ]);
+    const scene = container.querySelector(".home-scene-wrap");
+    const overlay = container.querySelector(".tent-people-overlay");
+    const homeInfo = container.querySelector(".home-info");
+    expect(scene).not.toBeNull();
+    expect(overlay).not.toBeNull();
+    expect(homeInfo).not.toBeNull();
+    expect(container.innerHTML.indexOf("home-scene-wrap")).toBeLessThan(container.innerHTML.indexOf("tent-people-overlay"));
+    expect(container.innerHTML.indexOf("tent-people-overlay")).toBeLessThan(container.innerHTML.indexOf("home-info"));
   });
 });
 

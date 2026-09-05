@@ -59,16 +59,16 @@ export function MemberProfileSheet({
             {streakMarks.map((mark) => (
               <div
                 key={mark.date}
-                className={`streak-dot ${mark.read ? "read" : "unread"}`}
+                className={`streak-dot ${mark.read ? "read" : mark.future ? "future" : "unread"}`}
                 role="img"
-                title={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
-                aria-label={`${mark.longLabel}: ${mark.read ? "Read" : "Missed"}`}
+                title={`${mark.longLabel}: ${mark.future ? "Upcoming" : mark.read ? "Read" : "Missed"}`}
+                aria-label={`${mark.longLabel}: ${mark.future ? "Upcoming" : mark.read ? "Read" : "Missed"}`}
               >
                 <span className="streak-day-label">{mark.label}</span>
                 <span className="streak-dot-circle" aria-hidden="true">
-                  {mark.read ? "✓" : ""}
+                  {mark.future ? "·" : mark.read ? "✓" : ""}
                 </span>
-                <span className="streak-dot-status">{mark.read ? "Read" : "—"}</span>
+                <span className="streak-dot-status">{mark.future ? "Soon" : mark.read ? "Read" : "—"}</span>
               </div>
             ))}
           </div>

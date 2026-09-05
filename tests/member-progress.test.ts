@@ -135,6 +135,7 @@ describe("recentFiveDayStreak", () => {
     const marks = recentFiveDayStreak([], "2026-09-20");
     expect(marks).toHaveLength(5);
     expect(marks.every((m) => m.read === false)).toBe(true);
+    expect(marks.every((m) => m.future === true)).toBe(true);
     expect(marks.map((m) => m.date)).toEqual([
       "2026-10-01",
       "2026-10-02",
@@ -142,5 +143,12 @@ describe("recentFiveDayStreak", () => {
       "2026-10-04",
       "2026-10-05",
     ]);
+  });
+
+  it("marks not-yet-available launch-week days as upcoming", () => {
+    const marks = recentFiveDayStreak([], "2026-10-02");
+
+    expect(marks.map((mark) => mark.future)).toEqual([false, false, true, true, true]);
+    expect(marks.filter((mark) => mark.read)).toHaveLength(0);
   });
 });

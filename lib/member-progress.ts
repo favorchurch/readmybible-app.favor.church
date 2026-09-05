@@ -9,6 +9,7 @@ export type StreakMark = {
   label: string;
   longLabel: string;
   read: boolean;
+  future: boolean;
 };
 
 /**
@@ -79,11 +80,13 @@ export function recentFiveDayStreak(dates: string[], todayLocal: string): Streak
     return [1, 2, 3, 4, 5].map((d) => {
       const date = `2026-10-${String(d).padStart(2, "0")}`;
       const labels = labelsForDate(date);
+      const future = date > todayLocal;
       return {
         date,
         day: d,
         ...labels,
-        read: dateSet.has(date),
+        read: !future && dateSet.has(date),
+        future,
       };
     });
   }
@@ -103,6 +106,7 @@ export function recentFiveDayStreak(dates: string[], todayLocal: string): Streak
       day,
       ...labels,
       read: dateSet.has(key),
+      future: key > todayLocal,
     });
   }
 

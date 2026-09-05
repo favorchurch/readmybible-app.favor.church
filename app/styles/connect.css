@@ -300,6 +300,7 @@
 }
 
 .member-avatar-streak i.read { background: var(--sage); }
+.member-avatar-streak i.upcoming { background: var(--line-strong); }
 .member-avatar-streak i.unread { background: var(--coral-soft); }
 
 .member-avatar b {

@@ -326,9 +326,11 @@
 .streak-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .streak-dot { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--line); }
 .streak-dot.read { background: var(--surface-2); border-color: var(--sage); }
+.streak-dot.future { background: var(--surface-3); border-color: var(--line-strong); }
 .streak-day-label { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
 .streak-dot-circle { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; margin: 6px 0; background: var(--cream); color: #496f58; font-weight: 900; font-size: 12px; border: 1.5px solid var(--line); }
 .streak-dot.read .streak-dot-circle { background: var(--sage); color: #fff; border-color: var(--sage); }
+.streak-dot.future .streak-dot-circle { color: var(--ink-muted); }
 .streak-dot-status { font-size: 12px; color: var(--ink-muted); }
 .streak-dot.read .streak-dot-status { color: var(--ink); font-weight: 600; }
 .member-calendar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-2); }
