@@ -467,6 +467,8 @@ describe("ProfileEditor reading data disclosure", () => {
     );
 
     expect(html).toContain('data-section="reading-data-note"');
+    expect(html).toContain('class="profile-sticky-header"');
+    expect(html).toContain('class="primary-button profile-save profile-save--sticky"');
     expect(html).toContain("About your reading data");
     expect(html).toContain("check-in history for this journey");
     expect(html).toContain("which days you read and your recent five-day streak");
@@ -476,6 +478,7 @@ describe("ProfileEditor reading data disclosure", () => {
     expect(html).not.toContain("can see today's check-in status");
     expect(html).not.toContain("private notes");
     expect(html).not.toContain("verse bookmarks");
+    expect(html).not.toContain("Read My Bible is a Favor Church ministry.");
   });
 });
 
