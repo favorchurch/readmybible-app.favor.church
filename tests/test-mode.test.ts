@@ -11,6 +11,7 @@ import {
   simulatedMemberHistory,
   simulatedTodayState,
   TEST_MODE_BLOCKED_MESSAGE,
+  writesBlocked,
 } from "@/components/test-mode/logic";
 
 describe("isTestModeRequested", () => {
@@ -47,7 +48,43 @@ describe("initialTestModeState", () => {
     expect(state.phase).toBe("active");
     expect(state.completionPct).toBe(0);
     expect(state.groupPct).toBe(0);
-    expect(state.role).toBe("member");
+    expect(state.groupId).toBeNull();
+    expect(state.viewer).toBe("member");
+    expect(state).not.toHaveProperty("role");
+  });
+});
+
+describe("writesBlocked", () => {
+  it("returns false (writes allowed) when test mode is inactive", () => {
+    expect(writesBlocked(false, null, null, null)).toBe(false);
+    expect(writesBlocked(false, 87177, 87177, 87177)).toBe(false);
+    expect(writesBlocked(false, 12345, 99999, 87177)).toBe(false);
+  });
+
+  describe("when test mode is active", () => {
+    it("returns false (writes allowed) only when writable, selected, and real active all match", () => {
+      expect(writesBlocked(true, 87177, 87177, 87177)).toBe(false);
+    });
+
+    it("returns true when writableGroupId is null", () => {
+      expect(writesBlocked(true, 87177, 87177, null)).toBe(true);
+      expect(writesBlocked(true, null, null, null)).toBe(true);
+    });
+
+    it("returns true when selectedGroupId is null (my real group selected)", () => {
+      expect(writesBlocked(true, null, 87177, 87177)).toBe(true);
+      expect(writesBlocked(true, null, 12345, 87177)).toBe(true);
+    });
+
+    it("returns true when selectedGroupId does not match writableGroupId", () => {
+      expect(writesBlocked(true, 12345, 87177, 87177)).toBe(true);
+      expect(writesBlocked(true, 12345, 12345, 87177)).toBe(true);
+    });
+
+    it("returns true when realActiveGroupId does not match writableGroupId (A2 mismatch case)", () => {
+      expect(writesBlocked(true, 87177, 99999, 87177)).toBe(true);
+      expect(writesBlocked(true, 87177, null, 87177)).toBe(true);
+    });
   });
 });
 

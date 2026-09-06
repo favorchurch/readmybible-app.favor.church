@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { PLAN } from "@/lib/plan";
-import type { SimulatedPhase, TestModeState } from "./logic";
+import { writesBlocked, type SimulatedPhase, type TestModeState, type TestModeViewer } from "./logic";
 
 const PHASES: { value: SimulatedPhase; label: string }[] = [
   { value: "pre-launch", label: "Pre-launch" },
@@ -12,14 +12,36 @@ const PHASES: { value: SimulatedPhase; label: string }[] = [
   { value: "closed", label: "Closed" },
 ];
 
+const VIEWERS: { value: TestModeViewer; label: string }[] = [
+  { value: "member", label: "Member" },
+  { value: "leader", label: "Leader" },
+  { value: "non-member", label: "Non-member" },
+];
+
+export type CampusGroupOption = {
+  groupId: number;
+  groupName: string;
+};
+
 export function TestModePanel({
   state,
   onChange,
+  realActiveGroup,
+  campusGroups = [],
+  writableGroupId = null,
 }: {
   state: TestModeState;
   onChange: (next: TestModeState) => void;
+  realActiveGroup?: { groupId: number; groupName: string } | null;
+  campusGroups?: CampusGroupOption[];
+  writableGroupId?: number | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
+
+  const realActiveGroupId = realActiveGroup?.groupId ?? null;
+  const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
+  const isA2Mismatch =
+    writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
 
   return (
     <div className="test-mode-panel" data-section="test-mode-panel" role="region" aria-label="Test mode">
@@ -31,7 +53,53 @@ export function TestModePanel({
       </div>
       {!collapsed && (
         <div className="test-mode-body">
-          <p className="test-mode-note">View-only. Check-in and profile writes are disabled.</p>
+          {!isBlocked ? (
+            <p className="test-mode-note test-mode-note-sandbox">Sandbox group — writes are REAL.</p>
+          ) : isA2Mismatch ? (
+            <p className="test-mode-note">View-only. Writes disabled (session not in group {writableGroupId}).</p>
+          ) : (
+            <p className="test-mode-note">View-only. Writes disabled.</p>
+          )}
+
+          <label className="test-mode-field">
+            <span>Group</span>
+            <select
+              value={state.groupId !== null ? String(state.groupId) : ""}
+              onChange={(event) =>
+                onChange({
+                  ...state,
+                  groupId: event.target.value ? Number(event.target.value) : null,
+                })
+              }
+            >
+              <option value="">
+                {realActiveGroup ? `${realActiveGroup.groupName} (my group)` : "(No active group)"}
+              </option>
+              {campusGroups
+                .filter((g) => g.groupId !== realActiveGroup?.groupId)
+                .map((g) => (
+                  <option key={g.groupId} value={String(g.groupId)}>
+                    {g.groupName}
+                  </option>
+                ))}
+            </select>
+          </label>
+
+          <div className="test-mode-field" role="group" aria-label="Viewer">
+            <span>Viewer</span>
+            <div className="test-mode-phase-row">
+              {VIEWERS.map((v) => (
+                <button
+                  key={v.value}
+                  type="button"
+                  className={state.viewer === v.value ? "selected" : ""}
+                  onClick={() => onChange({ ...state, viewer: v.value })}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="test-mode-field" role="group" aria-label="Phase">
             <span>Phase</span>
@@ -86,26 +154,6 @@ export function TestModePanel({
               onChange={(event) => onChange({ ...state, groupPct: Number(event.target.value) })}
             />
           </label>
-
-          <div className="test-mode-field" role="group" aria-label="Role">
-            <span>Role</span>
-            <div className="test-mode-phase-row">
-              <button
-                type="button"
-                className={state.role === "member" ? "selected" : ""}
-                onClick={() => onChange({ ...state, role: "member" })}
-              >
-                Member
-              </button>
-              <button
-                type="button"
-                className={state.role === "leader" ? "selected" : ""}
-                onClick={() => onChange({ ...state, role: "leader" })}
-              >
-                Leader
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-export { TestModePanel } from "./TestModePanel";
+export { TestModePanel, type CampusGroupOption } from "./TestModePanel";
 export { useTestMode, type TestMode } from "./use-test-mode";
 export {
   dateForSimulatedDay,
@@ -10,6 +10,8 @@ export {
   simulatedMemberHistory,
   simulatedTodayState,
   TEST_MODE_BLOCKED_MESSAGE,
+  writesBlocked,
   type SimulatedPhase,
   type TestModeState,
+  type TestModeViewer,
 } from "./logic";
