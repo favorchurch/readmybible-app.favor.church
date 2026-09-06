@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type UserProfile } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
@@ -83,13 +82,45 @@ export function ProfileEditor({
 
   return (
     <Sheet open onClose={onClose} labelledBy="profile-title" className="profile-sheet">
-      <button className="close-button" onClick={onClose} aria-label="Close">
-        ×
-      </button>
-      <p className="eyebrow">YOUR AVATAR</p>
+      <div className="profile-sticky-header">
+        <div className="profile-sticky-identity">
+          <Avatar
+            color="coral"
+            gender={draft.gender}
+            hair={draft.hair}
+            glasses={draft.glasses}
+            facialHair={draft.facialHair}
+            face={draft.face}
+            hairColor={draft.hairColor}
+            skinColor={draft.skinColor}
+            shirtColor={draft.shirtColor}
+            backgroundColor={draft.backgroundColor}
+            preview
+          />
+          <div>
+            <span className="profile-sticky-label">YOUR AVATAR</span>
+            <strong>{draft.displayName.trim() || "Your name"}</strong>
+            <small>Live preview</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="primary-button profile-save profile-save--sticky"
+          disabled={saving}
+          onClick={() => onSave({ ...draft, displayName: draft.displayName.trim() || profile.displayName })}
+        >
+          <span>{saving ? "Saving…" : "Save"}</span>
+          <span aria-hidden="true">✓</span>
+        </button>
+        <button type="button" className="close-button profile-close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div className="profile-editor-intro">
         <h2 id="profile-title">Make it feel like you.</h2>
         <p className="profile-intro">Choose a few details for the avatar your Connect will see.</p>
-        <div className="profile-preview-wrap">
+      </div>
+      <div className="profile-preview-wrap">
           <Avatar
             color="coral"
             gender={draft.gender}
@@ -105,8 +136,9 @@ export function ProfileEditor({
           />
           <div>
             <strong>{draft.displayName.trim() || "Your name"}</strong>
+            <span>Shown to your Connect Group</span>
           </div>
-        </div>
+      </div>
 
         <label className="profile-name-field">
           <span>Display name</span>
@@ -173,6 +205,7 @@ export function ProfileEditor({
                 key={face}
                 className={draft.face === face ? "selected" : ""}
                 onClick={() => update("face", face)}
+                aria-pressed={draft.face === face}
               >
                 <Avatar
                   color="coral"
@@ -199,6 +232,7 @@ export function ProfileEditor({
                 key={choice.value}
                 className={draft.hair === choice.value ? "selected" : ""}
                 onClick={() => update("hair", choice.value)}
+                aria-pressed={draft.hair === choice.value}
               >
                 <Avatar
                   color="coral"
@@ -279,13 +313,6 @@ export function ProfileEditor({
         <ColorChoices label="Skin color" colors={skinColors} value={draft.skinColor} onChange={(color) => update("skinColor", color)} />
         <ColorChoices label="T-shirt color" colors={shirtColors} value={draft.shirtColor} onChange={(color) => update("shirtColor", color)} />
         <ColorChoices label="Background color" colors={backgroundColors} value={draft.backgroundColor} onChange={(color) => update("backgroundColor", color)} />
-        <button
-          className="primary-button profile-save"
-          disabled={saving}
-          onClick={() => onSave({ ...draft, displayName: draft.displayName.trim() || profile.displayName })}
-        >
-          {saving ? "Saving…" : "Save"} <span>✓</span>
-        </button>
         <details className="reading-data-note" data-section="reading-data-note">
           <summary>About your reading data</summary>
           <p>
@@ -296,10 +323,6 @@ export function ProfileEditor({
             your private reading details.
           </p>
         </details>
-        <div className="profile-brand-footer" data-section="profile-brand-footer">
-          <Image src="/favor-logo-white.png" alt="Favor Church" width={40} height={44} />
-          <span>Read My Bible is a Favor Church ministry.</span>
-        </div>
     </Sheet>
   );
 }
