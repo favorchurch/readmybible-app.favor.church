@@ -7,6 +7,7 @@ export {
   isTestModeRequested,
   simulatedChapters,
   simulatedGroupRatio,
+  simulatedMemberHistory,
   simulatedTodayState,
   TEST_MODE_BLOCKED_MESSAGE,
   type SimulatedPhase,

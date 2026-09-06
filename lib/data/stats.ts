@@ -22,6 +22,11 @@ import { appNow } from "@/lib/dev-clock";
 import { getCampusGroups, getRoster } from "@/lib/rock/client";
 import { groupRatio, rankGroups, type GroupStanding } from "@/lib/game";
 
+import {
+  deriveMemberReadingHistory,
+  type MemberReadingHistory,
+} from "@/lib/member-progress";
+
 export function todayInTimezone(timezone: string, now: Date = appNow()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
 }
@@ -41,6 +46,28 @@ export async function getPersonReadingState(rockPersonId: number): Promise<Perso
     chapters: rows.map((r) => r.chapter),
     dates: rows.map((r) => r.readingDate),
   };
+}
+
+/**
+ * Compact per-member reading history for an active group and roster personIds.
+ * Privacy-safe: only queries rockPersonId, chapter, and readingDate, strictly scoped
+ * to check-ins belonging to the active group.
+ */
+export async function getGroupMembersReadingHistory(
+  groupId: number,
+  personIds: number[],
+): Promise<Map<number, MemberReadingHistory>> {
+  if (!groupId || personIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      rockPersonId: checkins.rockPersonId,
+      chapter: checkins.chapter,
+      readingDate: checkins.readingDate,
+    })
+    .from(checkins)
+    .where(and(eq(checkins.groupId, groupId), inArray(checkins.rockPersonId, personIds)));
+
+  return deriveMemberReadingHistory(rows, personIds);
 }
 
 export type GroupStats = {

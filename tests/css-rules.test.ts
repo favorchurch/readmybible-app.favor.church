@@ -188,6 +188,34 @@ describe("css-rules", () => {
     }
   });
 
+  it("keeps the tent people layout mobile-safe and the toggle selector-specific", () => {
+    const today = loadAll().find(({ path }) => path === "app/styles/today.css");
+    const toggleRule = today?.rules.find(({ selector }) => selector === ".section-heading .tent-toggle-button");
+    const mobileOverlayRule = today?.rules.find(
+      ({ selector, prelude }) => selector === ".tent-people-overlay" && prelude.some((p) => /max-width:\s*480px/.test(p)),
+    );
+    const desktopOverlayRule = today?.rules.find(({ selector, prelude }) => selector === ".tent-people-overlay" && prelude.length === 0);
+    expect(toggleRule?.decls).toContain("text-decoration: none");
+    expect(desktopOverlayRule?.decls).toContain("flex-wrap: wrap");
+    expect(desktopOverlayRule?.decls).toContain("max-height: none");
+    expect(desktopOverlayRule?.decls).toContain("overflow: visible");
+    const desktopOverlayGridRule = today?.rules.find(
+      ({ selector, prelude }) => selector === ".home-card .tent-people-overlay" && prelude.some((p) => /min-width:\s*760px/.test(p)),
+    );
+    expect(desktopOverlayGridRule?.decls).toContain("grid-column: 1 / -1");
+    expect(mobileOverlayRule?.decls).toContain("position: static");
+    expect(mobileOverlayRule?.decls).toContain("flex-wrap: wrap");
+    expect(mobileOverlayRule?.decls).toContain("overflow: visible");
+  });
+
+  it("keeps the compact Today home selectors valid through the people wrapper", () => {
+    const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
+    const today = loadAll().find(({ path }) => path === "app/styles/today.css");
+    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact")).toBe(true);
+    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact .home3d-ground")).toBe(true);
+    expect(today?.rules.some(({ selector }) => selector === ".home-card .home-scene-wrap")).toBe(true);
+  });
+
   it("has no meaningful font-size at 11px or below (or the rem equivalent) unless marked decorative", () => {
     const violations: string[] = [];
     for (const { path, raw } of loadAll()) {

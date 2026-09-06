@@ -19,7 +19,7 @@ export function ReadingVisibilityNote({
           </button>
         </div>
         <p className="reading-visibility-body">
-          People in your Connect Group can see whether you&apos;ve checked in today. This app does not show how long you read or what Bible app you used.
+          People in your Connect Group can see your check-in history for this journey, including which days you read and your recent five-day streak. This app does not show how long you read or what Bible app you used.
         </p>
       </section>
     </Sheet>

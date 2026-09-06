@@ -8,6 +8,7 @@ import {
   isTestModeRequested,
   simulatedChapters,
   simulatedGroupRatio,
+  simulatedMemberHistory,
   simulatedTodayState,
   TEST_MODE_BLOCKED_MESSAGE,
 } from "@/components/test-mode/logic";
@@ -103,6 +104,17 @@ describe("simulatedChapters", () => {
   it("clamps out-of-range percentages", () => {
     expect(simulatedChapters(-10)).toEqual([]);
     expect(simulatedChapters(500)).toEqual(PLAN.map((entry) => entry.chapter));
+  });
+});
+
+describe("simulatedMemberHistory", () => {
+  it("varies member histories while keeping each result deterministic", () => {
+    const jordan = simulatedMemberHistory(101, 50, "2026-10-14");
+    const taylor = simulatedMemberHistory(102, 50, "2026-10-14");
+
+    expect(jordan).not.toEqual(taylor);
+    expect(simulatedMemberHistory(101, 50, "2026-10-14")).toEqual(jordan);
+    expect(jordan.readingDates.every((date) => date <= "2026-10-14")).toBe(true);
   });
 });
 

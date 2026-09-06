@@ -290,8 +290,9 @@ export function ProfileEditor({
           <summary>About your reading data</summary>
           <p>
             Your chapter check-ins power your personal progress and your Connect
-            Group&apos;s shared progress. Your Connect Group can see today&apos;s
-            check-in status. Section leaders see group totals in their dashboard, not
+            Group&apos;s shared progress. Your Connect Group can see your check-in
+            history for this journey, including which days you read and your recent
+            five-day streak. Section leaders see group totals in their dashboard, not
             your private reading details.
           </p>
         </details>

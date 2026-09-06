@@ -1,0 +1,114 @@
+export type MemberReadingHistory = {
+  chapters: number[];
+  dates: string[];
+};
+
+export type StreakMark = {
+  date: string;
+  day: number;
+  label: string;
+  longLabel: string;
+  read: boolean;
+  future: boolean;
+};
+
+/**
+ * Pure function to derive compact, privacy-safe reading history per member.
+ * Only extracts chapter numbers and reading dates; never includes private metadata or verse text.
+ */
+export function deriveMemberReadingHistory(
+  rows: Array<{ rockPersonId: number; chapter: number; readingDate: string }>,
+  personIds: number[],
+): Map<number, MemberReadingHistory> {
+  const map = new Map<number, MemberReadingHistory>();
+  for (const id of personIds) {
+    map.set(id, { chapters: [], dates: [] });
+  }
+
+  for (const row of rows) {
+    const entry = map.get(row.rockPersonId);
+    if (entry) {
+      if (!entry.chapters.includes(row.chapter)) {
+        entry.chapters.push(row.chapter);
+      }
+      if (!entry.dates.includes(row.readingDate)) {
+        entry.dates.push(row.readingDate);
+      }
+    }
+  }
+
+  for (const entry of map.values()) {
+    entry.chapters.sort((a, b) => a - b);
+    entry.dates.sort();
+  }
+
+  return map;
+}
+
+function parseLocalDate(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function toKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function labelsForDate(dateKey: string): { label: string; longLabel: string } {
+  const date = parseLocalDate(dateKey);
+  return {
+    label: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date),
+    longLabel: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", timeZone: "UTC" }).format(date),
+  };
+}
+
+/**
+ * Returns 5 recent streak marks ending at todayLocal (or Oct 1..5 if before launch).
+ */
+export function recentFiveDayStreak(dates: string[], todayLocal: string): StreakMark[] {
+  const dateSet = new Set(dates);
+
+  // Before the first five campaign days are available, display Oct 1 to Oct 5
+  // rather than showing dates outside the journey.
+  if (todayLocal < "2026-10-05") {
+    return [1, 2, 3, 4, 5].map((d) => {
+      const date = `2026-10-${String(d).padStart(2, "0")}`;
+      const labels = labelsForDate(date);
+      const future = date > todayLocal;
+      return {
+        date,
+        day: d,
+        ...labels,
+        read: !future && dateSet.has(date),
+        future,
+      };
+    });
+  }
+
+  const today = parseLocalDate(todayLocal);
+  const campaignEnd = parseLocalDate("2026-10-31");
+  const displayEnd = today > campaignEnd ? campaignEnd : today;
+  const marks: StreakMark[] = [];
+
+  for (let i = 4; i >= 0; i--) {
+    const d = addDays(displayEnd, -i);
+    const key = toKey(d);
+    const day = Number(key.slice(8, 10));
+    const labels = labelsForDate(key);
+    marks.push({
+      date: key,
+      day,
+      ...labels,
+      read: dateSet.has(key),
+      future: key > todayLocal,
+    });
+  }
+
+  return marks;
+}

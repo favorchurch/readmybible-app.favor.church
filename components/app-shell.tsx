@@ -21,6 +21,7 @@ import {
   guardWrite,
   simulatedChapters,
   simulatedGroupRatio,
+  simulatedMemberHistory,
   simulatedTodayState,
   useTestMode,
   dateForSimulatedDay,
@@ -43,6 +44,8 @@ export type RosterMemberView = {
   name: string;
   isLeader: boolean;
   readToday: boolean;
+  chapters: number[];
+  readingDates: string[];
 };
 
 export type AppShellProps = {
@@ -124,6 +127,19 @@ export function AppShell(props: AppShellProps) {
     };
   }, [testMode.active, testMode.state.groupPct, props.groupStats]);
   const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
+
+  const roster = useMemo(() => {
+    if (!testMode.active) return props.roster;
+    return props.roster.map((member) => {
+      const simulated = simulatedMemberHistory(member.personId, testMode.state.completionPct, today.todayLocal);
+      return {
+        ...member,
+        readToday: testMode.state.completionPct > 0 && simulated.readingDates.includes(today.todayLocal),
+        chapters: simulated.chapters,
+        readingDates: simulated.readingDates,
+      };
+    });
+  }, [testMode.active, props.roster, testMode.state.completionPct, today.todayLocal]);
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
@@ -232,7 +248,7 @@ export function AppShell(props: AppShellProps) {
           streakDays={currentStreak}
           groupName={groupName}
           groupStats={groupStats}
-          roster={props.roster}
+          roster={roster}
           profile={profile}
           onStart={startReading}
           onReplayCelebration={replayCelebration}
@@ -247,7 +263,7 @@ export function AppShell(props: AppShellProps) {
           groupName={groupName}
           campusName={props.campusName}
           isLeader={isLeader}
-          roster={props.roster}
+          roster={roster}
           groupStats={groupStats}
           appBaseUrl={props.appBaseUrl}
           profile={profile}
