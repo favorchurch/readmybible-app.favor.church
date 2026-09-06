@@ -139,10 +139,10 @@ describe("nextStageProgress", () => {
 describe("rankGroups", () => {
   it("sorts by ratio desc, then readers today desc, then name asc", () => {
     const ranked = rankGroups([
-      { groupId: 1, name: "Zeta", ratio: 0.5, readersToday: 2 },
-      { groupId: 2, name: "Alpha", ratio: 0.5, readersToday: 3 },
-      { groupId: 3, name: "Beta", ratio: 0.8, readersToday: 1 },
-      { groupId: 4, name: "Alpha", ratio: 0.5, readersToday: 2 },
+      { groupId: 1, name: "Zeta", ratio: 0.5, readersToday: 2, locality: null },
+      { groupId: 2, name: "Alpha", ratio: 0.5, readersToday: 3, locality: null },
+      { groupId: 3, name: "Beta", ratio: 0.8, readersToday: 1, locality: null },
+      { groupId: 4, name: "Alpha", ratio: 0.5, readersToday: 2, locality: null },
     ]);
     expect(ranked.map((g) => g.groupId)).toEqual([3, 2, 4, 1]);
   });

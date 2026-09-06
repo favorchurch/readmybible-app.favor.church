@@ -145,7 +145,7 @@ export type GroupStanding = {
   name: string;
   ratio: number;
   readersToday: number;
-  locality?: string | null;
+  locality: string | null;
 };
 
 /**
