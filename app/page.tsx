@@ -12,7 +12,7 @@ import {
   getGroupStats,
   getPersonReadingState,
 } from "@/lib/data/stats";
-import { getCampusGroups, getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
+import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import { getSessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
@@ -37,20 +37,32 @@ export default async function Page() {
 
   const writableGroupId = testWritableGroupId();
 
-  // The sandbox group is deliberately not required to sit on the reader's
-  // campus -- 87177 lives on campus 5 (OPEN ACCESS) -- so it is fetched by id
-  // and appended, otherwise a campus-scoped list would never offer the one
-  // group test mode can write to.
+  // Test mode simulates ANY active Connect Group, org-wide, not just the
+  // reader's own campus. This is a deliberate widening for testing and it is
+  // why the list is built only when `isDev`: in production this resolves to []
+  // and getTestGroupSnapshot refuses outright, so no reader can reach another
+  // campus's roster through it.
+  //
+  // The sandbox is still fetched by id and appended if missing, because it is
+  // the one group test mode can write to and it would drop off the list if it
+  // were ever archived or deactivated.
   const campusGroupsP = !isDev
     ? Promise.resolve([])
     : (async () => {
-        const [campusGroups, sandbox] = await Promise.all([
-          session.campusId ? getCampusGroups(session.campusId) : Promise.resolve([]),
+        const [allGroups, campusNames, sandbox] = await Promise.all([
+          getAllConnectGroups(),
+          getAllCampusNames(),
           writableGroupId ? getGroupBasic(writableGroupId) : Promise.resolve(null),
         ]);
-        const list = campusGroups
+        // Several hundred groups share names across campuses, so label each with
+        // its campus and sort, or the picker is unusable.
+        const list = allGroups
           .filter((g) => g.GroupTypeId === GROUP_TYPE_CONNECT_GROUP)
-          .map((g) => ({ groupId: g.Id, groupName: g.Name }));
+          .map((g) => {
+            const campus = g.CampusId === null ? null : (campusNames.get(g.CampusId) ?? null);
+            return { groupId: g.Id, groupName: campus ? `${g.Name} — ${campus}` : g.Name };
+          })
+          .sort((a, b) => a.groupName.localeCompare(b.groupName));
         if (sandbox && !list.some((g) => g.groupId === sandbox.Id)) {
           list.unshift({ groupId: sandbox.Id, groupName: sandbox.Name });
         }

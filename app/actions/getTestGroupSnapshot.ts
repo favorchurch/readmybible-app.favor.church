@@ -11,7 +11,6 @@ import { getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
 import { GROUP_TYPE_CONNECT_GROUP, ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER } from "@/lib/rock/constants";
 import { getGroupMembersReadingHistory, getGroupStats, type GroupStats } from "@/lib/data/stats";
 import { getSessionContext } from "@/lib/session";
-import { testWritableGroupId } from "@/lib/test-mode-config";
 
 const inputSchema = z.object({
   groupId: z.number().int().positive(),
@@ -58,16 +57,16 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
     return { ok: false, error: `Group ${groupId} not found.` };
   }
 
-  // The picker only offers campus Connect Groups plus the sandbox, but a server
-  // action is a directly callable HTTP endpoint -- so the action must enforce
-  // the same scope the picker displays, rather than trusting its caller.
+  // A server action is a directly callable HTTP endpoint, so it enforces scope
+  // itself rather than trusting the picker that displays it.
+  //
+  // The campus fence is deliberately GONE: test mode simulates any Connect
+  // Group org-wide. What still bounds this is the pair of checks above -- it
+  // refuses entirely in production, and requires admin scope otherwise -- plus
+  // the group type check below. A non-admin, or anyone at all in production,
+  // reaches nothing.
   if (groupBasic.GroupTypeId !== GROUP_TYPE_CONNECT_GROUP) {
     return { ok: false, error: `Group ${groupId} is not a Connect Group.` };
-  }
-  const writableGroupId = testWritableGroupId();
-  const isSandbox = writableGroupId !== null && groupId === writableGroupId;
-  if (!isSandbox && groupBasic.CampusId !== session.campusId) {
-    return { ok: false, error: `Group ${groupId} is not at your campus.` };
   }
 
   const rockRoster = await getRoster(groupId);
