@@ -34,6 +34,7 @@ import { ProgressScreen } from "@/components/screens/progress-screen";
 import { RewardsScreen } from "@/components/screens/rewards-screen";
 import { SoloScreen } from "@/components/screens/solo-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
+import { LeaderScreen } from "@/components/screens/leader-screen";
 import { coinsFor, streak as computeStreak, TOTAL_CHAPTERS } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
@@ -131,6 +132,7 @@ export function AppShell(props: AppShellProps) {
     };
   }, [testMode.active, testMode.state.groupPct, props.groupStats]);
   const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
+  const activeTab = isLeader || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
     if (!testMode.active) return props.roster;
@@ -244,9 +246,9 @@ export function AppShell(props: AppShellProps) {
 
   return (
     <div className="app-shell">
-      <div className="paper-noise" />
+      {activeTab !== "leader" && <div className="paper-noise" />}
       {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
-      {tab === "today" && (
+      {activeTab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
           today={today}
@@ -266,21 +268,18 @@ export function AppShell(props: AppShellProps) {
           onTranslationChange={handleTranslationChange}
         />
       )}
-      {tab === "connect" && (
+      {activeTab === "connect" && (
         <ConnectScreen
           groupName={groupName}
           campusName={props.campusName}
-          isLeader={isLeader}
           roster={roster}
           groupStats={groupStats}
-          appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
-          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           today={today}
         />
       )}
-      {tab === "rewards" && (
+      {activeTab === "rewards" && (
         <RewardsScreen
           profile={profile}
           chapters={chaptersRead}
@@ -288,7 +287,7 @@ export function AppShell(props: AppShellProps) {
           today={today}
         />
       )}
-      {tab === "progress" && (
+      {activeTab === "progress" && (
         <ProgressScreen
           today={today}
           chapters={chapters}
@@ -296,7 +295,6 @@ export function AppShell(props: AppShellProps) {
           coins={coins}
           streakDays={currentStreak}
           groupName={groupName}
-          campusName={props.campusName}
           campusBoard={props.campusBoard}
           profile={profile}
           onCatchUp={startReading}
@@ -304,7 +302,20 @@ export function AppShell(props: AppShellProps) {
           onTranslationChange={handleTranslationChange}
         />
       )}
-      <BottomNav tab={tab} onSelect={selectTab} />
+      {activeTab === "leader" && (
+        <LeaderScreen
+          groupName={groupName}
+          campusBoard={props.campusBoard}
+          roster={roster}
+          today={today}
+          profile={profile}
+          appBaseUrl={props.appBaseUrl}
+          readerGroupId={props.activeGroup?.groupId ?? null}
+          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
+          onEditProfile={() => setProfileOpen(true)}
+        />
+      )}
+      <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
       {flowChapter !== null && (
         <CompletionFlow
           step={flowStep}

@@ -20,6 +20,7 @@ const CSS_FILES = [
   "app/styles/misc.css",
   "app/styles/typography.css",
   "app/admin/admin.css",
+  "app/styles/leader.css",
 ];
 
 type Rule = {

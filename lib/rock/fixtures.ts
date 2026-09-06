@@ -20,7 +20,38 @@ const FIXTURE_GROUP: RockGroup = {
   ParentGroupId: 23870,
   IsActive: true,
   IsArchived: false,
+  locality: "Ortigas Center",
 };
+
+/** Additional fixture groups spanning multiple localities to exercise the icon grid and section ordering. */
+const FIXTURE_EXTRA_GROUPS: RockGroup[] = [
+  { Id: 24100, Name: "Adults // Bernardo Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Ortigas Center" },
+  { Id: 24101, Name: "Adults // Santos Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Ortigas Center" },
+  { Id: 24102, Name: "Adults // Cruz Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Pasig" },
+  { Id: 24103, Name: "Adults // Reyes Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Pasig" },
+  { Id: 24104, Name: "Adults // Dela Cruz Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Quezon City" },
+  // Two groups with no locality — matches the real production fixture case (see docs/plans/leader-tools-tab.md Settled facts)
+  { Id: 31192, Name: "Youth // Junior High // Ely Borja", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24021, IsActive: true, IsArchived: false, locality: null },
+  { Id: 31193, Name: "Youth // Junior High // Vince Puno", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24021, IsActive: true, IsArchived: false, locality: null },
+];
+
+// Keep the fixture's dense locality representative of the measured production
+// spread: 166 Ortigas Center groups, with small sections beside it.
+const FIXTURE_DENSE_GROUPS: RockGroup[] = Array.from({ length: 163 }, (_, index) => ({
+  Id: 24200 + index,
+  Name: `Adults // Ortigas Center ${String(index + 4).padStart(3, "0")}`,
+  GroupTypeId: 25,
+  CampusId: 1,
+  ParentGroupId: 23870,
+  IsActive: true,
+  IsArchived: false,
+  locality: "Ortigas Center",
+}));
+
+export function fixtureCampusGroups(campusId: number): RockGroup[] {
+  if (campusId !== FIXTURE_GROUP.CampusId) return [];
+  return [FIXTURE_GROUP, ...FIXTURE_EXTRA_GROUPS, ...FIXTURE_DENSE_GROUPS];
+}
 
 // PersonId -> NickName, first names only. Frozen from Rock prod.
 const FIXTURE_PEOPLE: Record<number, string> = {
@@ -107,10 +138,7 @@ export function fixtureRoster(groupId: number): RockGroupMember[] {
   });
 }
 
-export function fixtureCampusGroups(campusId: number): RockGroup[] {
-  if (campusId !== FIXTURE_GROUP.CampusId) return [];
-  return [FIXTURE_GROUP];
-}
+
 
 export function fixtureSectionSubtree(sectionGroupId: number): RockGroup[] {
   if (sectionGroupId !== FIXTURE_GROUP.ParentGroupId) return [];

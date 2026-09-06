@@ -22,7 +22,6 @@ import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
-import type { GroupStanding } from "@/lib/game";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -233,13 +232,10 @@ describe("ConnectScreen roster cards", () => {
       React.createElement(ConnectScreen, {
         groupName: "Manila Central",
         campusName: "Favor Manila",
-        isLeader: false,
         roster: sampleRoster,
         groupStats: sampleStats,
-        appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
-        onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
@@ -266,13 +262,10 @@ describe("ConnectScreen roster cards", () => {
       React.createElement(ConnectScreen, {
         groupName: "Manila Central",
         campusName: "Favor Manila",
-        isLeader: false,
         roster: sampleRoster,
         groupStats: sampleStats,
-        appBaseUrl: "http://localhost:3000",
         profile: testProfile,
         onEditProfile: () => {},
-        onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
         today: mockTodayState,
       }),
     );
@@ -358,22 +351,7 @@ describe("TodayScreen tent people toggle", () => {
 });
 
 describe("ProgressScreen campus groups", () => {
-  const sampleCampusBoard: GroupStanding[] = [
-    {
-      groupId: 1,
-      name: "Makati Adults",
-      ratio: 0.45,
-      readersToday: 10,
-    },
-    {
-      groupId: 2,
-      name: "BGC Youth",
-      ratio: 0.15,
-      readersToday: 5,
-    },
-  ];
-
-  it("renders campus groups full-width with StageMini, ProgressBar, and status copy", () => {
+  it("renders only the campus group count on the active branch", () => {
     const html = renderToStaticMarkup(
       React.createElement(ProgressScreen, {
         today: mockTodayState,
@@ -381,9 +359,11 @@ describe("ProgressScreen campus groups", () => {
         chaptersRead: 5,
         coins: 50,
         streakDays: 5,
-        groupName: "Makati Adults",
-        campusName: "Favor Manila",
-        campusBoard: sampleCampusBoard,
+        groupName: "Manila Central",
+        campusBoard: [
+          { groupId: 1, name: "Makati Adults", ratio: 0.45, readersToday: 10, locality: "Makati" },
+          { groupId: 2, name: "BGC Youth", ratio: 0.15, readersToday: 5, locality: "Taguig" },
+        ],
         profile: testProfile,
         onCatchUp: () => {},
         onEditProfile: () => {},
@@ -391,30 +371,22 @@ describe("ProgressScreen campus groups", () => {
       }),
     );
 
-    // Full-width section with frame__span
-    expect(html).toContain('class="leaderboard-card frame__span"');
-    expect(html).toContain('data-section="campus-groups"');
-    expect(html).toContain("FAVOR MANILA CONNECT GROUPS");
-
-    // Group cards with StageMini, ProgressBar, and readable status
-    expect(html).toContain("Makati Adults");
-    expect(html).toContain("BGC Youth");
-    expect(html).toContain("45% complete · Apartment");
-    expect(html).toContain("15% complete · Trailer");
-    expect(html).toContain("stage-mini");
-    expect(html).toContain("progress-track");
+    expect(html).toContain('data-section="campus-group-count"');
+    expect(html).toContain("2 Connect Groups on this campus.");
+    expect(html).not.toContain("Makati Adults");
+    expect(html).not.toContain("BGC Youth");
+    expect(html).not.toContain("leaderboard-card");
   });
 
-  it("handles reduced-value case when campusBoard is empty", () => {
+  it("renders the same count-only line on the pre-launch branch", () => {
     const html = renderToStaticMarkup(
       React.createElement(ProgressScreen, {
-        today: mockTodayState,
+        today: { ...mockTodayState, todayLocal: "2026-09-20", displayPhase: "pre-launch", phase: "pre-launch", dayLabel: 0, entry: null },
         chapters: [],
         chaptersRead: 0,
         coins: 0,
         streakDays: 0,
         groupName: null,
-        campusName: "Favor Manila",
         campusBoard: [],
         profile: testProfile,
         onCatchUp: () => {},
@@ -423,8 +395,31 @@ describe("ProgressScreen campus groups", () => {
       }),
     );
 
-    expect(html).toContain("No groups on the board yet. October&#x27;s coming.");
-    expect(html).not.toContain("campus-group-card");
+    expect(html).toContain('data-section="campus-group-count"');
+    expect(html).toContain("0 Connect Groups on this campus.");
+    expect(html).not.toContain("leaderboard-card");
+    expect(html).not.toContain("No groups on the board yet. October&#x27;s coming.");
+  });
+
+  it("uses singular grammar for a one-group campus", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: mockTodayState,
+        chapters: [],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [{ groupId: 1, name: "Only Connect", ratio: 0, readersToday: 0, locality: null }],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain("1 Connect Group on this campus.");
+    expect(html).not.toContain("1 Connect Groups on this campus.");
   });
 });
 

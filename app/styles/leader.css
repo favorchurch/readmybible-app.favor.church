@@ -1,0 +1,242 @@
+/* Leader screen — navy backstage background */
+.leader-screen {
+  background: var(--navy);
+  color: var(--cream);
+  min-height: 100dvh;
+  padding: 22px 18px 116px;
+}
+
+.leader-screen .topbar .brand {
+  color: var(--cream);
+}
+
+.leader-screen .header-person {
+  color: var(--cream);
+}
+
+.leader-screen .header-name {
+  color: var(--cream);
+}
+
+.leader-screen .section-heading h2 {
+  color: var(--cream);
+}
+
+.leader-section {
+  background: rgba(255, 250, 240, .06);
+  border: 1px solid rgba(255, 250, 240, .12);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 20px;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.leader-section.leader-nudge {
+  background: rgba(217, 108, 87, .12);
+  border-color: rgba(217, 108, 87, .3);
+}
+
+.leader-section > p {
+  font-size: 13px;
+  color: rgba(247, 240, 223, .7);
+  margin: 6px 0 16px;
+  line-height: 1.4;
+}
+
+.leader-code-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.leader-code {
+  display: grid;
+  gap: 4px;
+}
+
+.leader-section .eyebrow {
+  color: var(--coral);
+}
+
+.leader-code strong {
+  font-family: Impact, sans-serif;
+  font-size: 32px;
+  letter-spacing: .12em;
+  color: var(--coral);
+}
+
+.leader-code-row img {
+  border: 1px solid rgba(255, 250, 240, .2);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.leader-nudge {
+  margin-top: 16px;
+  border-top: 1px solid rgba(255, 250, 240, .12);
+  padding-top: 14px;
+}
+
+.leader-nudge span {
+  display: block;
+  font-size: 12px;
+  color: rgba(247, 240, 223, .7);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.leader-add-member-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.connect-portal-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--coral);
+}
+
+/* Other Connects */
+.leader-connects { max-width: 720px; margin-left: auto; margin-right: auto; }
+
+.leader-connects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.leader-toggle-names {
+  background: transparent;
+  border: 1px solid rgba(247, 240, 223, .3);
+  color: var(--cream);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease-out);
+  white-space: nowrap;
+  min-height: 36px;
+  align-self: center;
+}
+
+@media (hover: hover) {
+  .leader-toggle-names:hover {
+    background: rgba(247, 240, 223, .1);
+  }
+}
+
+.locality-section {
+  margin-top: 20px;
+}
+
+.locality-heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(247, 240, 223, .55);
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.locality-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(247, 240, 223, .35);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.locality-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.locality-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  border-radius: 4px;
+}
+
+.locality-icon-own {
+  box-shadow: 0 0 0 2px var(--coral);
+  border-radius: 4px;
+}
+
+/* Named-rows (show-names) mode: the former Progress campus-group styles live here. */
+.leader-screen .campus-groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.leader-screen .campus-group-card {
+  border: 1px solid rgba(255, 250, 240, .12);
+  background: rgba(255, 250, 240, .06);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leader-screen .campus-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leader-screen .campus-group-mini { flex-shrink: 0; }
+
+.leader-screen .campus-group-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.leader-screen .campus-group-info strong {
+  color: var(--cream);
+  font-size: 13px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leader-screen .campus-group-status {
+  display: block;
+  font-size: 12px;
+  color: rgba(247, 240, 223, .55);
+  margin-top: 2px;
+}
+
+.leader-screen .campus-group-card .progress-track {
+  width: 100%;
+  margin: 0;
+}
+
+.leader-section .gentle-note {
+  color: rgba(247, 240, 223, .45);
+}
+
+@media (max-width: 480px) {
+  .leader-screen .campus-groups-grid {
+    grid-template-columns: 1fr;
+  }
+}
