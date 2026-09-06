@@ -30,7 +30,6 @@ import {
 export function todayInTimezone(timezone: string, now: Date = appNow()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
 }
-
 export type PersonReadingState = {
   chapters: number[];
   dates: string[]; // reading_date values, one per checkin row
@@ -172,4 +171,3 @@ export async function getCampusBoard(campusId: number): Promise<GroupStanding[]>
     return rankGroups(standings);
   });
 }
-
