@@ -35,6 +35,21 @@ sandbox group.
   check in `AppShell`. The `non-member` viewer must bypass that branch too, or it
   never reaches `SoloScreen`.
 
+## Amendments during execution (Rico, 2026-09-06)
+
+| # | Decision | Why |
+|---|---|---|
+| D5 | **The sandbox unblock is per-action: `checkIn` only.** `joinByCode`, `chooseGroup`, `saveProfile`, `getOrCreateJoinCode` are blocked whenever test mode is on. | Review round 1, Critical. A2's reasoning ("writes follow the server's real active group") is true for `checkIn` but **false for `joinByCode`**, which joins whatever group the *entered code* names. One shared flag let any code perform a real Rock write and move the tester's active group — which this plan's own blast radius forbids. Narrowing, so no user decision was needed. |
+| D6 | **The sandbox group is appended to the picker regardless of campus.** | Group 87177 sits on campus 5 (OPEN ACCESS), not Rico's Manila (1), so `getCampusGroups(campusId)` would never offer it. Rico chose this over moving the group in Rock. |
+| D7 | **Group 87177 populated on PROD** with existing test Person records: 13358 Rico Test as Leader (24); 7790/7791/7792/7793/7794 (Test1, Test2, Test3, Test5, Test6) as Members (23). | Rico-approved. Idempotent upsert, no Person records created, read-back verified, second run reports zero changes. Backups in `/tmp/office/backup-87177-members-*.json`. |
+| D8 | `getTestGroupSnapshot` enforces GT25 **and** the caller's campus, exempting only the sandbox id. | Review round 1. A server action is a directly callable endpoint; the picker's restriction does not bind it. |
+| D9 | Env parsing moved to a shared `lib/test-mode-config.ts`. | Page and action must never disagree about which group is the sandbox. |
+
+### Known-open, deliberately not done
+
+- **The write-unblock ships dormant.** Rico declined to add his real PersonId 152 to group 87177, and A2 requires the sandbox to be the session's *real* active group. So writes stay blocked and the panel says why: *"View-only. Writes disabled (session not in group 87177)."* Adding 152 to the group is the single remaining step to make a live check-in testable.
+- **"Fully try in rock-preview with mocks" is unresolved.** Preview 404s on group 87177, and `lib/rock/constants.ts` warns that preview is an unsynced database whose GroupType/role ids are not guaranteed to match prod. Scoped as separate work, not attempted here.
+
 ## Global Constraints
 
 ### Blast-radius ceiling
