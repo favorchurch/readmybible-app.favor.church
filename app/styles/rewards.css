@@ -59,10 +59,12 @@
 /* Silhouette outline treatment for unearned / pre-launch */
 .reward.unearned .shelf-award,
 .reward.pre-launch-silhouette .shelf-award {
-  background: rgba(255, 255, 255, .75);
-  border: 2px dashed rgba(23, 41, 67, .45);
+  --award: #a9a495;
+  --award-dark: #888479;
+  background: transparent;
   color: var(--navy);
-  box-shadow: 0 2px 8px rgba(90, 54, 30, .08);
+  filter: grayscale(1) opacity(.42);
+  box-shadow: none;
 }
 .reward.unearned .shelf-award *,
 .reward.pre-launch-silhouette .shelf-award * {
@@ -72,6 +74,11 @@
 .reward.pre-launch-silhouette > span {
   color: #3b4b60;
 }
+.reward .reward-state { min-height: 32px; font-size: 12px; line-height: 1.4; }
+.reward-state svg { display: inline-block; vertical-align: -2px; }
+.reward.earned .shelf-award { filter: drop-shadow(0 5px 4px rgba(80,46,28,.28)); }
+.reward.earned .reward-state { color: var(--navy); font-weight: 900; }
+.rewards-screen .page-title { margin-top: 26px; }
 
 /* Earned shine animation (one-time, transform/opacity only) */
 @keyframes rewardShine {
@@ -91,6 +98,9 @@
 
 .reward.earned-shine .shelf-award {
   animation: rewardShine var(--dur-slow) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reward.earned-shine .shelf-award { animation: none; }
 }
 
 @media (hover: hover) and (pointer: fine) {

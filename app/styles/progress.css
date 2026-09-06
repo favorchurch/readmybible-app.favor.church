@@ -23,10 +23,15 @@
 .plan-facts-card {
   max-width: 720px;
   margin: 0 auto;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  padding: 22px 18px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: 22px 0;
 }
+.plan-facts-card > p { color: var(--ink-muted); font-size: 14px; line-height: 1.55; margin: 0; }
+.calendar-preview-note { color: var(--ink-muted); font-size: 13px; line-height: 1.5; margin: 18px 0 0; }
+.progress-screen .page-title.compact { margin: 26px 0 8px; }
+.progress-screen .page-title > p:last-child { font-size: 14px; line-height: 1.5; }
 .plan-facts-card .section-heading { margin-bottom: 16px; }
 .plan-facts-grid {
   display: grid;
@@ -71,14 +76,14 @@
 .calendar-cell {
   position: relative;
   aspect-ratio: 1;
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 0;
+  min-height: 44px;
   display: grid;
   place-items: center;
   padding: 0 0 6px;
   border-radius: var(--radius-sm);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
@@ -105,8 +110,10 @@
   font-weight: 900;
 }
 .read-cell .cell-glyph {
+  position: absolute;
+  top: 3px;
+  right: 4px;
   font-size: 12px;
-  margin-bottom: 2px;
 }
 
 .today-cell {
@@ -278,10 +285,13 @@
   .progress-screen .plan-facts-card,
   .progress-screen .stats-card,
   .progress-screen .mini-stats {
-    order: 1;
+    order: 2;
+    width: 100%;
   }
   .progress-screen .calendar-card {
-    order: 2;
+    order: 1;
+    width: 100%;
+    margin-top: 12px;
   }
   .progress-screen .next-reward.progress-reward {
     order: 3;
@@ -314,7 +324,7 @@
   .chapter-ring { width: 88px; height: 88px; }
   .stat-copy h2 { font-size: 17px; }
   .calendar-grid { gap: 3px; }
-  .calendar-cell { min-width: 36px; min-height: 40px; }
+  .calendar-cell { min-width: 0; min-height: 44px; }
 }
 
 /* Personal identity takes center stage on Progress. */

@@ -41,6 +41,8 @@ import type { GroupMembership } from "@/lib/session";
 
 export type RosterMemberView = {
   personId: number;
+  avatar: AvatarConfig;
+  isSelf: boolean;
   name: string;
   isLeader: boolean;
   readToday: boolean;
@@ -51,6 +53,7 @@ export type RosterMemberView = {
 export type AppShellProps = {
   displayName: string;
   avatar: AvatarConfig;
+  avatarCustomized: boolean;
   translation: Translation;
   memberships: GroupMembership[];
   activeGroup: GroupMembership | null;
@@ -94,6 +97,7 @@ export function AppShell(props: AppShellProps) {
     [props.displayName, props.translation, props.avatar],
   );
   const [optimisticProfile, setOptimisticProfile] = useState<UserProfile | null>(null);
+  const [avatarSaved, setAvatarSaved] = useState(false);
   const profile = optimisticProfile ?? baseProfile;
 
   const [tab, setTab] = useState<Tab>("today");
@@ -192,7 +196,10 @@ export function AppShell(props: AppShellProps) {
     const result = await guardedSaveProfile({ displayName, translation, avatar });
     setSavingProfile(false);
     setProfileOpen(false);
-    if (result.ok) router.refresh();
+    if (result.ok) {
+      setAvatarSaved(true);
+      router.refresh();
+    }
   }
 
   async function handleChooseGroup(groupId: number) {
@@ -241,6 +248,7 @@ export function AppShell(props: AppShellProps) {
       {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
       {tab === "today" && (
         <TodayScreen
+          avatarCustomized={avatarSaved || props.avatarCustomized}
           today={today}
           chapters={chapters}
           chaptersRead={chaptersRead}

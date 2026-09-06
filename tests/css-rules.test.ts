@@ -13,6 +13,7 @@ const CSS_FILES = [
   "app/styles/nav.css",
   "app/styles/onboarding.css",
   "app/styles/home3d.css",
+  "app/styles/full-home.css",
   "app/styles/avatar.css",
   "app/styles/motion.css",
   "app/styles/completion.css",
@@ -211,9 +212,36 @@ describe("css-rules", () => {
   it("keeps the compact Today home selectors valid through the people wrapper", () => {
     const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
     const today = loadAll().find(({ path }) => path === "app/styles/today.css");
-    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact")).toBe(true);
-    expect(home?.rules.some(({ selector }) => selector === ".home-card .home3d-wrap.compact .home3d-ground")).toBe(true);
+    const compact = home?.rules.filter(({ selector }) => selector === ".home-card .home3d-wrap.compact") ?? [];
+    expect(compact.length).toBeGreaterThan(0);
+    // The Today card sizes its lawn through --ground-size on the wrap rather
+    // than a rule on .home3d-ground, so the model stays base-anchored to the
+    // same ground line the ellipse is drawn on.
+    expect(compact.some(({ decls }) => /--ground-size:/.test(decls))).toBe(true);
     expect(today?.rules.some(({ selector }) => selector === ".home-card .home-scene-wrap")).toBe(true);
+  });
+
+  it("seats every home stage on the shared ground plane instead of a per-stage top", () => {
+    const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
+    const full = loadAll().find(({ path }) => path === "app/styles/full-home.css");
+    // A per-stage `top` is what left the tent, house and apartment floating:
+    // every stage has a different --h, so a centre anchor lands its base
+    // somewhere different. The base anchor in .home3d-model replaces them all.
+    const perStageTop = [...(home?.rules ?? []), ...(full?.rules ?? [])].filter(
+      ({ selector, decls }) =>
+        /\.home3d-model\.(tent|trailer|cabin3d|apartment|house3d|mansion)\b/.test(selector) &&
+        !selector.includes(".stage-mini") &&
+        /(^|;)\s*top\s*:/.test(decls),
+    );
+    expect(perStageTop.map(({ selector }) => selector)).toEqual([]);
+
+    // `scale` is applied before `transform`, so it would run the anchoring
+    // translate in unscaled units and push the model off the lawn.
+    const standaloneScale = [...(home?.rules ?? []), ...(full?.rules ?? [])].filter(
+      ({ selector, decls }) =>
+        selector.includes(".home3d-model") && /(^|;)\s*scale\s*:/.test(decls),
+    );
+    expect(standaloneScale.map(({ selector }) => selector)).toEqual([]);
   });
 
   it("has no meaningful font-size at 11px or below (or the rem equivalent) unless marked decorative", () => {

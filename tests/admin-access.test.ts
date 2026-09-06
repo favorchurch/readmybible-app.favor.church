@@ -7,6 +7,7 @@ import type { SessionContext } from "@/lib/session";
 function okSession(overrides: Partial<Extract<SessionContext, { status: "ok" }>>): SessionContext {
   return {
     status: "ok",
+    rockGender: null,
     rockPersonId: 999,
     displayName: "Test",
     memberships: [],

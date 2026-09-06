@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { AppShell, type AppShellProps } from "@/components/app-shell";
-import { defaultAvatarConfig, isAvatarConfig, type Translation } from "@/components/avatar";
+import { isAvatarConfig, resolveAvatar, type Translation } from "@/components/avatar";
 import { devMockToday } from "@/lib/dev-clock";
 import {
   getCampusBoard,
@@ -42,12 +42,18 @@ export default async function Page() {
   ]);
 
   const profileRow = profileRows[0];
-  const avatar = isAvatarConfig(profileRow?.avatar) ? profileRow.avatar : defaultAvatarConfig;
+  const avatar = resolveAvatar(session.rockPersonId, session.rockGender, profileRow?.avatar);
+  const rosterProfiles = roster.length
+    ? await db.select({ personId: profiles.rockPersonId, avatar: profiles.avatar })
+      .from(profiles).where(inArray(profiles.rockPersonId, roster.map((member) => member.PersonId)))
+    : [];
+  const savedAvatars = new Map(rosterProfiles.map((row) => [row.personId, row.avatar]));
   const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
   const props: AppShellProps = {
     displayName: profileRow?.displayName || session.displayName,
     avatar,
+    avatarCustomized: isAvatarConfig(profileRow?.avatar),
     translation,
     memberships: session.memberships,
     activeGroup: session.activeGroup,
@@ -58,6 +64,8 @@ export default async function Page() {
       const history = memberReadingMap.get(m.PersonId);
       return {
         personId: m.PersonId,
+        avatar: resolveAvatar(m.PersonId, m.Person?.Gender, savedAvatars.get(m.PersonId)),
+        isSelf: m.PersonId === session.rockPersonId,
         name: m.Person?.NickName || m.Person?.FirstName || `Reader ${m.PersonId}`,
         isLeader: m.GroupRoleId !== undefined && m.GroupRoleId !== null && [24, 81].includes(m.GroupRoleId),
         readToday: groupStats?.readersTodayIds.includes(m.PersonId) ?? false,

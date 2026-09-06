@@ -33,6 +33,8 @@ const testProfile: UserProfile = {
 const sampleRoster: RosterMemberView[] = [
   {
     personId: 101,
+    avatar: { ...defaultAvatarConfig },
+    isSelf: false,
     name: "Jordan",
     isLeader: true,
     readToday: true,
@@ -41,6 +43,8 @@ const sampleRoster: RosterMemberView[] = [
   },
   {
     personId: 102,
+    avatar: { ...defaultAvatarConfig },
+    isSelf: false,
     name: "Taylor",
     isLeader: false,
     readToday: false,
@@ -49,6 +53,8 @@ const sampleRoster: RosterMemberView[] = [
   },
   {
     personId: 103,
+    avatar: { ...defaultAvatarConfig },
+    isSelf: false,
     name: "Sam",
     isLeader: false,
     readToday: false,
@@ -79,9 +85,22 @@ const mockTodayState: TodayState = {
   },
 };
 
+/**
+ * Sheet renders through createPortal, which react-dom/server refuses to render
+ * ("Portals are not currently supported by the server renderer"). In Next this
+ * is fine -- `document` is undefined on the server so Sheet returns null -- but
+ * jsdom defines `document`, so renderToStaticMarkup reaches the portal and
+ * throws. Client-render instead and read the portal's markup off document.body.
+ */
+function renderPortalMarkup(element: React.ReactElement): string {
+  cleanup();
+  render(element);
+  return document.body.innerHTML;
+}
+
 describe("MemberProfileSheet", () => {
   it("renders an accessible modal dialog with first name, avatar, 5-day streak, and 28-day calendar", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -105,7 +124,7 @@ describe("MemberProfileSheet", () => {
     expect(html).toContain("5 of 28 chapters read");
 
     // 28-day October progress calendar
-    expect(html).toContain('aria-label="Jordan&#x27;s October reading calendar"');
+    expect(html).toContain('aria-label="Jordan\'s October reading calendar"');
     expect(html).toContain("Matthew · October 2026");
     expect(html).toContain("5/28 complete");
 
@@ -114,7 +133,7 @@ describe("MemberProfileSheet", () => {
   });
 
   it("handles reduced-value case for members with zero check-ins", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -146,7 +165,7 @@ describe("MemberProfileSheet", () => {
       readToday: true,
     };
 
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -161,7 +180,7 @@ describe("MemberProfileSheet", () => {
   });
 
   it("labels launch-week dates that have not happened yet as upcoming", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -175,7 +194,7 @@ describe("MemberProfileSheet", () => {
   });
 
   it("labels all streak marks as upcoming during pre-launch", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -192,7 +211,7 @@ describe("MemberProfileSheet", () => {
   });
 
   it("never exposes verse content, prayers, or private fields", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
         onClose: () => {},
@@ -281,6 +300,7 @@ describe("TodayScreen tent people toggle", () => {
         groupStats: sampleStats,
         roster: sampleRoster,
         profile: testProfile,
+        avatarCustomized: true,
         onStart: () => {},
         onReplayCelebration: () => {},
         onEditProfile: () => {},
@@ -307,6 +327,7 @@ describe("TodayScreen tent people toggle", () => {
         groupStats: sampleStats,
         roster: sampleRoster,
         profile: testProfile,
+        avatarCustomized: true,
         onStart: () => {},
         onReplayCelebration: () => {},
         onEditProfile: () => {},
@@ -441,7 +462,7 @@ describe("MemberStreakDots", () => {
 
 describe("ProfileEditor reading data disclosure", () => {
   it("accurately describes shared journey history, read days, and 5-day streak while preserving privacy", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(ProfileEditor, {
         profile: testProfile,
         saving: false,
@@ -465,7 +486,7 @@ describe("ProfileEditor reading data disclosure", () => {
 
 describe("ReadingVisibilityNote dialog", () => {
   it("accurately describes shared journey check-in visibility and privacy boundary", () => {
-    const html = renderToStaticMarkup(
+    const html = renderPortalMarkup(
       React.createElement(ReadingVisibilityNote, {
         open: true,
         onClose: () => {},

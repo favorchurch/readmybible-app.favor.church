@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
+import { type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import { StageMini } from "@/components/stage-mini";
@@ -25,7 +25,6 @@ export function ProgressScreen({
   chaptersRead,
   coins,
   streakDays,
-  groupName,
   campusName,
   campusBoard,
   profile,
@@ -72,45 +71,10 @@ export function ProgressScreen({
     <main className="screen progress-screen frame frame--rail">
       <Header heading="Your progress" profile={profile} onEditProfile={onEditProfile} />
       <div className="frame__span">
-        <section className="progress-profile-card" aria-label={`${profile.displayName}'s profile and reading highlights`}>
-          <Avatar
-            color="coral"
-            gender={profile.gender}
-            hair={profile.hair}
-            glasses={profile.glasses}
-            facialHair={profile.facialHair}
-            face={profile.face}
-            hairColor={profile.hairColor}
-            skinColor={profile.skinColor}
-            shirtColor={profile.shirtColor}
-            backgroundColor={profile.backgroundColor}
-            preview
-          />
-          <div className="progress-profile-copy">
-            <p className="eyebrow">YOUR PROFILE</p>
-            <h2>{profile.displayName}</h2>
-            <span>{groupName ?? "Reading solo"}</span>
-            <button type="button" onClick={onEditProfile}>
-              Edit avatar <b>→</b>
-            </button>
-          </div>
-          {!isPreLaunch && (
-            <div className="progress-profile-highlights">
-              <div>
-                <b>{streakDays}</b>
-                <span>day streak</span>
-              </div>
-              <div>
-                <b>{chaptersRead}</b>
-                <span>chapters read</span>
-              </div>
-            </div>
-          )}
-        </section>
         <section className="page-title compact">
           <p className="eyebrow">YOUR OCTOBER</p>
-          <h1>Keep showing up.</h1>
-          <p>Grace for the missed days. Joy in the next one.</p>
+          <h1>Your Progress</h1>
+          <p>28 chapters · Oct 1–28 · 3 catch-up days</p>
         </section>
       </div>
 
@@ -145,12 +109,13 @@ export function ProgressScreen({
                   className={`calendar-cell ${state}-cell`}
                   onClick={() => handleCellClick(entry, state)}
                   aria-label={`Day ${entry.day}, Matthew ${entry.chapter}, ${labelState}`}
+                  aria-current={entry.date === today.todayLocal ? "date" : undefined}
                 >
                   {state === "read" && <span className="cell-glyph" aria-hidden="true">✓</span>}
                   <span className="day-number">{entry.day}</span>
-                  {state === "today" && <span className="sr-only">Today</span>}
+                  {state === "today" && <i className="cell-tag">Today</i>}
                   {state === "today" && <span className="today-ring" aria-hidden="true" />}
-                  {state === "catch-up" && <i className="cell-tag">Catch up</i>}
+                  {state === "catch-up" && <i className="cell-tag" aria-hidden="true">↺</i>}
                 </button>
               );
             })}
@@ -165,7 +130,7 @@ export function ProgressScreen({
                 aria-label={`October ${entry.day}, Catch up day`}
               >
                 <span className="day-number">{entry.day}</span>
-                <i className="cell-tag">Catch up</i>
+                <i className="cell-tag" aria-hidden="true">↺</i>
               </button>
             ))}
           </div>
@@ -175,53 +140,50 @@ export function ProgressScreen({
               <span>Read</span>
             </div>
             <div className="legend-item">
-              <span className="legend-swatch today-swatch" aria-hidden="true" />
+              <span className="legend-swatch today-swatch" aria-hidden="true">•</span>
               <span>Today</span>
             </div>
             <div className="legend-item">
-              <span className="legend-swatch catchup-swatch" aria-hidden="true">Catch up</span>
-              <span>Catch up</span>
+              <span className="legend-swatch catchup-swatch" aria-hidden="true">↺</span>
+              <span>Catch-up</span>
             </div>
             <div className="legend-item">
               <span className="legend-swatch upcoming-swatch" aria-hidden="true">28</span>
               <span>Upcoming</span>
             </div>
           </div>
+          <p className="calendar-preview-note">Tap an upcoming day for a preview. Reading and check-ins open on its scheduled day.</p>
         </section>
       </div>
 
       <div className="frame__rail">
         {isPreLaunch ? (
-          <section className="plan-facts-card" data-section="plan-facts">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">THE PLAN</p>
-                <h2>Matthew in October</h2>
+          <>
+            <section className="plan-facts-card" data-section="plan-facts">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">THE PLAN</p>
+                  <h2>One chapter. Each day.</h2>
+                </div>
               </div>
-            </div>
-            <div className="plan-facts-grid">
-              <div className="plan-fact-item">
-                <b className="plan-fact-value">28</b>
-                <span className="plan-fact-label">chapters</span>
+              <p>Start with Matthew 1 on October 1. Miss a day? There is room to catch up, including October 29–31.</p>
+            </section>
+
+            <section className="leaderboard-card">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
+                  <h2>Groups on the same journey</h2>
+                </div>
               </div>
-              <div className="plan-fact-item">
-                <b className="plan-fact-value">1</b>
-                <span className="plan-fact-label">chapter a day</span>
-              </div>
-              <div className="plan-fact-item">
-                <b className="plan-fact-value">October 1 to 28</b>
-                <span className="plan-fact-label">reading days</span>
-              </div>
-              <div className="plan-fact-item">
-                <b className="plan-fact-value">October 29 to 31</b>
-                <span className="plan-fact-label">catch-up days</span>
-              </div>
-            </div>
-          </section>
+              <p className="gentle-note">Cheer them on.</p>
+              <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
+            </section>
+          </>
         ) : (
           <>
             <section className="stats-card">
-              <div className="chapter-ring">
+              <div className="chapter-ring" style={{ background: `conic-gradient(var(--gold) 0 ${Math.min(100, chaptersRead / TOTAL_CHAPTERS * 100)}%, rgba(255,255,255,.14) 0)` }}>
                 <span>
                   <b>{chaptersRead}</b>
                   <small>/ {TOTAL_CHAPTERS}</small>

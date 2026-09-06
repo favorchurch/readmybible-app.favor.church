@@ -98,6 +98,7 @@ export type RockPerson = {
   FirstName: string;
   LastName: string;
   PrimaryCampusId: number | null;
+  Gender?: number | string | null;
 };
 
 export type RockGroup = {
@@ -123,10 +124,10 @@ export type RockGroupMember = {
 /** People/{id} -- selected fields only. Cached 5 minutes. */
 export async function getPerson(personId: number): Promise<RockPerson | null> {
   if (isFixtureMode()) return fixturePerson(personId);
-  return cached(`rock:person:${personId}`, 300, async () => {
+  return cached(`rock:person:v2:${personId}`, 300, async () => {
     try {
       return await rockFetch<RockPerson>(
-        `People/${personId}?$select=Id,NickName,FirstName,LastName,PrimaryCampusId`,
+        `People/${personId}?$select=Id,NickName,FirstName,LastName,PrimaryCampusId,Gender`,
       );
     } catch (error) {
       if (error instanceof RockApiError && error.status === 404) return null;
@@ -356,6 +357,7 @@ async function bustPersonCache(personId: number, groupId: number): Promise<void>
     `rock:memberships:${personId}`,
     `rock:sections:${personId}`,
     `rock:person:${personId}`,
+    `rock:person:v2:${personId}`,
     `rock:roster:${groupId}`,
   );
 }

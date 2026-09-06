@@ -64,14 +64,14 @@ export function RewardsScreen({
 
   return (
     <main className="screen rewards-screen frame">
-      <Header heading="Rewards" profile={profile} onEditProfile={onEditProfile} />
+      <Header heading={profile.displayName} profile={profile} onEditProfile={onEditProfile} />
       <section className="page-title">
         {isPreLaunch ? (
           <>
             <p className="eyebrow">STARTS OCTOBER 1</p>
             <h1>Rewards</h1>
             <p className="rewards-sub">
-              Rewards celebrate your own consistency. Your group&apos;s home is a separate journey.
+              A little reminder of every step. Your shelf starts filling as you read.
             </p>
           </>
         ) : (
@@ -162,7 +162,7 @@ function Reward({
         </div>
       )}
       <strong>{title}</strong>
-      <span>{earned ? "Earned" : `${threshold} chapters`}</span>
+      <span className="reward-state">{earned ? <><span aria-hidden="true">✓ </span>Earned</> : <><svg aria-hidden="true" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5" /><path d="M5 7V5a3 3 0 0 1 6 0v2" /></svg> Unlock at {threshold} chapters</>}</span>
     </article>
   );
 }
