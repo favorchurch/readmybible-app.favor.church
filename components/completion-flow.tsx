@@ -18,6 +18,7 @@ export function CompletionFlow({
   pending,
   onClose,
   onComplete,
+  onOpenScripture,
 }: {
   step: number;
   chapter: number;
@@ -29,6 +30,7 @@ export function CompletionFlow({
   pending?: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onOpenScripture: () => void;
 }) {
   const entry = planEntryForChapter(chapter);
   const nextTrophyAt = nextMedal(chaptersRead);
@@ -46,13 +48,13 @@ export function CompletionFlow({
           <p className="eyebrow">{isCatchUp ? "CATCH-UP READING" : "TODAY'S READING"}</p>
           <h2 id="modal-title">Matthew {chapter}</h2>
           {entry && <p className="passage-note">{entry.title}</p>}
-          <div className="reading-prompt">
+          <button type="button" className="reading-prompt" onClick={onOpenScripture}>
             <span>{String(chapter).padStart(2, "0")}</span>
             <div>
               <strong>Read Matthew chapter {chapter}</strong>
               <small>Use your Bible or preferred Bible app.</small>
             </div>
-          </div>
+          </button>
           <button className="primary-button" onClick={onComplete} disabled={pending}>
             I read today <span>✓</span>
           </button>

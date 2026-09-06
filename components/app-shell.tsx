@@ -17,6 +17,7 @@ import {
 } from "@/components/avatar";
 import { CompletionFlow } from "@/components/completion-flow";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ScripturePopup } from "@/components/scripture-popup";
 import {
   TestModePanel,
   guardWrite,
@@ -187,6 +188,7 @@ export function AppShell(props: AppShellProps) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [flowChapter, setFlowChapter] = useState<number | null>(null);
   const [flowStep, setFlowStep] = useState(0);
+  const [flowScriptureOpen, setFlowScriptureOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [checkInError, setCheckInError] = useState<string | null>(null);
@@ -474,8 +476,18 @@ export function AppShell(props: AppShellProps) {
             setFlowChapter(null);
             setCheckInError(null);
             setFlowGroupResult(null);
+            setFlowScriptureOpen(false);
           }}
           onComplete={finishReading}
+          onOpenScripture={() => setFlowScriptureOpen(true)}
+        />
+      )}
+      {flowScriptureOpen && flowChapter !== null && (
+        <ScripturePopup
+          passageRef={`Matthew ${flowChapter}`}
+          translation={profile.translation}
+          onTranslationChange={handleTranslationChange}
+          onClose={() => setFlowScriptureOpen(false)}
         />
       )}
       {profileOpen && (
