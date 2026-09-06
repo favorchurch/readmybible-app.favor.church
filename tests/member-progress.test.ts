@@ -1,5 +1,48 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
+vi.mock("server-only", () => ({}));
+
+const mockCheckins = [
+  { rockPersonId: 101, groupId: 24077, chapter: 1, readingDate: "2026-10-01" }, // active group
+  { rockPersonId: 101, groupId: 24001, chapter: 2, readingDate: "2026-10-02" }, // other group
+  { rockPersonId: 101, groupId: null,  chapter: 3, readingDate: "2026-10-03" }, // solo read (groupId NULL)
+  { rockPersonId: 102, groupId: 24077, chapter: 1, readingDate: "2026-10-01" }, // active group
+  { rockPersonId: 999, groupId: 24077, chapter: 5, readingDate: "2026-10-05" }, // other member not in roster
+];
+
+const dialect = new PgDialect();
+
+vi.mock("@/db", () => ({
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn((predicate) => {
+          const { sql, params } = dialect.sqlToQuery(predicate);
+          const hasGroupFilter = sql.includes("group_id");
+          const targetGroupId = hasGroupFilter ? (params[0] as number) : null;
+          const personIds = hasGroupFilter ? (params.slice(1) as number[]) : (params as number[]);
+
+          const matchingRows = mockCheckins
+            .filter((row) => {
+              const matchesPerson = Array.isArray(personIds) && personIds.includes(row.rockPersonId);
+              const matchesGroup = hasGroupFilter ? row.groupId === targetGroupId : true;
+              return matchesPerson && matchesGroup;
+            })
+            .map((r) => ({
+              rockPersonId: r.rockPersonId,
+              chapter: r.chapter,
+              readingDate: r.readingDate,
+            }));
+
+          return Promise.resolve(matchingRows);
+        }),
+      })),
+    })),
+  },
+}));
+
+import { getGroupMembersReadingHistory } from "@/lib/data/stats";
 import {
   deriveMemberReadingHistory,
   recentFiveDayStreak,
@@ -176,5 +219,48 @@ describe("recentFiveDayStreak", () => {
     expect(day3).toBeDefined();
     expect(day3?.future).toBe(true);
     expect(day3?.read).toBe(false);
+  });
+});
+
+describe("getGroupMembersReadingHistory", () => {
+  it("filters check-ins strictly to the active group, excluding solo (NULL) and other-group rows", async () => {
+    const activeGroupId = 24077;
+    const rosterPersonIds = [101, 102, 103];
+
+    // member 101 has:
+    // - ch 1 with groupId 24077 (current group)
+    // - ch 2 with groupId 24001 (other group)
+    // - ch 3 with groupId NULL (solo read)
+    // member 102 has:
+    // - ch 1 with groupId 24077 (current group)
+    // member 103 has no check-ins
+    // person 999 has checkin with groupId 24077 but is not in roster
+
+    const history = await getGroupMembersReadingHistory(activeGroupId, rosterPersonIds);
+
+    expect(history.has(101)).toBe(true);
+    expect(history.has(102)).toBe(true);
+    expect(history.has(103)).toBe(true);
+    expect(history.has(999)).toBe(false);
+
+    // Only current-group check-ins must reach the member history model
+    expect(history.get(101)?.chapters).toEqual([1]);
+    expect(history.get(101)?.dates).toEqual(["2026-10-01"]);
+
+    // Proves other-group (24001) and solo (NULL) rows are excluded
+    expect(history.get(101)?.chapters).not.toContain(2);
+    expect(history.get(101)?.chapters).not.toContain(3);
+
+    expect(history.get(102)?.chapters).toEqual([1]);
+    expect(history.get(102)?.dates).toEqual(["2026-10-01"]);
+
+    // Reduced-value case: member 103 with zero check-ins in active group
+    expect(history.get(103)?.chapters).toEqual([]);
+    expect(history.get(103)?.dates).toEqual([]);
+  });
+
+  it("returns an empty map when groupId is missing or personIds is empty", async () => {
+    expect((await getGroupMembersReadingHistory(0, [101])).size).toBe(0);
+    expect((await getGroupMembersReadingHistory(24077, [])).size).toBe(0);
   });
 });

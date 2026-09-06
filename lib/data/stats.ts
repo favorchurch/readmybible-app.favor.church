@@ -49,13 +49,15 @@ export async function getPersonReadingState(rockPersonId: number): Promise<Perso
 }
 
 /**
- * Compact per-member reading history for an array of personIds.
- * Privacy-safe: only queries rockPersonId, chapter, and readingDate.
+ * Compact per-member reading history for an active group and roster personIds.
+ * Privacy-safe: only queries rockPersonId, chapter, and readingDate, strictly scoped
+ * to check-ins belonging to the active group.
  */
 export async function getGroupMembersReadingHistory(
+  groupId: number,
   personIds: number[],
 ): Promise<Map<number, MemberReadingHistory>> {
-  if (personIds.length === 0) return new Map();
+  if (!groupId || personIds.length === 0) return new Map();
   const rows = await db
     .select({
       rockPersonId: checkins.rockPersonId,
@@ -63,7 +65,7 @@ export async function getGroupMembersReadingHistory(
       readingDate: checkins.readingDate,
     })
     .from(checkins)
-    .where(inArray(checkins.rockPersonId, personIds));
+    .where(and(eq(checkins.groupId, groupId), inArray(checkins.rockPersonId, personIds)));
 
   return deriveMemberReadingHistory(rows, personIds);
 }

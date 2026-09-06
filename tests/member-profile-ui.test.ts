@@ -14,6 +14,7 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import { MemberStreakDots } from "@/components/member-streak-dots";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
 import { ConnectScreen } from "@/components/screens/connect-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
 import { ProgressScreen } from "@/components/screens/progress-screen";
@@ -459,5 +460,22 @@ describe("ProfileEditor reading data disclosure", () => {
     expect(html).not.toContain("can see today's check-in status");
     expect(html).not.toContain("private notes");
     expect(html).not.toContain("verse bookmarks");
+  });
+});
+
+describe("ReadingVisibilityNote dialog", () => {
+  it("accurately describes shared journey check-in visibility and privacy boundary", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ReadingVisibilityNote, {
+        open: true,
+        onClose: () => {},
+      }),
+    );
+
+    expect(html).toContain('id="reading-visibility-title"');
+    expect(html).toContain("Who can see this?</h2>");
+    expect(html).toContain("People in your Connect Group can see your check-in history for this journey");
+    expect(html).toContain("including which days you read and your recent five-day streak");
+    expect(html).toContain("This app does not show how long you read or what Bible app you used");
   });
 });
