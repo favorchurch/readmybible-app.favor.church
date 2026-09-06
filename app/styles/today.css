@@ -303,6 +303,7 @@
 
 .home-preview-card { text-align: center; }
 .home-preview-card p { margin: var(--space-2) 0 0; font-size: 13px; color: var(--ink-muted); }
+.home-preview-card .home-growth-trigger { margin-top: var(--space-2); }
 
 .how-it-works-card ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); counter-reset: hiw; }
 .how-it-works-card li { padding-left: 28px; position: relative; font-size: 13px; line-height: 1.5; color: var(--ink-2); counter-increment: hiw; }

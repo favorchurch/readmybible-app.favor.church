@@ -7,6 +7,7 @@ import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScripturePopup } from "@/components/scripture-popup";
+import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
@@ -75,6 +76,7 @@ export function TodayScreen({
 }) {
   const entry = today.entry;
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
+  const [growthSheetOpen, setGrowthSheetOpen] = useState(false);
   const [chapterOpen, setChapterOpen] = useState(false);
   const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
@@ -183,6 +185,16 @@ export function TodayScreen({
               <section className="home-preview-card" data-section="home-preview">
                 <HomeIllustration stage={stageIndex("Tent")} />
                 <p>Your home starts as a Tent on October 1.</p>
+                <button
+                  type="button"
+                  className="home-growth-trigger secondary-link"
+                  data-section="home-growth-trigger"
+                  data-trigger="home-growth-sheet"
+                  aria-haspopup="dialog"
+                  onClick={() => setGrowthSheetOpen(true)}
+                >
+                  How your home grows
+                </button>
               </section>
             )}
 
@@ -210,6 +222,11 @@ export function TodayScreen({
           </div>
         </div>
         {quickVersePopup}
+        <HomeGrowthSheet
+          open={growthSheetOpen}
+          onClose={() => setGrowthSheetOpen(false)}
+          currentStage={stage}
+        />
       </main>
     );
   }
