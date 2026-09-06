@@ -419,7 +419,24 @@
 /* Home Growth and Reading Visibility Sheet styles */
 .home-growth-modal,
 .reading-visibility-modal {
-  padding: var(--space-4);
+  padding: 0;
+}
+
+/* A compact home and people nearby, with details available on demand. */
+.connect-title { margin-block: 26px 18px; }
+.member-card > strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; overflow-wrap: anywhere; line-height: 1.3; min-height: 2.6em; }
+.member-card { padding: 10px 6px; border-color: transparent; background: transparent; }
+.roster-header { gap: 4px 14px; align-items: center; }
+.roster-header .section-heading { margin-bottom: 0; }
+.home-growth-action { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.open-home-button { width: auto; flex: 1 1 130px; min-height: 48px; gap: 20px; }
+.home-growth-trigger { flex: 1 1 130px; justify-content: center; }
+@media (max-width: 759px) {
+  .big-home-card .home3d-wrap { height: 200px; }
+  .big-home-card { padding-bottom: 14px; }
+  .big-home-info { padding-top: 10px; }
+  .member-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .member-section { margin-top: 24px; }
 }
 
 .sheet-header {

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
-import { Avatar, avatarSeedFor, type UserProfile } from "@/components/avatar";
+import { Avatar, type UserProfile } from "@/components/avatar";
+import { FullHome } from "@/components/full-home";
 import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -58,6 +59,7 @@ export function ConnectScreen({
   const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+  const [homeOpen, setHomeOpen] = useState(false);
 
   useEffect(() => {
     if (!isLeader) return;
@@ -94,7 +96,7 @@ export function ConnectScreen({
     <main className={`screen connect-screen frame ${isLeader ? "frame--rail" : ""}`}>
       <Header heading={groupName ?? "Connect"} profile={profile} onEditProfile={onEditProfile} />
       <section className={`connect-title ${isLeader ? "frame__span" : ""}`}>
-        <h1>{groupName}</h1>
+        <h1>{groupName ?? "Your Connect Group"}</h1>
         <p>
           {campusName ?? "Favor Church"} · {memberCount} members
         </p>
@@ -124,6 +126,7 @@ export function ConnectScreen({
               {nextStage && <StageMini name={nextStage.stage} size={38} className="upgrade-copy-mini" />}
             </div>
             <div className="home-growth-action">
+              <button className="primary-button open-home-button" onClick={() => setHomeOpen(true)} aria-haspopup="dialog">Open Home <span aria-hidden="true">↗</span></button>
               <button
                 type="button"
                 className="home-growth-trigger secondary-link"
@@ -143,7 +146,7 @@ export function ConnectScreen({
             <div className="section-heading">
               {phase === "pre-launch" && (
                 <div>
-                  <h2>Reading together this October</h2>
+                  <h2>Reading together</h2>
                   <p className="roster-sub">{memberCount} members</p>
                 </div>
               )}
@@ -189,7 +192,7 @@ export function ConnectScreen({
           ) : (
             <div className="member-grid">
               {sorted.map((m) => {
-                const seed = avatarSeedFor(m.personId);
+                const avatar = m.isSelf ? profile : m.avatar;
 
                 if (phase === "pre-launch" || phase === "grace" || phase === "closed") {
                   return (
@@ -207,7 +210,7 @@ export function ConnectScreen({
                     >
                       <div className="member-avatar">
                         <MemberStreakDots dates={m.readingDates ?? []} todayLocal={today.todayLocal} />
-                        <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
+                        <Avatar color="coral" {...avatar} />
                       </div>
                       <strong>{m.name}</strong>
                     </button>
@@ -230,7 +233,7 @@ export function ConnectScreen({
                   >
                     <div className="member-avatar">
                       <MemberStreakDots dates={m.readingDates ?? []} todayLocal={today.todayLocal} />
-                      <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
+                      <Avatar color="coral" {...avatar} />
                       {m.readToday && <b>✓</b>}
                     </div>
                     <strong>{m.name}</strong>
@@ -290,6 +293,7 @@ export function ConnectScreen({
         onClose={() => setGrowthSheetOpen(false)}
         currentStage={stage}
       />
+      {homeOpen && <FullHome onClose={() => setHomeOpen(false)} groupName={groupName ?? "Your Connect Group"} coins={groupCoins} stage={selectedStage} progress={nextStage} chapter={today.entry?.chapter ?? null} roster={roster} profile={profile} />}
       <ReadingVisibilityNote
         open={visibilityOpen}
         onClose={() => setVisibilityOpen(false)}

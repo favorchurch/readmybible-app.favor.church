@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { Avatar, avatarSeedFor, defaultAvatarConfig, type Translation, type UserProfile } from "@/components/avatar";
+import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
 import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
@@ -24,23 +24,6 @@ import {
 import type { GroupStats } from "@/lib/data/stats";
 import { TRANSLATION_META } from "@/lib/scripture/types";
 
-const AVATAR_KEYS = [
-  "gender",
-  "face",
-  "hair",
-  "glasses",
-  "facialHair",
-  "hairColor",
-  "skinColor",
-  "shirtColor",
-  "backgroundColor",
-] as const;
-
-/** Whether the reader has customized any avatar field away from the default look. */
-function isAvatarSet(profile: UserProfile): boolean {
-  return AVATAR_KEYS.some((key) => profile[key] !== defaultAvatarConfig[key]);
-}
-
 export function TodayScreen({
   today,
   chapters,
@@ -51,6 +34,7 @@ export function TodayScreen({
   groupStats,
   roster,
   profile,
+  avatarCustomized,
   onStart,
   onReplayCelebration,
   onEditProfile,
@@ -67,6 +51,7 @@ export function TodayScreen({
   groupStats: GroupStats | null;
   roster: RosterMemberView[];
   profile: UserProfile;
+  avatarCustomized: boolean;
   onStart: (chapter: number) => void;
   onReplayCelebration: (chapter: number) => void;
   onEditProfile: () => void;
@@ -92,7 +77,7 @@ export function TodayScreen({
     setViewed(syncedView.viewedChapter);
   }
 
-  const viewedChapter = entry ? clampReadingChapter(syncedView.viewedChapter, entry.chapter) : 1;
+  const viewedChapter = entry ? Math.min(entry.chapter, clampReadingChapter(syncedView.viewedChapter, entry.chapter)) : 1;
   const viewedEntry = planEntryForChapter(viewedChapter);
   const viewingUnavailable = Boolean(entry && viewedChapter > entry.chapter);
   const todayAlreadyRead = entry ? isChapterRead(entry.chapter, chapters) : false;
@@ -124,7 +109,7 @@ export function TodayScreen({
 
   if (today.displayPhase === "pre-launch" && dayOneEntry) {
     return (
-      <main className="screen today-screen frame">
+      <main className="screen today-screen prelaunch-screen frame">
         <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
         <div className="frame--rail">
           <div className="frame__main">
@@ -136,9 +121,33 @@ export function TodayScreen({
               </p>
             </section>
 
+            <section className="readiness-card" data-section="readiness">
+              <p className="eyebrow">GET READY</p>
+              <h2>Make yourself at home.</h2>
+              <p className="readiness-intro">A few things to check before October 1.</p>
+              <button type="button" className={`readiness-row ${avatarCustomized ? "is-ready" : "needs-setup"}`} onClick={onEditProfile}>
+                <span className="readiness-avatar" aria-hidden="true">
+                  <Avatar color="coral" {...profile} small />
+                  <span className="readiness-avatar-status">{avatarCustomized ? "✓" : "1"}</span>
+                </span>
+                <span className="readiness-copy"><span>Avatar</span><strong>{avatarCustomized ? "Ready to go" : "Choose your look"}</strong></span>
+                <span className="readiness-arrow" aria-hidden="true">→</span>
+              </button>
+              <button type="button" className={`readiness-row ${groupName ? "is-ready" : "needs-setup"}`} onClick={onViewConnect}>
+                <span className="readiness-indicator" aria-hidden="true">{groupName ? "✓" : "2"}</span>
+                <span className="readiness-copy"><span>Connect Group</span><strong>{groupName ?? "Join with a leader code"}</strong></span>
+                <span className="readiness-arrow" aria-hidden="true">→</span>
+              </button>
+              <button type="button" className="readiness-row" onClick={onEditProfile}>
+                <span className="readiness-indicator" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M10 5v12M10 5C7 3 4 3 2 4v12c3-1 5-1 8 1 3-2 5-2 8-1V4c-2-1-5-1-8 1Z" /></svg></span>
+                <span className="readiness-copy"><span>Bible translation</span><strong>{profile.translation} · Review your choice</strong></span>
+                <span className="readiness-arrow" aria-hidden="true">→</span>
+              </button>
+            </section>
+
             <section className="day1-preview-card" data-section="day1-preview">
               <div className="reading-topline">
-                <span>DAY 1</span>
+                <span>DAY 1 PREVIEW</span>
               </div>
               <div className="reading-main">
                 <div>
@@ -161,27 +170,6 @@ export function TodayScreen({
           </div>
 
           <div className="frame__rail">
-            <section className="readiness-card" data-section="readiness">
-              <p className="eyebrow">GET READY</p>
-              <h2>Set up before October 1</h2>
-              <button type="button" className="readiness-row" onClick={onEditProfile}>
-                <span>Avatar</span>
-                <strong>{isAvatarSet(profile) ? "Set" : "Default"}</strong>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
-              </button>
-              <button type="button" className="readiness-row" onClick={onViewConnect}>
-                <span>Connect Group</span>
-                <strong>{groupName ?? "Join with a leader code"}</strong>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
-              </button>
-              <button type="button" className="readiness-row" onClick={onEditProfile}>
-                <span>Bible translation</span>
-                <strong>{profile.translation}</strong>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
-              </button>
-            </section>
-
-            {groupName && (
               <section className="home-preview-card" data-section="home-preview">
                 <HomeIllustration stage={stageIndex("Tent")} />
                 <p>Your home starts as a Tent on October 1.</p>
@@ -196,7 +184,6 @@ export function TodayScreen({
                   How your home grows
                 </button>
               </section>
-            )}
 
             <section className="how-it-works-card" data-section="how-it-works">
               <p className="eyebrow">HOW THIS WORKS</p>
@@ -343,8 +330,8 @@ export function TodayScreen({
                 <button
                   type="button"
                   aria-label="Next chapter"
-                  disabled={viewedChapter === entry.chapter + 1}
-                  onClick={() => setViewed(clampReadingChapter(viewedChapter + 1, entry.chapter))}
+                  disabled={viewedChapter >= entry.chapter}
+                  onClick={() => setViewed(Math.min(entry.chapter, viewedChapter + 1))}
                 >
                   <span aria-hidden="true">→</span>
                 </button>
@@ -497,10 +484,9 @@ export function TodayScreen({
 
             <section className="people-today" data-section="readers-today">
               <div className="avatar-stack">
-                {roster.slice(0, 5).map((m) => {
-                  const seed = avatarSeedFor(m.personId);
-                  return <Avatar key={m.personId} color={seed.color} skin={seed.skin} hair={seed.hair} small />;
-                })}
+                {roster.slice(0, 5).map((m) => (
+                  <Avatar key={m.personId} color="coral" {...(m.isSelf ? profile : m.avatar)} small />
+                ))}
               </div>
               <div>
                 <strong>{readersToday} of {memberCount} have read today</strong>
@@ -514,7 +500,7 @@ export function TodayScreen({
       {quickVersePopup}
       {chapterOpen && entry && (
         <ScripturePopup
-          passageRef={`Matthew ${entry.chapter}`}
+          passageRef={`Matthew ${viewedChapter}`}
           translation={profile.translation}
           onTranslationChange={onTranslationChange}
           onClose={() => {

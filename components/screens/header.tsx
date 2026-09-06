@@ -2,7 +2,6 @@ import { Avatar, type UserProfile } from "@/components/avatar";
 import { Brand } from "@/components/brand";
 
 export function Header({
-  heading,
   profile,
   onEditProfile,
 }: {
@@ -15,7 +14,7 @@ export function Header({
       <Brand />
       <button className="header-person" onClick={onEditProfile} aria-label="Edit your avatar">
         <span>
-          {heading}
+          <span className="header-name">{profile.displayName ? `Hey, ${profile.displayName}!` : "Hey, you!"}</span>
           <small>Edit profile</small>
         </span>
         <Avatar

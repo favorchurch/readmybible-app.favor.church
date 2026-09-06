@@ -71,14 +71,12 @@ export function ScripturePopup({
       {parsed && (
         <div className="link-groups">
           <div className="link-group">
-            <div className="link-group-row inline-row">
-              <a className="inline-link" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
+              <a className="primary-button scripture-chapter-action" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
                 Open full chapter ↗
               </a>
-            </div>
           </div>
           <details className="link-group link-disclosure">
-            <summary className="eyebrow">COMMENTARIES</summary>
+            <summary>Commentaries</summary>
             <div className="link-group-row inline-row">
               {commentaryLinks.map((link) => (
                 <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">
@@ -88,7 +86,7 @@ export function ScripturePopup({
             </div>
           </details>
           <details className="link-group link-disclosure">
-            <summary className="eyebrow">APPS</summary>
+            <summary>Apps</summary>
             <div className="link-group-row inline-row">
               {appsLinks.map((link) => (
                 <a key={link.label} className="inline-link" href={link.url} target="_blank" rel="noreferrer">

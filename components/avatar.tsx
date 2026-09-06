@@ -62,26 +62,18 @@ export const defaultAvatarConfig: AvatarConfig = {
 export function isAvatarConfig(value: unknown): value is AvatarConfig {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
-  return typeof v.gender === "string" && typeof v.hair === "string" && typeof v.hairColor === "string";
+  return (v.gender === "male" || v.gender === "female") && typeof v.hair === "string" && typeof v.hairColor === "string";
 }
 
 export const defaultProfile: UserProfile = {
   displayName: "",
-  gender: "female",
-  face: "normal",
-  hair: "short-straight",
-  glasses: "none",
-  facialHair: "none",
-  hairColor: "#172943",
-  skinColor: "#b97856",
-  shirtColor: "#d96c57",
-  backgroundColor: "#efd8bd",
+  ...defaultAvatarConfig,
   translation: "NET",
 };
 
 export function Avatar({
   color,
-  gender = "female",
+  gender,
   skin = "warm",
   hair = "crop",
   glasses = "none",
@@ -95,7 +87,7 @@ export function Avatar({
   preview = false,
 }: {
   color: string;
-  gender?: Gender;
+  gender: Gender;
   skin?: SkinTone;
   hair?: HairStyle;
   glasses?: GlassesStyle;
@@ -158,4 +150,31 @@ export function avatarSeedFor(personId: number): { color: AvatarColor; skin: Ski
     skin: SEED_SKINS[(personId * 7) % SEED_SKINS.length],
     hair: SEED_HAIR[(personId * 13) % SEED_HAIR.length],
   };
+}
+
+/** Rock.Model.Gender: Unknown=0, Male=1, Female=2. Never infer it from a name. */
+export function avatarGenderFromRock(value: unknown): Gender | null {
+  if (value === 1 || value === "1" || value === "Male" || value === "male") return "male";
+  if (value === 2 || value === "2" || value === "Female" || value === "female") return "female";
+  return null;
+}
+
+const SEED_SHIRTS = ["#d96c57", "#587b9d", "#d6aa55", "#809783", "#9a86aa"];
+const SEED_SKIN_COLORS = ["#edc7a3", "#d8a373", "#b97856", "#754732"];
+
+/**
+ * The only person-to-avatar resolver, shared by the reader and their roster.
+ * Missing Rock gender uses a stable mixed illustration, not a claim about the
+ * person's gender. An explicitly saved avatar always takes precedence.
+ */
+export function resolveAvatar(personId: number, rockGender: unknown, savedAvatar?: unknown): AvatarConfig {
+  const seed = Math.abs(Math.trunc(personId));
+  const generated: AvatarConfig = {
+    ...defaultAvatarConfig,
+    gender: avatarGenderFromRock(rockGender) ?? (seed % 2 === 0 ? "male" : "female"),
+    hair: SEED_HAIR[(seed * 13) % SEED_HAIR.length],
+    skinColor: SEED_SKIN_COLORS[(seed * 7) % SEED_SKIN_COLORS.length],
+    shirtColor: SEED_SHIRTS[seed % SEED_SHIRTS.length],
+  };
+  return isAvatarConfig(savedAvatar) ? { ...generated, ...savedAvatar } : generated;
 }

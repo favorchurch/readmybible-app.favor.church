@@ -31,6 +31,7 @@ export type SessionContext =
   | {
       status: "ok";
       rockPersonId: number;
+      rockGender: number | string | null;
       displayName: string;
       memberships: GroupMembership[];
       sectionMemberships: RockGroupMember[];
@@ -116,6 +117,7 @@ export async function getSessionContext(): Promise<SessionContext> {
   return {
     status: "ok",
     rockPersonId,
+    rockGender: person.Gender ?? null,
     displayName: profileRow[0]?.displayName || person.NickName || person.FirstName,
     memberships,
     sectionMemberships,

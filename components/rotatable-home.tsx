@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { HomeModel } from "@/components/home-model";
 import type { Stage } from "@/lib/game";
@@ -23,23 +23,39 @@ export function RotatableHome({
   stage,
   completed,
   compact = false,
+  immersive = false,
+  children,
 }: {
   stage: number;
   completed: boolean;
   compact?: boolean;
+  immersive?: boolean;
+  children?: React.ReactNode;
 }) {
   const [rotation, setRotation] = useState(-28);
-  const drag = useRef<{ x: number; rotation: number } | null>(null);
+  const [pan, setPan] = useState(0);
+  const [coachmark, setCoachmark] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try { setCoachmark(!sessionStorage.getItem('home-looked-around')); } catch { setCoachmark(true); }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const drag = useRef<{ x: number; y: number; rotation: number; pan: number } | null>(null);
   const selected = homeStages[stage];
 
   function pointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    drag.current = { x: event.clientX, rotation };
+    if (!event.isPrimary || event.button !== 0) return;
+    drag.current = { x: event.clientX, y: event.clientY, rotation, pan };
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (!drag.current) return;
     setRotation(drag.current.rotation + (event.clientX - drag.current.x) * 0.55);
+    if (immersive) setPan(Math.max(-80, Math.min(80, drag.current.pan + (event.clientY - drag.current.y) * .4)));
+    setCoachmark(false);
+    try { sessionStorage.setItem('home-looked-around', '1'); } catch { /* Storage is optional. */ }
   }
 
   function keyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -48,7 +64,7 @@ export function RotatableHome({
   }
 
   return (
-    <div className={`home3d-wrap ${compact ? "compact" : ""}`}>
+    <div className={`home3d-wrap ${compact ? "compact" : ""} ${immersive ? "home3d-immersive" : ""}`}>
       <div className="home3d-sky">
         <i />
         <i />
@@ -72,18 +88,19 @@ export function RotatableHome({
         aria-label={`Interactive 3D ${selected.name}. Drag, swipe, or use arrow keys to rotate.`}
       >
         {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-        <div className="home3d-turntable" style={{ transform: `rotateX(-9deg) rotateY(${rotation}deg)` }}>
+        <div className="home3d-turntable" style={{ transform: `translateY(${pan}px) rotateX(-9deg) rotateY(${rotation}deg)` }}>
           <div className="home3d-ground">
             <span className="path3d" />
             <span className="shrub shrub-one" />
             <span className="shrub shrub-two" />
           </div>
           <HomeModel stageClassName={selected.className} />
+          {children}
         </div>
       </div>
-      <div className="rotate-hint">
+      {coachmark && <div className="home-coachmark" aria-hidden="true">Swipe to look around</div>}
+      {!immersive && rotation !== -28 && <div className="rotate-hint">
         <span className="rotate-glyph" aria-hidden="true">↔</span>
-        <span className="rotate-text">Drag, swipe, or use the arrows to look around.</span>
         <div className="rotate-actions">
           <button
             type="button"
@@ -105,7 +122,7 @@ export function RotatableHome({
             Reset view
           </button>
         </div>
-      </div>
+      </div>}
       {completed && <div className="home3d-complete">✦ 10 coins added</div>}
     </div>
   );

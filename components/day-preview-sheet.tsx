@@ -68,7 +68,7 @@ export function DayPreviewSheet({
             ref={chapterTriggerRef}
             onClick={() => setChapterOpen(true)}
           >
-            Read Matthew {entry.chapter} <span aria-hidden="true">→</span>
+            Preview Matthew {entry.chapter} <span aria-hidden="true">→</span>
           </button>
         ) : null}
 
@@ -79,7 +79,7 @@ export function DayPreviewSheet({
           </div>
         ) : (
           <div className="day-preview-status upcoming-status">
-            <p className="day-preview-opens">Read ahead any time. {checkInOpensLabel(entry)}</p>
+            <p className="day-preview-opens">This is a preview of the plan. {checkInOpensLabel(entry)}</p>
           </div>
         )}
       </div>
