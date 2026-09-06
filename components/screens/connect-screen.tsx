@@ -10,6 +10,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
+import { StageMini } from "@/components/stage-mini";
 import { MemberStreakDots } from "@/components/member-streak-dots";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
@@ -68,7 +69,7 @@ export function ConnectScreen({
               <p className="eyebrow">CURRENT HOME</p>
               <h2 className="stage-name-row">
                 {stage}
-                <span className="stage-name-mini" aria-hidden="true" />
+                <StageMini name={stage} size={53} className="stage-name-mini" />
               </h2>
               <span className="home-note">{homeStages[selectedStage].note}</span>
             </div>
@@ -80,6 +81,7 @@ export function ConnectScreen({
               <strong>{nextStage ? `${nextStage.pct}% to ${nextStage.stage}` : "All stages reached"}</strong>
               <span>Next group upgrade</span>
             </div>
+            {nextStage && <StageMini name={nextStage.stage} size={38} className="upgrade-copy-mini" />}
           </div>
           <div className="home-growth-action">
             <button className="primary-button open-home-button" onClick={() => setHomeOpen(true)} aria-haspopup="dialog">Open Home <span aria-hidden="true">↗</span></button>
