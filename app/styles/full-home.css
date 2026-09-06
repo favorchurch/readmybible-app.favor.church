@@ -67,4 +67,9 @@
   .full-home .home-coachmark { bottom: 85px; }
   .home-person .avatar { width: 42px; height: 42px; }
 }
+/* The Tent's floor line is lower than taller homes, so anchor its base to the
+   shared ground plane in the portrait immersive view instead of its center. */
+@media (orientation: portrait) {
+  .full-home .home3d-model.tent { top: 50%; }
+}
 @media (prefers-reduced-motion: reduce) { .home3d-turntable { transition: none; } }
