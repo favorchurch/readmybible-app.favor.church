@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { UserProfile } from "@/components/avatar";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import type { TodayState } from "@/components/use-today";
 import { medals as medalsReached, nextMedal } from "@/lib/game";
@@ -30,11 +31,13 @@ export function RewardsScreen({
   chapters,
   onEditProfile,
   today,
+  connectSwitcher,
 }: {
   profile: UserProfile;
   chapters: number;
   onEditProfile: () => void;
   today: TodayState;
+  connectSwitcher?: ConnectSwitcherContext;
 }) {
   const isPreLaunch = today.displayPhase === "pre-launch";
 
@@ -64,7 +67,7 @@ export function RewardsScreen({
 
   return (
     <main className="screen rewards-screen frame">
-      <Header heading={profile.displayName} profile={profile} onEditProfile={onEditProfile} />
+      <Header heading={profile.displayName} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
       <section className="page-title">
         {isPreLaunch ? (
           <>

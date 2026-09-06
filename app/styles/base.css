@@ -10,6 +10,7 @@ summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .screen { min-height: 100dvh; padding: 22px 18px 116px; animation: pageIn var(--dur-base) var(--ease-out); }
 
 .topbar { display: flex; justify-content: space-between; align-items: center; max-width: 1040px; margin: auto; }
+.header-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .brand { font-family: Impact, "Arial Narrow", sans-serif; display: flex; align-items: end; gap: 5px; font-stretch: condensed; font-weight: 900; letter-spacing: 0; line-height: .84; font-size: 23px; white-space: nowrap; min-height: 44px; text-decoration: none; color: inherit; }
 .brand span { display: block; color: var(--coral); }
 .header-person { display: flex; align-items: center; gap: 9px; padding: 0; border: 0; background: transparent; text-align: right; cursor: pointer; font-size: 12px; font-weight: 700; }
@@ -107,6 +108,45 @@ summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .secondary-link { display: flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; margin: 22px auto 0; max-width: 720px; color: var(--navy); font-size: 12px; font-weight: 700; text-decoration: underline; }
 .error-note { color: var(--coral); font-size: 12px; font-weight: 700; margin: 10px 0 0; }
+
+.connect-switcher-trigger {
+  min-height: 44px;
+  max-width: min(38vw, 220px);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  text-align: left;
+  cursor: pointer;
+}
+.connect-switcher-trigger-copy { min-width: 0; display: grid; gap: 1px; }
+.connect-switcher-trigger-copy small { color: var(--coral); font-size: 12px; font-weight: 900; letter-spacing: .1em; }
+.connect-switcher-trigger-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.connect-switcher-chevron { color: var(--coral); font-size: 18px; line-height: 1; }
+.connect-switcher-sheet { padding-bottom: 4px; }
+.connect-switcher-heading { padding: 3px 0 0; }
+.connect-switcher-heading h2 { font-size: clamp(30px, 8vw, 42px); }
+.connect-switcher-note { max-width: 390px; margin: 12px 0 0; color: var(--ink-muted); font-size: 13px; line-height: 1.5; }
+.connect-switcher-list { display: grid; gap: 10px; margin-top: 22px; }
+.connect-switcher-option { width: 100%; min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); text-align: left; cursor: pointer; }
+.connect-switcher-option.selected { border-color: var(--coral); background: #fff5eb; }
+.connect-switcher-option:disabled { cursor: default; opacity: .72; }
+.connect-switcher-option-copy { min-width: 0; display: grid; gap: 4px; }
+.connect-switcher-option-copy strong { overflow-wrap: anywhere; font-size: 14px; }
+.connect-switcher-option-copy small { color: var(--ink-muted); font-size: 12px; font-weight: 800; }
+.connect-switcher-option-state { flex: 0 0 auto; color: var(--coral); font-size: 12px; font-weight: 900; }
+.connect-switcher-error { margin-top: 16px; }
+.connect-switcher-pending { margin: 14px 0 0; color: var(--ink-muted); font-size: 12px; text-align: center; }
+.connect-switcher-trigger:focus-visible,
+.connect-switcher-option:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .connect-switcher-trigger:hover,
+  .connect-switcher-option:not(:disabled):hover { border-color: var(--line-strong); }
+}
 
 /* 44px touch floor (Task 12): the header avatar button and the profile card
    link-button measured 35px and 21px tall. */

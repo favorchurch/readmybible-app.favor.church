@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { Header } from "@/components/screens/header";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -24,6 +25,7 @@ export function LeaderScreen({
   readerGroupId,
   onGetOrCreateJoinCode,
   onEditProfile,
+  connectSwitcher,
 }: {
   groupName: string | null;
   campusBoard: GroupStanding[];
@@ -34,6 +36,7 @@ export function LeaderScreen({
   readerGroupId: number | null;
   onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   onEditProfile: () => void;
+  connectSwitcher?: ConnectSwitcherContext;
 }) {
   const phase = today.displayPhase;
   const stillReading = roster.filter((m) => !m.readToday);
@@ -77,7 +80,7 @@ export function LeaderScreen({
 
   return (
     <main className="screen leader-screen">
-      <Header heading="Leader" profile={profile} onEditProfile={onEditProfile} />
+      <Header heading="Leader" profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
 
       {/* Bring someone in */}
       <section className="leader-section" data-section="bring-someone-in">

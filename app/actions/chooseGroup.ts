@@ -19,28 +19,33 @@ export async function chooseGroup(input: z.infer<typeof inputSchema>): Promise<C
     return { ok: false, error: "That group didn't look right. Try again." };
   }
 
-  const session = await getSessionContext();
-  if (session.status !== "ok") {
-    return { ok: false, error: "You need to be logged in to choose a group." };
+  try {
+    const session = await getSessionContext();
+    if (session.status !== "ok") {
+      return { ok: false, error: "You need to be logged in to choose a group." };
+    }
+
+    const isMember = session.memberships.some((m) => m.groupId === parsed.data.groupId);
+    if (!isMember) {
+      return { ok: false, error: "You're not a member of that group." };
+    }
+
+    await db
+      .insert(profiles)
+      .values({
+        rockPersonId: session.rockPersonId,
+        displayName: session.displayName,
+        avatar: {},
+        activeGroupId: parsed.data.groupId,
+      })
+      .onConflictDoUpdate({
+        target: profiles.rockPersonId,
+        set: { activeGroupId: parsed.data.groupId, updatedAt: new Date() },
+      });
+
+    return { ok: true };
+  } catch (error) {
+    console.error("chooseGroup failed while resolving the session or saving the active group", error);
+    return { ok: false, error: "We couldn't save that group. Please try again." };
   }
-
-  const isMember = session.memberships.some((m) => m.groupId === parsed.data.groupId);
-  if (!isMember) {
-    return { ok: false, error: "You're not a member of that group." };
-  }
-
-  await db
-    .insert(profiles)
-    .values({
-      rockPersonId: session.rockPersonId,
-      displayName: session.displayName,
-      avatar: {},
-      activeGroupId: parsed.data.groupId,
-    })
-    .onConflictDoUpdate({
-      target: profiles.rockPersonId,
-      set: { activeGroupId: parsed.data.groupId, updatedAt: new Date() },
-    });
-
-  return { ok: true };
 }

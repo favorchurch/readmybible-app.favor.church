@@ -124,7 +124,7 @@ export async function getSessionContext(): Promise<SessionContext> {
     activeGroup,
     needsGroupChoice,
     campusId,
-    isLeader: memberships.some((m) => m.isLeader),
+    isLeader: activeGroup?.isLeader ?? false,
     isAdminScope,
     defaultTranslation: defaultTranslationForCampus(campusId),
   };

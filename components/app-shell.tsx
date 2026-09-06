@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
@@ -16,6 +16,7 @@ import {
   type UserProfile,
 } from "@/components/avatar";
 import { CompletionFlow } from "@/components/completion-flow";
+import type { ChooseGroupHandler, ConnectSwitcherContext } from "@/components/connect-switcher";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ScripturePopup } from "@/components/scripture-popup";
 import {
@@ -42,6 +43,7 @@ import { coinsFor, streak as computeStreak, TOTAL_CHAPTERS } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
+import type { ChooseGroupResult } from "@/app/actions/chooseGroup";
 
 export type RosterMemberView = {
   personId: number;
@@ -190,6 +192,8 @@ export function AppShell(props: AppShellProps) {
   const [flowStep, setFlowStep] = useState(0);
   const [flowScriptureOpen, setFlowScriptureOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [chooseGroupError, setChooseGroupError] = useState<string | null>(null);
+  const choosingGroup = useRef(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [checkInError, setCheckInError] = useState<string | null>(null);
   const [flowGroupResult, setFlowGroupResult] = useState<CheckInGroupState | null>(null);
@@ -311,11 +315,30 @@ export function AppShell(props: AppShellProps) {
     }
   }
 
-  async function handleChooseGroup(groupId: number) {
+  const handleChooseGroup: ChooseGroupHandler = async (groupId): Promise<ChooseGroupResult> => {
+    if (choosingGroup.current) {
+      return { ok: false, error: "A group change is already in progress. Please wait." };
+    }
+
+    choosingGroup.current = true;
+    setChooseGroupError(null);
     setPending(true);
-    await guardedChooseGroup({ groupId });
-    setPending(false);
-    router.refresh();
+    try {
+      const result = await guardedChooseGroup({ groupId });
+      if (result.ok) {
+        router.refresh();
+      } else {
+        setChooseGroupError(result.error);
+      }
+      return result;
+    } catch {
+      const result = { ok: false as const, error: "We couldn't save that group. Please try again." };
+      setChooseGroupError(result.error);
+      return result;
+    } finally {
+      choosingGroup.current = false;
+      setPending(false);
+    }
   }
 
   async function handleJoinCode(code: string) {
@@ -340,6 +363,13 @@ export function AppShell(props: AppShellProps) {
     testMode.active && snapshotError && snapshotError.groupId === testMode.state.groupId
       ? snapshotError.error
       : null;
+
+  const connectSwitcher: ConnectSwitcherContext = {
+    memberships: props.memberships,
+    activeGroup: props.activeGroup,
+    pending,
+    onChooseGroup: handleChooseGroup,
+  };
 
   const testModePanel = testMode.active ? (
     <TestModePanel
@@ -371,7 +401,7 @@ export function AppShell(props: AppShellProps) {
       <div className="app-shell">
         <div className="paper-noise" />
         {testModePanel}
-        <GroupPickerScreen memberships={props.memberships} pending={pending} onChoose={handleChooseGroup} />
+        <GroupPickerScreen memberships={props.memberships} pending={pending} error={chooseGroupError} onChoose={handleChooseGroup} />
       </div>
     );
   }
@@ -408,6 +438,7 @@ export function AppShell(props: AppShellProps) {
           onStart={startReading}
           onReplayCelebration={replayCelebration}
           onEditProfile={() => setProfileOpen(true)}
+          connectSwitcher={connectSwitcher}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
           onTranslationChange={handleTranslationChange}
@@ -422,6 +453,7 @@ export function AppShell(props: AppShellProps) {
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
           today={today}
+          connectSwitcher={connectSwitcher}
         />
       )}
       {activeTab === "rewards" && (
@@ -430,6 +462,7 @@ export function AppShell(props: AppShellProps) {
           chapters={chaptersRead}
           onEditProfile={() => setProfileOpen(true)}
           today={today}
+          connectSwitcher={connectSwitcher}
         />
       )}
       {activeTab === "progress" && (
@@ -445,6 +478,7 @@ export function AppShell(props: AppShellProps) {
           onCatchUp={startReading}
           onEditProfile={() => setProfileOpen(true)}
           onTranslationChange={handleTranslationChange}
+          connectSwitcher={connectSwitcher}
         />
       )}
       {activeTab === "leader" && (
@@ -458,6 +492,7 @@ export function AppShell(props: AppShellProps) {
           readerGroupId={props.activeGroup?.groupId ?? null}
           onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
+          connectSwitcher={connectSwitcher}
         />
       )}
       <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
