@@ -184,6 +184,18 @@ export function AppShell(props: AppShellProps) {
   const profile = optimisticProfile ?? baseProfile;
 
   const [tab, setTab] = useState<Tab>("today");
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const initialTab = sp.get("tab");
+    if (initialTab === "leader" || sp.get("leader") === "1") {
+      // URL bootstrap runs after hydration so the server-rendered default tab stays stable.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab("leader");
+    } else if (initialTab && ["today", "connect", "rewards", "progress", "leader"].includes(initialTab)) {
+      setTab(initialTab as Tab);
+    }
+  }, []);
   const [profileOpen, setProfileOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [flowChapter, setFlowChapter] = useState<number | null>(null);

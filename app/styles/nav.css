@@ -17,6 +17,14 @@
 .nav-key b:before { right: 4px; top: 1px; height: 4px; }
 .nav-key b:after { right: 1px; top: 1px; height: 3px; }
 
+.bottom-nav button[data-tab="leader"] {
+  border-radius: var(--radius-md);
+  transition: color var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out);
+}
+.bottom-nav button[data-tab="leader"].active {
+  background: rgba(217, 108, 87, .12);
+}
+
 @media (min-width: 760px) {
   .bottom-nav { width: min(620px, 94%); left: 50%; bottom: 18px; height: 70px; border: 1px solid var(--line); border-radius: 7px; box-shadow: 0 8px 30px rgba(23,41,67,.16); padding: 6px 12px; }.bottom-nav button:after { bottom: 4px; }
 }
