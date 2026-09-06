@@ -219,6 +219,14 @@
 
 .progress-reward { margin-top: 25px; }
 
+.campus-group-count {
+  margin: 14px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 /* Responsive rail integration */
 @media (max-width: 1023px) {
   .progress-screen.frame--rail {
