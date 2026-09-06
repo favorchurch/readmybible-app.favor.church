@@ -141,25 +141,37 @@ describe("getTestGroupSnapshot", () => {
     if (!result.ok) expect(result.error).toMatch(/not a Connect Group/i);
   });
 
-  it("refuses a Connect Group at another campus when it is not the sandbox", async () => {
+  /**
+   * The campus fence was removed deliberately: test mode simulates any Connect
+   * Group org-wide. This asserts the widening actually took -- a group at
+   * another campus now gets PAST the scope checks and on to the roster read.
+   *
+   * What still bounds the action is the production refusal and the admin-scope
+   * check, both asserted above, plus the group-type check below.
+   */
+  it("allows a Connect Group at another campus, org-wide", async () => {
     const { getSessionContext } = await import("@/lib/session");
-    const { getGroupBasic } = await import("@/lib/rock/client");
+    const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
 
     vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
     vi.mocked(getGroupBasic).mockResolvedValueOnce({
       Id: 24999,
       Name: "Another campus's group",
       GroupTypeId: 25,
+      // Campus 2, deliberately not the caller's campus 1.
       CampusId: 2,
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
       locality: null,
     });
+    // Empty roster short-circuits before the data layer; the point is that it
+    // got past the scope checks, not what it returns after.
+    vi.mocked(getRoster).mockResolvedValueOnce([]);
 
     const result = await getTestGroupSnapshot({ groupId: 24999 });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/not at your campus/i);
+    if (!result.ok) expect(result.error).toMatch(/empty roster/i);
   });
 
   it("allows the sandbox group even though it sits on another campus", async () => {

@@ -292,6 +292,45 @@ export async function getCampusGroups(campusId: number): Promise<RockGroup[]> {
   });
 }
 
+/**
+ * Every active Connect Group, org-wide, across all campuses. Cached 15 minutes.
+ *
+ * Test mode only. The reader-facing app never needs this -- a reader only ever
+ * sees groups they belong to -- so nothing outside `?test=1` should call it.
+ * Paged, because this is the one group query whose result set is unbounded by
+ * campus and would otherwise be silently truncated at one page.
+ */
+export async function getAllConnectGroups(): Promise<RockGroup[]> {
+  if (isFixtureMode()) return fixtureCampusGroups(1);
+  return cached("rock:allconnectgroups:v2", 900, async () => {
+    const filter = `GroupTypeId eq ${GROUP_TYPE_CONNECT_GROUP} and IsActive eq true and IsArchived eq false`;
+    // $orderby is required, not cosmetic: $top/$skip paging over an unordered
+    // result set lets Rock return the same row on two pages and drop others.
+    // Observed here as duplicate React keys in the picker (group 12253 twice).
+    const raw = await rockFetchAllPages<RawRockGroupWithAttributes>(
+      "Groups",
+      filter,
+      "&loadAttributes=simple&$orderby=Id",
+    );
+    // Belt and braces -- a duplicate here silently corrupts any caller that
+    // keys by group id, and the picker is only the visible symptom.
+    const byId = new Map(raw.map((g) => [g.Id, g]));
+    return [...byId.values()].map(narrowGroup);
+  });
+}
+
+/** Id -> name for every campus, so a group list can be labelled. Cached 15 minutes. */
+export async function getAllCampusNames(): Promise<Map<number, string>> {
+  return cached("rock:allcampuses:v1", 900, async () => {
+    try {
+      const campuses = await rockFetch<RockCampus[]>("Campuses?$select=Id,Name");
+      return campuses.map((c) => [c.Id, c.Name] as const);
+    } catch {
+      return [];
+    }
+  }).then((entries) => new Map(entries));
+}
+
 /** All descendant groups of a section, recursively, down to GT25 Connect Groups. Cached 15 minutes. */
 export async function getSectionSubtree(sectionGroupId: number): Promise<RockGroup[]> {
   if (isFixtureMode()) return fixtureSectionSubtree(sectionGroupId);
