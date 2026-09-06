@@ -71,5 +71,10 @@
    shared ground plane in the portrait immersive view instead of its center. */
 @media (orientation: portrait) {
   .full-home .home3d-model.tent { top: 50%; }
+  .full-home .home3d-model.trailer { top: 49%; }
+  .full-home .home3d-model.cabin3d { top: 50%; }
+  .full-home .home3d-model.apartment { top: 46%; }
+  .full-home .home3d-model.house3d { top: 49%; }
+  .full-home .home3d-model.mansion { top: 46%; }
 }
 @media (prefers-reduced-motion: reduce) { .home3d-turntable { transition: none; } }
