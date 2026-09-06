@@ -127,7 +127,7 @@ merge action below.
 
 | Unit | Brand | Model / effort | Form | Why |
 |---|---|---|---|---|
-| Executor (whole plan) | agy | sonnet-tier, high | herdr pane, right | Frontend-dominant; Codex at 0% headroom; agy at 100%, but that probe is known unreliable, so the brief tells it to fall back to a Claude slug on Gemini exhaustion. |
+| Executor (whole plan) | agy | sonnet-tier, high | herdr pane, right | Frontend-dominant (5 of 6 tasks are components, CSS, and RTL tests), which is agy's fit. Codex was at 0% at fit-test and has since reset to 100%/52%, but that does not change the routing — the work shape does. agy probe reads 100%, though that probe is known unreliable, so the brief tells it to fall back to a Claude slug on Gemini exhaustion. |
 | Code reviewer, each round | claude | opus, low | fresh dispatch | Standing preference: review stays on Claude's own Opus low. |
 
 `HERDR_ENV=1`, so the executor runs in a visible pane, not in-session.

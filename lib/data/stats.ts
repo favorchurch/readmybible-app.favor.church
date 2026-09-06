@@ -116,9 +116,10 @@ export async function getGroupStatsFresh(groupId: number, campusId: number | nul
   return loadGroupStats(groupId, campusId);
 }
 
-/** Ranked Connect Groups on a campus, by ratio then readers-today then name. Cached 5 minutes. */
+/** Ranked Connect Groups on a campus, by ratio then readers-today then name. Cached 5 minutes.
+ *  Cache key is v2 because the payload shape changed (GroupStanding now carries locality). */
 export async function getCampusBoard(campusId: number): Promise<GroupStanding[]> {
-  return cached(`campus:${campusId}:board`, 300, async () => {
+  return cached(`campus:${campusId}:board:v2`, 300, async () => {
     const groups = await getCampusGroups(campusId);
     if (groups.length === 0) return [];
 
@@ -164,9 +165,11 @@ export async function getCampusBoard(campusId: number): Promise<GroupStanding[]>
         name: group.Name,
         ratio: groupRatio(checkinCount, memberCount),
         readersToday: readersToday.get(group.Id)?.size ?? 0,
+        locality: group.locality,
       };
     });
 
     return rankGroups(standings);
   });
 }
+

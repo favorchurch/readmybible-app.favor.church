@@ -109,7 +109,42 @@ export type RockGroup = {
   ParentGroupId: number | null;
   IsActive: boolean;
   IsArchived: boolean;
+  locality: string | null;
 };
+
+/** Raw Rock response when loadAttributes=simple is requested. */
+type RawRockGroupWithAttributes = {
+  Id: number;
+  Name: string;
+  GroupTypeId: number;
+  CampusId: number | null;
+  ParentGroupId: number | null;
+  IsActive: boolean;
+  IsArchived: boolean;
+  AttributeValues?: Record<string, { Value?: string | null }> | null;
+};
+
+/** Extract the CityMunicipalityLocality attribute value, trimmed. Returns null for empty or missing. */
+function localityOf(raw: RawRockGroupWithAttributes): string | null {
+  const val = raw.AttributeValues?.CityMunicipalityLocality?.Value;
+  if (!val) return null;
+  const trimmed = val.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Narrow a raw Rock group (which may include AttributeValues) to only the fields we cache. */
+function narrowGroup(raw: RawRockGroupWithAttributes): RockGroup {
+  return {
+    Id: raw.Id,
+    Name: raw.Name,
+    GroupTypeId: raw.GroupTypeId,
+    CampusId: raw.CampusId,
+    ParentGroupId: raw.ParentGroupId,
+    IsActive: raw.IsActive,
+    IsArchived: raw.IsArchived,
+    locality: localityOf(raw),
+  };
+}
 
 export type RockGroupMember = {
   Id: number;
@@ -245,12 +280,15 @@ export async function getGroupBasic(groupId: number): Promise<RockGroup | null> 
   });
 }
 
-/** Active, non-archived Connect Groups for a campus. Cached 15 minutes. */
+/** Active, non-archived Connect Groups for a campus. Cached 15 minutes.
+ *  Fetches loadAttributes=simple to include CityMunicipalityLocality; narrows
+ *  before caching to keep the Redis value compact (raw payload is ~3.3× larger). */
 export async function getCampusGroups(campusId: number): Promise<RockGroup[]> {
   if (isFixtureMode()) return fixtureCampusGroups(campusId);
-  return cached(`rock:campusgroups:${campusId}`, 900, async () => {
+  return cached(`rock:campusgroups:v2:${campusId}`, 900, async () => {
     const filter = `GroupTypeId eq ${GROUP_TYPE_CONNECT_GROUP} and CampusId eq ${campusId} and IsActive eq true and IsArchived eq false`;
-    return rockFetch<RockGroup[]>(`Groups?$filter=${encodeURIComponent(filter)}`);
+    const raw = await rockFetch<RawRockGroupWithAttributes[]>(`Groups?$filter=${encodeURIComponent(filter)}&loadAttributes=simple`);
+    return raw.map(narrowGroup);
   });
 }
 
