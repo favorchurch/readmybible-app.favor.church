@@ -1,18 +1,33 @@
 import { NavIcon, type NavIconName } from "@/components/nav-icon";
 
-export type Tab = "today" | "connect" | "rewards" | "progress";
+export type Tab = "today" | "connect" | "rewards" | "progress" | "leader";
 
-export const navItems: { id: Tab; label: string; icon: NavIconName }[] = [
+const BASE_NAV_ITEMS: { id: Tab; label: string; icon: NavIconName }[] = [
   { id: "today", label: "Today", icon: "home" },
   { id: "connect", label: "Connect", icon: "people" },
   { id: "rewards", label: "Rewards", icon: "medal" },
   { id: "progress", label: "Progress", icon: "progress" },
 ];
 
-export function BottomNav({ tab, onSelect }: { tab: Tab; onSelect: (next: Tab) => void }) {
+export function BottomNav({
+  tab,
+  onSelect,
+  isLeader,
+}: {
+  tab: Tab;
+  onSelect: (next: Tab) => void;
+  isLeader: boolean;
+}) {
+  const items = isLeader
+    ? [...BASE_NAV_ITEMS, { id: "leader" as const, label: "Leader", icon: "key" as const }]
+    : BASE_NAV_ITEMS;
   return (
-    <nav className="bottom-nav" aria-label="Main navigation">
-      {navItems.map((item) => (
+    <nav
+      className="bottom-nav"
+      aria-label="Main navigation"
+      style={{ "--nav-count": items.length } as React.CSSProperties}
+    >
+      {items.map((item) => (
         <button key={item.id} data-tab={item.id} className={tab === item.id ? "active" : ""} onClick={() => onSelect(item.id)}>
           <NavIcon icon={item.icon} />
           {item.label}
