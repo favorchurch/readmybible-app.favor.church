@@ -5,6 +5,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("qrcode", () => ({
+  toDataURL: vi.fn(async (value: string) => `data:${value}`),
+}));
 
 const navigation = vi.hoisted(() => ({ refresh: vi.fn() }));
 const searchParams = vi.hoisted(() => ({ value: new URLSearchParams("test=1") }));
@@ -34,8 +37,10 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({ getOrCreateJoinCode }));
 vi.mock("@/app/actions/getTestGroupSnapshot", () => ({ getTestGroupSnapshot }));
 
 import { AppShell, type AppShellProps } from "@/components/app-shell";
-import { defaultAvatarConfig } from "@/components/avatar";
+import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import { ConnectSwitcher } from "@/components/connect-switcher";
+import { LeaderScreen } from "@/components/screens/leader-screen";
+import type { TodayState } from "@/components/use-today";
 
 const memberships = [
   { groupId: 101, groupName: "Alpha Connect", campusId: 1, roleId: 24, isLeader: true },
@@ -202,5 +207,54 @@ describe("AppShell initial picker selection wiring", () => {
     expect(chooseGroup).toHaveBeenCalledTimes(1);
     resolve?.({ ok: true });
     await waitFor(() => expect(navigation.refresh).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe("LeaderScreen active-group join code", () => {
+  const profile: UserProfile = { displayName: "Alex", translation: "NIV", ...defaultAvatarConfig };
+  const today: TodayState = {
+    todayLocal: "2026-10-05",
+    timezone: "Asia/Manila",
+    phase: "active",
+    displayPhase: "active",
+    dayLabel: 5,
+    entry: null,
+  };
+
+  it("does not keep group A's code or QR after the mounted screen switches to group B", async () => {
+    let activeGroupId = 101;
+    const onGetOrCreateJoinCode = vi.fn(async () => ({
+      ok: true as const,
+      code: activeGroupId === 101 ? "ALPHA1" : "BETA22",
+    }));
+
+    const props = (groupId: number, groupName: string) => ({
+      groupName,
+      campusBoard: [],
+      roster: [],
+      today,
+      profile,
+      appBaseUrl: "http://localhost:3000",
+      readerGroupId: groupId,
+      onGetOrCreateJoinCode,
+      onEditProfile: () => {},
+    });
+
+    const { rerender } = render(React.createElement(LeaderScreen, props(101, "Alpha Connect")));
+
+    await waitFor(() => expect(screen.getByText("ALPHA1")).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("img", { name: "QR code to join Alpha Connect" })).toBeTruthy());
+
+    activeGroupId = 202;
+    rerender(React.createElement(LeaderScreen, props(202, "Beta Connect")));
+
+    expect(screen.queryByText("ALPHA1")).toBeNull();
+    expect(screen.queryByRole("img", { name: "QR code to join Alpha Connect" })).toBeNull();
+    expect(screen.getByText("Loading…")).toBeTruthy();
+
+    await waitFor(() => expect(screen.getByText("BETA22")).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("img", { name: "QR code to join Beta Connect" })).toBeTruthy());
+    expect(screen.getByRole("img", { name: "QR code to join Beta Connect" }).getAttribute("src")).toContain("BETA22");
+    expect(onGetOrCreateJoinCode).toHaveBeenCalledTimes(2);
   });
 });

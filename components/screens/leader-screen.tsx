@@ -15,18 +15,7 @@ import type { GroupStanding } from "@/lib/game";
 
 export const MIN_RATIO_TO_SHOW = 0;
 
-export function LeaderScreen({
-  groupName,
-  campusBoard,
-  roster,
-  today,
-  profile,
-  appBaseUrl,
-  readerGroupId,
-  onGetOrCreateJoinCode,
-  onEditProfile,
-  connectSwitcher,
-}: {
+type LeaderScreenProps = {
   groupName: string | null;
   campusBoard: GroupStanding[];
   roster: RosterMemberView[];
@@ -37,7 +26,24 @@ export function LeaderScreen({
   onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   onEditProfile: () => void;
   connectSwitcher?: ConnectSwitcherContext;
-}) {
+};
+
+export function LeaderScreen(props: LeaderScreenProps) {
+  return <LeaderScreenContent key={props.readerGroupId ?? "no-active-group"} {...props} />;
+}
+
+function LeaderScreenContent({
+  groupName,
+  campusBoard,
+  roster,
+  today,
+  profile,
+  appBaseUrl,
+  readerGroupId,
+  onGetOrCreateJoinCode,
+  onEditProfile,
+  connectSwitcher,
+}: LeaderScreenProps) {
   const phase = today.displayPhase;
   const stillReading = roster.filter((m) => !m.readToday);
 
@@ -57,7 +63,7 @@ export function LeaderScreen({
     return () => {
       cancelled = true;
     };
-  }, [onGetOrCreateJoinCode]);
+  }, [readerGroupId, onGetOrCreateJoinCode]);
 
   // Moved verbatim from connect-screen.tsx:77-88
   useEffect(() => {
