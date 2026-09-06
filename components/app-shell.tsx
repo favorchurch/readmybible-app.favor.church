@@ -278,13 +278,10 @@ export function AppShell(props: AppShellProps) {
         <ConnectScreen
           groupName={groupName}
           campusName={props.campusName}
-          isLeader={isLeader}
           roster={roster}
           groupStats={groupStats}
-          appBaseUrl={props.appBaseUrl}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
-          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           today={today}
         />
       )}

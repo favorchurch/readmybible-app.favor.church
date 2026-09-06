@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
@@ -15,29 +15,22 @@ import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
-import { useMemo } from "react";
 
 export function ConnectScreen({
   groupName,
   campusName,
-  isLeader,
   roster,
   groupStats,
-  appBaseUrl,
   profile,
   onEditProfile,
-  onGetOrCreateJoinCode,
   today,
 }: {
   groupName: string | null;
   campusName: string | null;
-  isLeader: boolean;
   roster: RosterMemberView[];
   groupStats: GroupStats | null;
-  appBaseUrl: string;
   profile: UserProfile;
   onEditProfile: () => void;
-  onGetOrCreateJoinCode: () => Promise<{ ok: true; code: string } | { ok: false; error: string }>;
   today: TodayState;
 }) {
   const phase = today.displayPhase;
