@@ -113,7 +113,8 @@ describe("LeaderScreen", () => {
 
   it("uses the navy backstage token for the leader surface", () => {
     const css = readFileSync("app/styles/leader.css", "utf8");
-    expect(css).toMatch(/\.leader-screen\s*\{[^}]*background:\s*var\(--navy\)/s);
+    const leaderBlock = css.slice(css.indexOf(".leader-screen {"), css.indexOf("}", css.indexOf(".leader-screen {")));
+    expect(leaderBlock).toContain("background: var(--navy)");
   });
 
   it("reveals names, stage, and percent after the toggle", () => {
