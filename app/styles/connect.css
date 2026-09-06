@@ -352,6 +352,37 @@
   margin: 20px 0;
 }
 
+/* Member desktop: single column, full width home card with balanced 2-column layout, 5-col roster */
+@media (min-width: 1024px) {
+  .connect-screen {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .connect-screen .frame__main {
+    display: contents;
+  }
+  /* Same auto-margin trap as the leader flex root above, for grid items. */
+  .connect-screen > *,
+  .connect-screen .frame__main > * {
+    margin-inline: 0;
+  }
+  .connect-screen .big-home-card {
+    max-width: 100%;
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+  .connect-screen .big-home-card .home3d-wrap {
+    height: 360px;
+  }
+  .connect-screen .member-section {
+    max-width: 100%;
+  }
+  .connect-screen .member-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+}
+
 /* Home Growth and Reading Visibility Sheet styles */
 .home-growth-modal,
 .reading-visibility-modal {

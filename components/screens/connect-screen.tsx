@@ -52,7 +52,7 @@ export function ConnectScreen({
   const [homeOpen, setHomeOpen] = useState(false);
 
   return (
-    <main className="screen connect-screen">
+    <main className="screen connect-screen frame">
       <Header heading={groupName ?? "Connect"} profile={profile} onEditProfile={onEditProfile} />
       <section className="connect-title">
         <h1>{groupName ?? "Your Connect Group"}</h1>
