@@ -111,10 +111,10 @@ describe("LeaderScreen", () => {
     expect(screen.getByLabelText("Ortigas Alpha — Mansion (your group)")).toBeTruthy();
   });
 
-  it("uses the navy backstage token for the leader surface", () => {
+  it("uses the paper token for the leader surface light mode", () => {
     const css = readFileSync("app/styles/leader.css", "utf8");
     const leaderBlock = css.slice(css.indexOf(".leader-screen {"), css.indexOf("}", css.indexOf(".leader-screen {")));
-    expect(leaderBlock).toContain("background: var(--navy)");
+    expect(leaderBlock).toContain("background: var(--paper)");
   });
 
   it("reveals names, stage, and percent after the toggle", () => {

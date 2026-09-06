@@ -20,9 +20,14 @@ export type TestModeState = {
   viewer: TestModeViewer;
 };
 
-/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias. */
+/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1` / `?tab=leader`. */
 export function isTestModeRequested(searchParams: URLSearchParams): boolean {
-  return searchParams.has(TEST_MODE_PARAM) || searchParams.has(DAY_PARAM);
+  return (
+    searchParams.has(TEST_MODE_PARAM) ||
+    searchParams.has(DAY_PARAM) ||
+    searchParams.has("leader") ||
+    searchParams.get("tab") === "leader"
+  );
 }
 
 function dayFromParams(searchParams: URLSearchParams): number {
@@ -31,15 +36,23 @@ function dayFromParams(searchParams: URLSearchParams): number {
   return 1;
 }
 
-/** The panel's starting values: `?day=N` seeds the day, everything else defaults to "nothing simulated yet." */
+/** The panel's starting values: `?day=N` seeds the day, `?leader=1` or `?tab=leader` seeds leader viewer. */
 export function initialTestModeState(searchParams: URLSearchParams): TestModeState {
+  const viewerParam = searchParams.get("viewer");
+  const isLeaderParam = searchParams.get("leader") === "1" || searchParams.get("tab") === "leader";
+  const viewer: TestModeViewer =
+    viewerParam === "leader" || isLeaderParam
+      ? "leader"
+      : viewerParam === "non-member"
+        ? "non-member"
+        : "member";
   return {
     day: dayFromParams(searchParams),
     phase: "active",
     completionPct: 0,
     groupPct: 0,
     groupId: null,
-    viewer: "member",
+    viewer,
   };
 }
 
