@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import React from "react";
+import { readFileSync } from "node:fs";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -108,6 +109,11 @@ describe("LeaderScreen", () => {
     expect(container.textContent).not.toContain("Ortigas Alpha");
     expect(container.textContent).not.toContain("Pasig One");
     expect(screen.getByLabelText("Ortigas Alpha — Mansion (your group)")).toBeTruthy();
+  });
+
+  it("uses the navy backstage token for the leader surface", () => {
+    const css = readFileSync("app/styles/leader.css", "utf8");
+    expect(css).toMatch(/\.leader-screen\s*\{[^}]*background:\s*var\(--navy\)/s);
   });
 
   it("reveals names, stage, and percent after the toggle", () => {
