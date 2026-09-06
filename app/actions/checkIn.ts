@@ -99,7 +99,7 @@ export async function checkIn(input: z.infer<typeof inputSchema>): Promise<Check
     .returning({ id: checkins.id });
 
   if (groupId) {
-    await redisDel(`group:${groupId}:stats`, `campus:${session.campusId ?? "none"}:board`);
+    await redisDel(`group:${groupId}:stats`, `campus:${session.campusId ?? "none"}:board:v2`);
   }
 
   if (!freshBefore) {

@@ -5,11 +5,10 @@ import { useMemo, useState } from "react";
 import { type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
 import { ProgressBar } from "@/components/progress-bar";
-import { StageMini } from "@/components/stage-mini";
 import { Header } from "@/components/screens/header";
 import { REWARD_TITLES } from "@/components/screens/rewards-screen";
 import type { useToday } from "@/components/use-today";
-import { nextMedal, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
+import { nextMedal, TOTAL_CHAPTERS } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
 import { dayState, PLAN, type DayState, type PlanEntry } from "@/lib/plan";
 
@@ -19,13 +18,16 @@ const GRACE_DAYS: PlanEntry[] = [
   { day: 31, chapter: 31, date: "2026-10-31", keyPassage: "", title: "Catch-up day" },
 ];
 
+function campusGroupCountLabel(count: number): string {
+  return `${count} Connect Group${count === 1 ? "" : "s"} on this campus.`;
+}
+
 export function ProgressScreen({
   today,
   chapters,
   chaptersRead,
   coins,
   streakDays,
-  campusName,
   campusBoard,
   profile,
   onCatchUp,
@@ -38,7 +40,6 @@ export function ProgressScreen({
   coins: number;
   streakDays: number;
   groupName: string | null;
-  campusName: string | null;
   campusBoard: GroupStanding[];
   profile: UserProfile;
   onCatchUp: (chapter: number) => void;
@@ -169,16 +170,9 @@ export function ProgressScreen({
               <p>Start with Matthew 1 on October 1. Miss a day? There is room to catch up, including October 29–31.</p>
             </section>
 
-            <section className="leaderboard-card">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
-                  <h2>Groups on the same journey</h2>
-                </div>
-              </div>
-              <p className="gentle-note">Cheer them on.</p>
-              <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
-            </section>
+            <p className="campus-group-count" data-section="campus-group-count">
+              {campusGroupCountLabel(campusBoard.length)}
+            </p>
           </>
         ) : (
           <>
@@ -225,41 +219,12 @@ export function ProgressScreen({
                 </strong>
               </section>
             )}
+            <p className="campus-group-count" data-section="campus-group-count">
+              {campusGroupCountLabel(campusBoard.length)}
+            </p>
           </>
         )}
       </div>
-
-      <section className="leaderboard-card frame__span" data-section="campus-groups">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">{(campusName ?? "Favor Church").toUpperCase()} CONNECT GROUPS</p>
-            <h2>Groups on the same journey</h2>
-          </div>
-        </div>
-        <p className="gentle-note">Cheer them on.</p>
-        {campusBoard.length === 0 ? (
-          <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
-        ) : (
-          <div className="campus-groups-grid">
-            {campusBoard.map((g) => {
-              const currentStage = stageFor(g.ratio);
-              const pct = Math.round(g.ratio * 100);
-              return (
-                <article className="campus-group-card" key={g.groupId}>
-                  <div className="campus-group-header">
-                    <StageMini name={currentStage} size={42} className="campus-group-mini" />
-                    <div className="campus-group-info">
-                      <strong>{g.name}</strong>
-                      <span className="campus-group-status">{pct}% complete · {currentStage}</span>
-                    </div>
-                  </div>
-                  <ProgressBar value={pct} max={100} />
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
 
       <DayPreviewSheet
         open={previewOpen}

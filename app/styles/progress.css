@@ -219,57 +219,12 @@
 
 .progress-reward { margin-top: 25px; }
 
-.leaderboard-card { max-width: 720px; margin: 32px auto 0; }
-.leaderboard-card.frame__span { max-width: 100%; width: 100%; }
-.leaderboard-card .gentle-note { margin: 4px 0 14px; text-align: left; }
-.campus-groups-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-}
-.campus-group-card {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.campus-group-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.campus-group-mini { flex-shrink: 0; }
-.campus-group-info {
-  flex: 1;
-  min-width: 0;
-}
-.campus-group-info strong {
-  display: block;
-  font-size: 14px;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.campus-group-status {
-  display: block;
-  font-size: 12px;
+.campus-group-count {
+  margin: 14px 0 0;
   color: var(--ink-muted);
-  margin-top: 2px;
-}
-.campus-group-card .progress-track {
-  width: 100%;
-  margin: 0;
-}
-
-@media (max-width: 480px) {
-  .campus-groups-grid {
-    grid-template-columns: 1fr;
-  }
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 /* Responsive rail integration */
@@ -296,9 +251,6 @@
   .progress-screen .next-reward.progress-reward {
     order: 3;
   }
-  .progress-screen .leaderboard-card {
-    order: 4;
-  }
 }
 
 @media (min-width: 1024px) {
@@ -313,9 +265,6 @@
   }
   .progress-screen .stats-card {
     margin-top: 0;
-  }
-  .progress-screen .leaderboard-card {
-    margin-top: 24px;
   }
 }
 

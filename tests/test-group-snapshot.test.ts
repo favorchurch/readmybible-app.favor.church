@@ -133,6 +133,7 @@ describe("getTestGroupSnapshot", () => {
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
+      locality: null,
     });
 
     const result = await getTestGroupSnapshot({ groupId: 23870 });
@@ -153,6 +154,7 @@ describe("getTestGroupSnapshot", () => {
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
+      locality: null,
     });
 
     const result = await getTestGroupSnapshot({ groupId: 24999 });
@@ -176,6 +178,7 @@ describe("getTestGroupSnapshot", () => {
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
+      locality: null,
     });
     // Empty roster short-circuits before the data layer; the point of this test
     // is that it got PAST the campus check, not what it returns after.
@@ -212,6 +215,7 @@ describe("getTestGroupSnapshot", () => {
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
+      locality: null,
     });
     vi.mocked(getRoster).mockResolvedValueOnce([]);
 
@@ -252,6 +256,7 @@ describe("getTestGroupSnapshot", () => {
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
+      locality: null,
     });
     vi.mocked(getCampusName).mockResolvedValueOnce("Downtown Campus");
     vi.mocked(getRoster).mockResolvedValueOnce([

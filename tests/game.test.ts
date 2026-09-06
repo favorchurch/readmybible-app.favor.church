@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   coinsFor,
+  groupByLocality,
   groupRatio,
   medals,
   nextMedal,
@@ -10,6 +11,7 @@ import {
   stageFor,
   stageTransition,
   streak,
+  UNKNOWN_LOCALITY,
 } from "@/lib/game";
 
 describe("stageTransition", () => {
@@ -137,11 +139,92 @@ describe("nextStageProgress", () => {
 describe("rankGroups", () => {
   it("sorts by ratio desc, then readers today desc, then name asc", () => {
     const ranked = rankGroups([
-      { groupId: 1, name: "Zeta", ratio: 0.5, readersToday: 2 },
-      { groupId: 2, name: "Alpha", ratio: 0.5, readersToday: 3 },
-      { groupId: 3, name: "Beta", ratio: 0.8, readersToday: 1 },
-      { groupId: 4, name: "Alpha", ratio: 0.5, readersToday: 2 },
+      { groupId: 1, name: "Zeta", ratio: 0.5, readersToday: 2, locality: null },
+      { groupId: 2, name: "Alpha", ratio: 0.5, readersToday: 3, locality: null },
+      { groupId: 3, name: "Beta", ratio: 0.8, readersToday: 1, locality: null },
+      { groupId: 4, name: "Alpha", ratio: 0.5, readersToday: 2, locality: null },
     ]);
     expect(ranked.map((g) => g.groupId)).toEqual([3, 2, 4, 1]);
+  });
+});
+
+describe("groupByLocality", () => {
+  const makeGroup = (groupId: number, name: string, locality: string | null) => ({
+    groupId,
+    name,
+    ratio: 0,
+    readersToday: 0,
+    locality,
+  });
+
+  it("sections are ordered by group count descending then locality name ascending", () => {
+    const standings = [
+      makeGroup(1, "A", "Pasig"),
+      makeGroup(2, "B", "Ortigas Center"),
+      makeGroup(3, "C", "Ortigas Center"),
+      makeGroup(4, "D", "Ortigas Center"),
+      makeGroup(5, "E", "Quezon City"),
+      makeGroup(6, "F", "Quezon City"),
+    ];
+    const result = groupByLocality(standings);
+    expect(result.map((s) => s.locality)).toEqual(["Ortigas Center", "Quezon City", "Pasig"]);
+  });
+
+  it("count tie-break falls back to locality name ascending", () => {
+    const standings = [
+      makeGroup(1, "A", "Zebra"),
+      makeGroup(2, "B", "Alpha"),
+    ];
+    const result = groupByLocality(standings);
+    expect(result.map((s) => s.locality)).toEqual(["Alpha", "Zebra"]);
+  });
+
+  it("groups within a section keep rankGroups order", () => {
+    const standings = [
+      { groupId: 1, name: "Zeta", ratio: 0.1, readersToday: 0, locality: "Pasig" },
+      { groupId: 2, name: "Alpha", ratio: 0.5, readersToday: 0, locality: "Pasig" },
+    ];
+    const result = groupByLocality(standings);
+    expect(result[0].groups.map((g) => g.groupId)).toEqual([1, 2]); // rankGroups order preserved
+  });
+
+  it("Unknown section is always last regardless of its count", () => {
+    const standings = [
+      makeGroup(1, "A", null),
+      makeGroup(2, "B", null),
+      makeGroup(3, "C", null),
+      makeGroup(4, "D", null),
+      makeGroup(5, "E", "Pasig"),
+    ];
+    const result = groupByLocality(standings);
+    expect(result[result.length - 1].locality).toBe(UNKNOWN_LOCALITY);
+    expect(result[0].locality).toBe("Pasig");
+  });
+
+  it("every standing in equals exactly one standing out (conservation)", () => {
+    const standings = [
+      makeGroup(1, "A", "Ortigas Center"),
+      makeGroup(2, "B", "Pasig"),
+      makeGroup(3, "C", null),
+      makeGroup(4, "D", "Ortigas Center"),
+      makeGroup(5, "E", null),
+    ];
+    const result = groupByLocality(standings);
+    const allOut = result.flatMap((s) => s.groups);
+    expect(allOut.length).toBe(standings.length);
+    // Every input groupId appears exactly once in the output
+    const outIds = allOut.map((g) => g.groupId).sort((a, b) => a - b);
+    expect(outIds).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("empty input returns empty output", () => {
+    expect(groupByLocality([])).toEqual([]);
+  });
+
+  it("all null locality produces a single Unknown section", () => {
+    const standings = [makeGroup(1, "A", null), makeGroup(2, "B", null)];
+    const result = groupByLocality(standings);
+    expect(result).toHaveLength(1);
+    expect(result[0].locality).toBe(UNKNOWN_LOCALITY);
   });
 });

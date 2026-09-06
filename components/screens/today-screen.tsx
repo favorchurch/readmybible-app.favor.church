@@ -123,25 +123,27 @@ export function TodayScreen({
 
             <section className="readiness-card" data-section="readiness">
               <p className="eyebrow">GET READY</p>
-              <h2>Make yourself at home.</h2>
-              <p className="readiness-intro">A few things to check before October 1.</p>
-              <button type="button" className={`readiness-row ${avatarCustomized ? "is-ready" : "needs-setup"}`} onClick={onEditProfile}>
-                <span className="readiness-avatar" aria-hidden="true">
-                  <Avatar color="coral" {...profile} small />
-                  <span className="readiness-avatar-status">{avatarCustomized ? "✓" : "1"}</span>
+              <h2>Set up before October 1</h2>
+              <button type="button" className="readiness-row" onClick={onEditProfile}>
+                <span className="readiness-label">Avatar</span>
+                <span className="readiness-value">
+                  <strong>{avatarCustomized ? "Set" : "Default"}</strong>
+                  <span className="readiness-arrow" aria-hidden="true">→</span>
                 </span>
-                <span className="readiness-copy"><span>Avatar</span><strong>{avatarCustomized ? "Ready to go" : "Choose your look"}</strong></span>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
               </button>
-              <button type="button" className={`readiness-row ${groupName ? "is-ready" : "needs-setup"}`} onClick={onViewConnect}>
-                <span className="readiness-indicator" aria-hidden="true">{groupName ? "✓" : "2"}</span>
-                <span className="readiness-copy"><span>Connect Group</span><strong>{groupName ?? "Join with a leader code"}</strong></span>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
+              <button type="button" className="readiness-row" onClick={onViewConnect}>
+                <span className="readiness-label">Connect Group</span>
+                <span className="readiness-value">
+                  <strong>{groupName ?? "Join with a leader code"}</strong>
+                  <span className="readiness-arrow" aria-hidden="true">→</span>
+                </span>
               </button>
               <button type="button" className="readiness-row" onClick={onEditProfile}>
-                <span className="readiness-indicator" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M10 5v12M10 5C7 3 4 3 2 4v12c3-1 5-1 8 1 3-2 5-2 8-1V4c-2-1-5-1-8 1Z" /></svg></span>
-                <span className="readiness-copy"><span>Bible translation</span><strong>{profile.translation} · Review your choice</strong></span>
-                <span className="readiness-arrow" aria-hidden="true">→</span>
+                <span className="readiness-label">Bible translation</span>
+                <span className="readiness-value">
+                  <strong>{profile.translation}</strong>
+                  <span className="readiness-arrow" aria-hidden="true">→</span>
+                </span>
               </button>
             </section>
 

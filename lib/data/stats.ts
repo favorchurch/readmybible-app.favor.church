@@ -2,7 +2,7 @@
  * DB-backed reading stats: personal check-in history, a group's check-in
  * count and today's readers, and the campus leaderboard. Aggregate reads
  * are cached in Redis with the same key names app/actions/checkIn.ts busts
- * on write (group:{id}:stats, campus:{id}:board).
+ * on write (group:{id}:stats, campus:{id}:board:v2).
  *
  * "Today" for group/campus aggregates uses that campus's own IANA timezone
  * (lib/campus-timezones.ts) as a single reference point per campus --
@@ -30,7 +30,6 @@ import {
 export function todayInTimezone(timezone: string, now: Date = appNow()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
 }
-
 export type PersonReadingState = {
   chapters: number[];
   dates: string[]; // reading_date values, one per checkin row
@@ -116,9 +115,10 @@ export async function getGroupStatsFresh(groupId: number, campusId: number | nul
   return loadGroupStats(groupId, campusId);
 }
 
-/** Ranked Connect Groups on a campus, by ratio then readers-today then name. Cached 5 minutes. */
+/** Ranked Connect Groups on a campus, by ratio then readers-today then name. Cached 5 minutes.
+ *  Cache key is v2 because the payload shape changed (GroupStanding now carries locality). */
 export async function getCampusBoard(campusId: number): Promise<GroupStanding[]> {
-  return cached(`campus:${campusId}:board`, 300, async () => {
+  return cached(`campus:${campusId}:board:v2`, 300, async () => {
     const groups = await getCampusGroups(campusId);
     if (groups.length === 0) return [];
 
@@ -164,6 +164,7 @@ export async function getCampusBoard(campusId: number): Promise<GroupStanding[]>
         name: group.Name,
         ratio: groupRatio(checkinCount, memberCount),
         readersToday: readersToday.get(group.Id)?.size ?? 0,
+        locality: group.locality,
       };
     });
 

@@ -145,6 +145,7 @@ export type GroupStanding = {
   name: string;
   ratio: number;
   readersToday: number;
+  locality: string | null;
 };
 
 /**
@@ -157,4 +158,44 @@ export function rankGroups(groups: GroupStanding[]): GroupStanding[] {
     if (b.readersToday !== a.readersToday) return b.readersToday - a.readersToday;
     return a.name.localeCompare(b.name);
   });
+}
+
+/** Sentinel name for groups with no locality -- always sorted last. */
+export const UNKNOWN_LOCALITY = "Unknown";
+
+/**
+ * Groups standings by locality, sections ordered by group count descending
+ * then locality name ascending; groups within each section keep `rankGroups`
+ * order. Rows with `locality === null` appear under UNKNOWN_LOCALITY, always
+ * last regardless of count. Every standing in equals exactly one standing out.
+ */
+export function groupByLocality(standings: GroupStanding[]): { locality: string; groups: GroupStanding[] }[] {
+  const sectionMap = new Map<string, GroupStanding[]>();
+
+  for (const s of standings) {
+    const key = s.locality ?? UNKNOWN_LOCALITY;
+    const existing = sectionMap.get(key) ?? [];
+    existing.push(s);
+    sectionMap.set(key, existing);
+  }
+
+  const known: { locality: string; groups: GroupStanding[] }[] = [];
+  let unknown: { locality: string; groups: GroupStanding[] } | undefined;
+
+  for (const [locality, groups] of sectionMap) {
+    const entry = { locality, groups };
+    if (locality === UNKNOWN_LOCALITY) {
+      unknown = entry;
+    } else {
+      known.push(entry);
+    }
+  }
+
+  // Sort known sections by group count descending, then locality name ascending
+  known.sort((a, b) => {
+    if (b.groups.length !== a.groups.length) return b.groups.length - a.groups.length;
+    return a.locality.localeCompare(b.locality);
+  });
+
+  return unknown ? [...known, unknown] : known;
 }

@@ -15,7 +15,7 @@
  */
 
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -146,10 +146,19 @@ describe("getOrCreateJoinCode stays blocked in the sandbox state", () => {
     render(React.createElement(AppShell, baseProps()));
     await assertUnblocked();
 
-    // Leader tools are what request a join code, and the request fires from an
-    // effect as soon as the connect screen renders for a leader.
-    fireEvent.click(screen.getByRole("button", { name: /leader/i }));
-    fireEvent.click(screen.getByRole("button", { name: /connect/i }));
+    // The join code is requested from an effect in the Leader screen (#66 moved
+    // it there off Connect), and the Leader nav item only appears for a leader.
+    // Simulate the leader viewer first, then open that tab.
+    // "Leader" names both the panel's viewer control and the nav item, so scope
+    // the first click to the panel's Viewer group.
+    const viewerControl = screen.getByRole("group", { name: /viewer/i });
+    fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
+
+    const navLeader = (await screen.findAllByRole("button", { name: /^leader$/i })).filter(
+      (el) => !viewerControl.contains(el),
+    );
+    expect(navLeader).toHaveLength(1);
+    fireEvent.click(navLeader[0]);
 
     await waitFor(() => {
       expect(getOrCreateJoinCode).not.toHaveBeenCalled();
