@@ -35,9 +35,22 @@ const FIXTURE_EXTRA_GROUPS: RockGroup[] = [
   { Id: 31193, Name: "Youth // Junior High // Vince Puno", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24021, IsActive: true, IsArchived: false, locality: null },
 ];
 
+// Keep the fixture's dense locality representative of the measured production
+// spread: 166 Ortigas Center groups, with small sections beside it.
+const FIXTURE_DENSE_GROUPS: RockGroup[] = Array.from({ length: 163 }, (_, index) => ({
+  Id: 24200 + index,
+  Name: `Adults // Ortigas Center ${String(index + 4).padStart(3, "0")}`,
+  GroupTypeId: 25,
+  CampusId: 1,
+  ParentGroupId: 23870,
+  IsActive: true,
+  IsArchived: false,
+  locality: "Ortigas Center",
+}));
+
 export function fixtureCampusGroups(campusId: number): RockGroup[] {
   if (campusId !== FIXTURE_GROUP.CampusId) return [];
-  return [FIXTURE_GROUP, ...FIXTURE_EXTRA_GROUPS];
+  return [FIXTURE_GROUP, ...FIXTURE_EXTRA_GROUPS, ...FIXTURE_DENSE_GROUPS];
 }
 
 // PersonId -> NickName, first names only. Frozen from Rock prod.
