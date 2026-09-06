@@ -117,9 +117,16 @@ export function writesBlocked(
   writableGroupId: number | null,
 ): boolean {
   if (!active) return false;
+  // `selectedGroupId === null` means "my real active group" -- the panel's
+  // first option, which is also the ONLY way that group can be selected,
+  // because the picker filters it out of the campus list to avoid listing it
+  // twice. Resolving null here is what makes the sandbox reachable at all:
+  // the unblock needs the sandbox to be the session's real active group, and
+  // in exactly that case the picker offers it only as "(my group)".
+  const effectiveGroupId = selectedGroupId ?? realActiveGroupId;
   if (
     writableGroupId !== null &&
-    selectedGroupId === writableGroupId &&
+    effectiveGroupId === writableGroupId &&
     realActiveGroupId === writableGroupId
   ) {
     return false;

@@ -71,9 +71,24 @@ describe("writesBlocked", () => {
       expect(writesBlocked(true, null, null, null)).toBe(true);
     });
 
-    it("returns true when selectedGroupId is null (my real group selected)", () => {
-      expect(writesBlocked(true, null, 87177, 87177)).toBe(true);
+    /**
+     * `selectedGroupId === null` means "my real active group", the panel's
+     * first option -- and the ONLY way that group can be selected, because the
+     * picker filters it out of the campus list rather than listing it twice.
+     *
+     * Treating null as "nothing selected" made the sandbox unreachable: the
+     * unblock requires the sandbox to be the session's real active group, and
+     * in exactly that case the picker offers it only as "(my group)", i.e.
+     * null. The feature could never activate. Hence null resolves to the real
+     * active group here.
+     */
+    it("resolves a null selection to the real active group, so the sandbox is reachable", () => {
+      expect(writesBlocked(true, null, 87177, 87177)).toBe(false);
+    });
+
+    it("still blocks a null selection when the real active group is not the sandbox", () => {
       expect(writesBlocked(true, null, 12345, 87177)).toBe(true);
+      expect(writesBlocked(true, null, null, 87177)).toBe(true);
     });
 
     it("returns true when selectedGroupId does not match writableGroupId", () => {
