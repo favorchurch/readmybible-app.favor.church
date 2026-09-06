@@ -18,6 +18,10 @@ const GRACE_DAYS: PlanEntry[] = [
   { day: 31, chapter: 31, date: "2026-10-31", keyPassage: "", title: "Catch-up day" },
 ];
 
+function campusGroupCountLabel(count: number): string {
+  return `${count} Connect Group${count === 1 ? "" : "s"} on this campus.`;
+}
+
 export function ProgressScreen({
   today,
   chapters,
@@ -167,7 +171,7 @@ export function ProgressScreen({
             </section>
 
             <p className="campus-group-count" data-section="campus-group-count">
-              {campusBoard.length} Connect Groups on this campus.
+              {campusGroupCountLabel(campusBoard.length)}
             </p>
           </>
         ) : (
@@ -216,7 +220,7 @@ export function ProgressScreen({
               </section>
             )}
             <p className="campus-group-count" data-section="campus-group-count">
-              {campusBoard.length} Connect Groups on this campus.
+              {campusGroupCountLabel(campusBoard.length)}
             </p>
           </>
         )}

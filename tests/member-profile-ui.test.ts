@@ -400,6 +400,27 @@ describe("ProgressScreen campus groups", () => {
     expect(html).not.toContain("leaderboard-card");
     expect(html).not.toContain("No groups on the board yet. October&#x27;s coming.");
   });
+
+  it("uses singular grammar for a one-group campus", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: mockTodayState,
+        chapters: [],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [{ groupId: 1, name: "Only Connect", ratio: 0, readersToday: 0, locality: null }],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain("1 Connect Group on this campus.");
+    expect(html).not.toContain("1 Connect Groups on this campus.");
+  });
 });
 
 describe("MemberStreakDots", () => {
