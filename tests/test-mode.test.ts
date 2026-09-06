@@ -11,6 +11,7 @@ import {
   simulatedMemberHistory,
   simulatedTodayState,
   TEST_MODE_BLOCKED_MESSAGE,
+  writesBlocked,
 } from "@/components/test-mode/logic";
 
 describe("isTestModeRequested", () => {
@@ -47,7 +48,58 @@ describe("initialTestModeState", () => {
     expect(state.phase).toBe("active");
     expect(state.completionPct).toBe(0);
     expect(state.groupPct).toBe(0);
-    expect(state.role).toBe("member");
+    expect(state.groupId).toBeNull();
+    expect(state.viewer).toBe("member");
+    expect(state).not.toHaveProperty("role");
+  });
+});
+
+describe("writesBlocked", () => {
+  it("returns false (writes allowed) when test mode is inactive", () => {
+    expect(writesBlocked(false, null, null, null)).toBe(false);
+    expect(writesBlocked(false, 87177, 87177, 87177)).toBe(false);
+    expect(writesBlocked(false, 12345, 99999, 87177)).toBe(false);
+  });
+
+  describe("when test mode is active", () => {
+    it("returns false (writes allowed) only when writable, selected, and real active all match", () => {
+      expect(writesBlocked(true, 87177, 87177, 87177)).toBe(false);
+    });
+
+    it("returns true when writableGroupId is null", () => {
+      expect(writesBlocked(true, 87177, 87177, null)).toBe(true);
+      expect(writesBlocked(true, null, null, null)).toBe(true);
+    });
+
+    /**
+     * `selectedGroupId === null` means "my real active group", the panel's
+     * first option -- and the ONLY way that group can be selected, because the
+     * picker filters it out of the campus list rather than listing it twice.
+     *
+     * Treating null as "nothing selected" made the sandbox unreachable: the
+     * unblock requires the sandbox to be the session's real active group, and
+     * in exactly that case the picker offers it only as "(my group)", i.e.
+     * null. The feature could never activate. Hence null resolves to the real
+     * active group here.
+     */
+    it("resolves a null selection to the real active group, so the sandbox is reachable", () => {
+      expect(writesBlocked(true, null, 87177, 87177)).toBe(false);
+    });
+
+    it("still blocks a null selection when the real active group is not the sandbox", () => {
+      expect(writesBlocked(true, null, 12345, 87177)).toBe(true);
+      expect(writesBlocked(true, null, null, 87177)).toBe(true);
+    });
+
+    it("returns true when selectedGroupId does not match writableGroupId", () => {
+      expect(writesBlocked(true, 12345, 87177, 87177)).toBe(true);
+      expect(writesBlocked(true, 12345, 12345, 87177)).toBe(true);
+    });
+
+    it("returns true when realActiveGroupId does not match writableGroupId (A2 mismatch case)", () => {
+      expect(writesBlocked(true, 87177, 99999, 87177)).toBe(true);
+      expect(writesBlocked(true, 87177, null, 87177)).toBe(true);
+    });
   });
 });
 
@@ -178,5 +230,80 @@ describe("guardWrite", () => {
 
     expect(action).not.toHaveBeenCalled();
     expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
+
+  it("blocks a check-in attempt for a non-sandbox group", async () => {
+    const checkInAction = vi.fn(async () => ({ ok: true as const }));
+    const nonSandboxBlocked = writesBlocked(true, 12345, 87177, 87177);
+    const guarded = guardWrite(nonSandboxBlocked, checkInAction);
+
+    const result = await guarded();
+
+    expect(checkInAction).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
+
+  it("allows a check-in attempt for the designated sandbox group when real active group matches", async () => {
+    const checkInAction = vi.fn(async () => ({ ok: true as const }));
+    const sandboxBlocked = writesBlocked(true, 87177, 87177, 87177);
+    const guarded = guardWrite(sandboxBlocked, checkInAction);
+
+    const result = await guarded();
+
+    expect(checkInAction).toHaveBeenCalled();
+    expect(result).toEqual({ ok: true });
+  });
+});
+
+/**
+ * The sandbox unblock is deliberately per-action, not one flag across all five
+ * guarded writes. `joinByCode` joins whatever group the *entered code* belongs
+ * to -- not the simulated group -- so a shared unblock would let any code
+ * perform a real Rock write and move the tester's active group off the sandbox.
+ * `chooseGroup` and `getOrCreateJoinCode` are Rock writes for the same reason,
+ * and `saveProfile` persists outside the group entirely.
+ *
+ * AppShell therefore passes `writesBlocked(...)` only to checkIn, and plain
+ * `testMode.active` to the other four. These assert the rule that wiring must
+ * satisfy.
+ */
+describe("sandbox unblock is scoped to check-in only", () => {
+  const SANDBOX = 87177;
+  // The most permissive state that exists: simulating the sandbox, from a
+  // session really in the sandbox, with the sandbox configured.
+  const checkInGate = () => writesBlocked(true, SANDBOX, SANDBOX, SANDBOX);
+  const otherActionGate = (testModeActive: boolean) => testModeActive;
+
+  it("unblocks check-in in the fully-matching sandbox state", () => {
+    expect(checkInGate()).toBe(false);
+  });
+
+  it.each([
+    ["joinByCode"],
+    ["chooseGroup"],
+    ["saveProfile"],
+    ["getOrCreateJoinCode"],
+  ])("keeps %s blocked even in the fully-matching sandbox state", () => {
+    expect(otherActionGate(true)).toBe(true);
+  });
+
+  it("never calls joinByCode in the sandbox state", async () => {
+    const joinAction = vi.fn(async () => ({ ok: true as const }));
+    const guarded = guardWrite(otherActionGate(true), joinAction);
+
+    const result = await guarded();
+
+    expect(joinAction).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
+
+  it("still passes the four through untouched when test mode is off", async () => {
+    const joinAction = vi.fn(async () => ({ ok: true as const }));
+    const guarded = guardWrite(otherActionGate(false), joinAction);
+
+    const result = await guarded();
+
+    expect(joinAction).toHaveBeenCalled();
+    expect(result).toEqual({ ok: true });
   });
 });

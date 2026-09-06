@@ -9,12 +9,15 @@ export const TEST_MODE_BLOCKED_MESSAGE = "Test mode: writes are disabled.";
 
 export type SimulatedPhase = "pre-launch" | "active" | "grace" | "closed";
 
+export type TestModeViewer = "member" | "leader" | "non-member";
+
 export type TestModeState = {
   day: number;
   phase: SimulatedPhase;
   completionPct: number;
   groupPct: number;
-  role: "leader" | "member";
+  groupId: number | null;
+  viewer: TestModeViewer;
 };
 
 /** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias. */
@@ -35,7 +38,8 @@ export function initialTestModeState(searchParams: URLSearchParams): TestModeSta
     phase: "active",
     completionPct: 0,
     groupPct: 0,
-    role: "member",
+    groupId: null,
+    viewer: "member",
   };
 }
 
@@ -99,6 +103,36 @@ export function simulatedMemberHistory(
 }
 
 type WriteResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Pure helper to determine if writes are blocked in test mode.
+ * Returns `false` (writes allowed) only when all hold:
+ * `active === true`, `writableGroupId !== null`, `selectedGroupId === writableGroupId`, `realActiveGroupId === writableGroupId`.
+ * Otherwise `true`. When `active` is `false`, returns `false` so `guardWrite` stays a pass-through.
+ */
+export function writesBlocked(
+  active: boolean,
+  selectedGroupId: number | null,
+  realActiveGroupId: number | null,
+  writableGroupId: number | null,
+): boolean {
+  if (!active) return false;
+  // `selectedGroupId === null` means "my real active group" -- the panel's
+  // first option, which is also the ONLY way that group can be selected,
+  // because the picker filters it out of the campus list to avoid listing it
+  // twice. Resolving null here is what makes the sandbox reachable at all:
+  // the unblock needs the sandbox to be the session's real active group, and
+  // in exactly that case the picker offers it only as "(my group)".
+  const effectiveGroupId = selectedGroupId ?? realActiveGroupId;
+  if (
+    writableGroupId !== null &&
+    effectiveGroupId === writableGroupId &&
+    realActiveGroupId === writableGroupId
+  ) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * Wraps a Supabase/Rock write action (checkIn, saveProfile, chooseGroup,

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
 import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
+import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
 import {
@@ -25,6 +26,7 @@ import {
   simulatedTodayState,
   useTestMode,
   dateForSimulatedDay,
+  writesBlocked,
 } from "@/components/test-mode";
 import { useToday } from "@/components/use-today";
 import { BottomNav, type Tab } from "@/components/screens/bottom-nav";
@@ -68,6 +70,8 @@ export type AppShellProps = {
   campusBoard: GroupStanding[];
   appBaseUrl: string;
   devMockToday: string | null;
+  campusGroups: { groupId: number; groupName: string }[];
+  testWritableGroupId: number | null;
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -83,11 +87,88 @@ export function AppShell(props: AppShellProps) {
     [testMode.state.day, testMode.state.phase, realToday.timezone],
   );
   const today = testMode.active ? simulatedToday : realToday;
-  const guardedCheckIn = useMemo(() => guardWrite(testMode.active, checkIn), [testMode.active]);
+  const blocked = useMemo(
+    () =>
+      writesBlocked(
+        testMode.active,
+        testMode.state.groupId,
+        props.activeGroup?.groupId ?? null,
+        props.testWritableGroupId,
+      ),
+    [testMode.active, testMode.state.groupId, props.activeGroup?.groupId, props.testWritableGroupId],
+  );
+  // Only checkIn is ever unblocked by the sandbox group. It writes a check-in
+  // row against the server's real active group, which `writesBlocked` has
+  // already pinned to the sandbox -- so the write cannot land anywhere else.
+  //
+  // The other four are blocked whenever test mode is on, sandbox or not.
+  // joinByCode is the reason this is per-action rather than one flag: it joins
+  // whatever group the *entered code* belongs to, not the simulated group, so
+  // a sandbox unblock would let any code perform a real Rock write and move the
+  // tester's active group. chooseGroup and getOrCreateJoinCode are Rock writes
+  // for the same reason; saveProfile persists outside the group entirely.
+  // In test mode, tell the server which group the client believes it is
+  // writing to. `blocked` is computed from props captured at page render, so it
+  // goes stale if the active group changes in another tab; checkIn re-resolves
+  // the session and refuses the write when the two disagree (round-3 finding 1).
+  const sandboxCheckIn = useMemo(() => {
+    if (!testMode.active) return checkIn;
+    const sandboxGroupId = props.testWritableGroupId ?? undefined;
+    return (input: { chapter: number; timezone: string }) => checkIn({ ...input, sandboxGroupId });
+  }, [testMode.active, props.testWritableGroupId]);
+  const guardedCheckIn = useMemo(() => guardWrite(blocked, sandboxCheckIn), [blocked, sandboxCheckIn]);
   const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
   const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
-  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(testMode.active, getOrCreateJoinCode), [testMode.active]);
+  const guardedGetOrCreateJoinCode = useMemo(
+    () => guardWrite(testMode.active, getOrCreateJoinCode),
+    [testMode.active],
+  );
+
+  const [snapshot, setSnapshot] = useState<{
+    groupId: number;
+    groupName: string;
+    campusName: string | null;
+    roster: RosterMemberView[];
+    groupStats: GroupStats;
+  } | null>(null);
+  const [snapshotError, setSnapshotError] = useState<{ groupId: number; error: string } | null>(null);
+
+  useEffect(() => {
+    if (!testMode.active || testMode.state.groupId === null) {
+      return;
+    }
+
+    const currentGroupId = testMode.state.groupId;
+    let cancelled = false;
+
+    getTestGroupSnapshot({ groupId: currentGroupId }).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setSnapshot({
+          groupId: currentGroupId,
+          groupName: result.groupName,
+          campusName: result.campusName,
+          roster: result.roster,
+          groupStats: result.groupStats,
+        });
+        // A retry that succeeds must clear the earlier failure for this same
+        // group, or the panel keeps showing a stale error beside a good roster.
+        setSnapshotError(null);
+      } else {
+        setSnapshotError({ groupId: currentGroupId, error: result.error });
+      }
+    }).catch(() => {
+      // A rejected request would otherwise leave the panel awaiting forever
+      // with nothing rendered and nothing explaining why.
+      if (cancelled) return;
+      setSnapshotError({ groupId: currentGroupId, error: "Could not load that group." });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [testMode.active, testMode.state.groupId]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -118,25 +199,49 @@ export function AppShell(props: AppShellProps) {
   const chaptersRead = chapters.length;
   const coins = coinsFor(chaptersRead);
   const currentStreak = computeStreak(props.readingDates, today.todayLocal);
-  const groupName = props.activeGroup?.groupName ?? null;
+
+  const currentSnapshot =
+    testMode.active && snapshot && snapshot.groupId === testMode.state.groupId ? snapshot : null;
+
+  // A group is being simulated but its snapshot hasn't arrived (still loading,
+  // or the action errored). Falling back to props.* here would render the
+  // reader's OWN group's members and stats under the selected group's name --
+  // the wrong group, silently, in a tool whose whole value is trusting what you
+  // see. Render an explicit empty state instead.
+  const awaitingSnapshot = testMode.active && testMode.state.groupId !== null && !currentSnapshot;
+
+  const groupName = currentSnapshot
+    ? currentSnapshot.groupName
+    : awaitingSnapshot
+      ? null
+      : (props.activeGroup?.groupName ?? null);
+  const campusName = currentSnapshot
+    ? currentSnapshot.campusName
+    : awaitingSnapshot
+      ? null
+      : props.campusName;
 
   const groupStats = useMemo((): GroupStats | null => {
-    if (!testMode.active) return props.groupStats;
+    if (awaitingSnapshot) return null;
+    const baseStats = currentSnapshot ? currentSnapshot.groupStats : props.groupStats;
+    if (!testMode.active) return baseStats;
     const ratio = simulatedGroupRatio(testMode.state.groupPct);
-    const memberCount = props.groupStats?.memberCount ?? 1;
+    const memberCount = baseStats?.memberCount ?? 1;
     return {
       checkinCount: Math.round(ratio * memberCount),
       memberCount,
       ratio,
-      readersTodayIds: props.groupStats?.readersTodayIds ?? [],
+      readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
-  }, [testMode.active, testMode.state.groupPct, props.groupStats]);
-  const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
+  }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
+  const isLeader = testMode.active ? testMode.state.viewer === "leader" : props.isLeader;
   const activeTab = isLeader || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
-    if (!testMode.active) return props.roster;
-    return props.roster.map((member) => {
+    if (awaitingSnapshot) return [];
+    const baseRoster = currentSnapshot ? currentSnapshot.roster : props.roster;
+    if (!testMode.active) return baseRoster;
+    return baseRoster.map((member) => {
       const simulated = simulatedMemberHistory(member.personId, testMode.state.completionPct, today.todayLocal);
       return {
         ...member,
@@ -145,7 +250,7 @@ export function AppShell(props: AppShellProps) {
         readingDates: simulated.readingDates,
       };
     });
-  }, [testMode.active, props.roster, testMode.state.completionPct, today.todayLocal]);
+  }, [testMode.active, currentSnapshot, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
@@ -229,16 +334,54 @@ export function AppShell(props: AppShellProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (props.needsGroupChoice) {
-    return (
-      <GroupPickerScreen memberships={props.memberships} pending={pending} onChoose={handleChooseGroup} />
-    );
-  }
+  const currentSnapshotError =
+    testMode.active && snapshotError && snapshotError.groupId === testMode.state.groupId
+      ? snapshotError.error
+      : null;
 
-  if (!props.activeGroup) {
+  const testModePanel = testMode.active ? (
+    <TestModePanel
+      state={testMode.state}
+      onChange={testMode.setState}
+      realActiveGroup={
+        props.activeGroup
+          ? { groupId: props.activeGroup.groupId, groupName: props.activeGroup.groupName }
+          : null
+      }
+      campusGroups={props.campusGroups}
+      writableGroupId={props.testWritableGroupId}
+      error={currentSnapshotError}
+    />
+  ) : null;
+
+  if (testMode.active && testMode.state.viewer === "non-member") {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
+        {testModePanel}
+        <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
+      </div>
+    );
+  }
+
+  if (props.needsGroupChoice) {
+    return (
+      <div className="app-shell">
+        <div className="paper-noise" />
+        {testModePanel}
+        <GroupPickerScreen memberships={props.memberships} pending={pending} onChoose={handleChooseGroup} />
+      </div>
+    );
+  }
+
+  const effectiveHasGroup =
+    testMode.active && testMode.state.groupId !== null ? true : !!props.activeGroup;
+
+  if (!effectiveHasGroup) {
+    return (
+      <div className="app-shell">
+        <div className="paper-noise" />
+        {testModePanel}
         <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
       </div>
     );
@@ -247,7 +390,7 @@ export function AppShell(props: AppShellProps) {
   return (
     <div className="app-shell">
       {activeTab !== "leader" && <div className="paper-noise" />}
-      {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
+      {testModePanel}
       {activeTab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
@@ -271,7 +414,7 @@ export function AppShell(props: AppShellProps) {
       {activeTab === "connect" && (
         <ConnectScreen
           groupName={groupName}
-          campusName={props.campusName}
+          campusName={campusName}
           roster={roster}
           groupStats={groupStats}
           profile={profile}
