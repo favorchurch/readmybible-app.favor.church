@@ -69,6 +69,24 @@ const FIXTURE_PEOPLE: Record<number, string> = {
   112: "Alliyah",
 };
 
+// PersonId -> Rock.Model.Gender (1 Male, 2 Female). Frozen from Rock prod.
+// Without this, resolveAvatar() has no rockGender to read and falls back to
+// a personId-parity coin flip -- which is how Alliyah (112, actually Female)
+// rendered as a male avatar in fixture mode.
+const FIXTURE_GENDERS: Record<number, number> = {
+  18038: 1,
+  194: 2,
+  3927: 2,
+  548: 1,
+  3011: 2,
+  3150: 1,
+  3554: 2,
+  3949: 2,
+  10: 2,
+  152: 1,
+  112: 2,
+};
+
 // PersonId -> GroupRoleId (23 Member, 24 Leader). Frozen from Rock prod.
 const FIXTURE_ROLES: Record<number, number> = {
   18038: 24,
@@ -94,6 +112,7 @@ export function fixturePerson(personId: number): RockPerson | null {
     FirstName: nickName,
     LastName: "",
     PrimaryCampusId: FIXTURE_GROUP.CampusId,
+    Gender: FIXTURE_GENDERS[personId],
   };
 }
 
@@ -133,6 +152,7 @@ export function fixtureRoster(groupId: number): RockGroupMember[] {
         FirstName: nickName,
         LastName: "",
         PrimaryCampusId: FIXTURE_GROUP.CampusId,
+        Gender: FIXTURE_GENDERS[personId],
       },
     };
   });

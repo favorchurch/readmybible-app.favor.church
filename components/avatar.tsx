@@ -162,6 +162,15 @@ export function avatarGenderFromRock(value: unknown): Gender | null {
 const SEED_SHIRTS = ["#d96c57", "#587b9d", "#d6aa55", "#809783", "#9a86aa"];
 const SEED_SKIN_COLORS = ["#edc7a3", "#d8a373", "#b97856", "#754732"];
 
+// SEED_HAIR mixed every cut into one pool keyed only on personId, with no
+// regard for the avatar's own gender -- a correctly-tagged gender-female
+// avatar could still land on a short, male-reading cut (e.g. Alliyah, person
+// 112, got "crop"). Split into per-gender pools so the generated hairstyle
+// never visually contradicts a gender Rock (or the seed fallback) already
+// committed to.
+const SEED_HAIR_FEMALE: HairStyle[] = ["bob", "curls", "bun", "graybun", "ponytail", "long-curly", "long-wavy", "long-straight"];
+const SEED_HAIR_MALE: HairStyle[] = ["crop", "waves", "pixie", "extra-short", "short-straight", "short-wavy", "short-curly"];
+
 /**
  * The only person-to-avatar resolver, shared by the reader and their roster.
  * Missing Rock gender uses a stable mixed illustration, not a claim about the
@@ -169,10 +178,12 @@ const SEED_SKIN_COLORS = ["#edc7a3", "#d8a373", "#b97856", "#754732"];
  */
 export function resolveAvatar(personId: number, rockGender: unknown, savedAvatar?: unknown): AvatarConfig {
   const seed = Math.abs(Math.trunc(personId));
+  const gender = avatarGenderFromRock(rockGender) ?? (seed % 2 === 0 ? "male" : "female");
+  const hairPool = gender === "female" ? SEED_HAIR_FEMALE : SEED_HAIR_MALE;
   const generated: AvatarConfig = {
     ...defaultAvatarConfig,
-    gender: avatarGenderFromRock(rockGender) ?? (seed % 2 === 0 ? "male" : "female"),
-    hair: SEED_HAIR[(seed * 13) % SEED_HAIR.length],
+    gender,
+    hair: hairPool[(seed * 13) % hairPool.length],
     skinColor: SEED_SKIN_COLORS[(seed * 7) % SEED_SKIN_COLORS.length],
     shirtColor: SEED_SHIRTS[seed % SEED_SHIRTS.length],
   };
