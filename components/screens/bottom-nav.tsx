@@ -28,7 +28,7 @@ export function BottomNav({
       style={{ "--nav-count": items.length } as React.CSSProperties}
     >
       {items.map((item) => (
-        <button key={item.id} data-tab={item.id} className={tab === item.id ? "active" : ""} onClick={() => onSelect(item.id)}>
+        <button type="button" key={item.id} data-tab={item.id} className={tab === item.id ? "active" : ""} onClick={() => onSelect(item.id)}>
           <NavIcon icon={item.icon} />
           {item.label}
         </button>
