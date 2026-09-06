@@ -216,4 +216,26 @@ describe("guardWrite", () => {
     expect(action).not.toHaveBeenCalled();
     expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
   });
+
+  it("blocks a check-in attempt for a non-sandbox group", async () => {
+    const checkInAction = vi.fn(async () => ({ ok: true as const }));
+    const nonSandboxBlocked = writesBlocked(true, 12345, 87177, 87177);
+    const guarded = guardWrite(nonSandboxBlocked, checkInAction);
+
+    const result = await guarded();
+
+    expect(checkInAction).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
+
+  it("allows a check-in attempt for the designated sandbox group when real active group matches", async () => {
+    const checkInAction = vi.fn(async () => ({ ok: true as const }));
+    const sandboxBlocked = writesBlocked(true, 87177, 87177, 87177);
+    const guarded = guardWrite(sandboxBlocked, checkInAction);
+
+    const result = await guarded();
+
+    expect(checkInAction).toHaveBeenCalled();
+    expect(result).toEqual({ ok: true });
+  });
 });
