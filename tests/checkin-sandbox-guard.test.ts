@@ -20,6 +20,10 @@ vi.mock("@/lib/session", () => ({ getSessionContext: vi.fn() }));
 vi.mock("@/lib/test-mode-config", () => ({ testWritableGroupId: vi.fn(() => null) }));
 vi.mock("@/lib/cache/redis", () => ({ redisDel: vi.fn() }));
 vi.mock("@/lib/data/stats", () => ({ getGroupStatsFresh: vi.fn(async () => null) }));
+// Today is outside the plan window in real time, so validateCheckIn would
+// reject before the insert and the positive tests below would pass for the
+// wrong reason. Pin the clock to day 1 of the plan instead.
+vi.mock("@/lib/dev-clock", () => ({ appNow: () => new Date(2026, 9, 1, 12, 0, 0) }));
 
 const insertSpy = vi.fn();
 vi.mock("@/db", () => ({
@@ -88,5 +92,30 @@ describe("checkIn sandbox claim", () => {
 
     expect(await checkIn({ ...input, sandboxGroupId: SANDBOX })).toEqual(BLOCKED);
     expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The refusals above all pass if the guard simply rejects every claim, which
+   * would silently kill the one write test mode is meant to permit. These two
+   * are the other half of the pair (round-4 finding 1).
+   */
+  it("proceeds when configured sandbox, claimed group, and live active group all agree", async () => {
+    writable.mockReturnValue(SANDBOX);
+    sessionInGroup(SANDBOX);
+
+    const result = await checkIn({ ...input, sandboxGroupId: SANDBOX });
+
+    expect(result.ok).toBe(true);
+    expect(insertSpy).toHaveBeenCalled();
+  });
+
+  it("leaves an ordinary check-in untouched when no claim is made", async () => {
+    writable.mockReturnValue(SANDBOX);
+    sessionInGroup(12345);
+
+    const result = await checkIn(input);
+
+    expect(result.ok).toBe(true);
+    expect(insertSpy).toHaveBeenCalled();
   });
 });
