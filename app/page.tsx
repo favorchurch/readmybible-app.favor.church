@@ -12,9 +12,10 @@ import {
   getGroupStats,
   getPersonReadingState,
 } from "@/lib/data/stats";
-import { getCampusGroups, getCampusName, getRoster } from "@/lib/rock/client";
+import { getCampusGroups, getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import { getSessionContext } from "@/lib/session";
+import { testWritableGroupId } from "@/lib/test-mode-config";
 
 export default async function Page() {
   const session = await getSessionContext();
@@ -34,19 +35,27 @@ export default async function Page() {
     ? rosterP.then((members) => getGroupMembersReadingHistory(activeGroupId, members.map((m) => m.PersonId)))
     : Promise.resolve(new Map());
 
-  const campusGroupsP =
-    isDev && session.campusId
-      ? getCampusGroups(session.campusId).then((groups) =>
-          groups
-            .filter((g) => g.GroupTypeId === GROUP_TYPE_CONNECT_GROUP)
-            .map((g) => ({ groupId: g.Id, groupName: g.Name })),
-        )
-      : Promise.resolve([]);
+  const writableGroupId = testWritableGroupId();
 
-  const testWritableGroupId =
-    isDev && process.env.TEST_MODE_WRITABLE_GROUP_ID
-      ? Number.parseInt(process.env.TEST_MODE_WRITABLE_GROUP_ID, 10) || null
-      : null;
+  // The sandbox group is deliberately not required to sit on the reader's
+  // campus -- 87177 lives on campus 5 (OPEN ACCESS) -- so it is fetched by id
+  // and appended, otherwise a campus-scoped list would never offer the one
+  // group test mode can write to.
+  const campusGroupsP = !isDev
+    ? Promise.resolve([])
+    : (async () => {
+        const [campusGroups, sandbox] = await Promise.all([
+          session.campusId ? getCampusGroups(session.campusId) : Promise.resolve([]),
+          writableGroupId ? getGroupBasic(writableGroupId) : Promise.resolve(null),
+        ]);
+        const list = campusGroups
+          .filter((g) => g.GroupTypeId === GROUP_TYPE_CONNECT_GROUP)
+          .map((g) => ({ groupId: g.Id, groupName: g.Name }));
+        if (sandbox && !list.some((g) => g.groupId === sandbox.Id)) {
+          list.unshift({ groupId: sandbox.Id, groupName: sandbox.Name });
+        }
+        return list;
+      })();
 
   const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap, campusGroups] =
     await Promise.all([
@@ -101,7 +110,7 @@ export default async function Page() {
     appBaseUrl: process.env.APP_BASE_URL ?? "",
     devMockToday: devMockToday(),
     campusGroups,
-    testWritableGroupId,
+    testWritableGroupId: writableGroupId,
   };
 
   return <AppShell {...props} />;

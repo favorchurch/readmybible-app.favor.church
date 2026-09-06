@@ -239,3 +239,56 @@ describe("guardWrite", () => {
     expect(result).toEqual({ ok: true });
   });
 });
+
+/**
+ * The sandbox unblock is deliberately per-action, not one flag across all five
+ * guarded writes. `joinByCode` joins whatever group the *entered code* belongs
+ * to -- not the simulated group -- so a shared unblock would let any code
+ * perform a real Rock write and move the tester's active group off the sandbox.
+ * `chooseGroup` and `getOrCreateJoinCode` are Rock writes for the same reason,
+ * and `saveProfile` persists outside the group entirely.
+ *
+ * AppShell therefore passes `writesBlocked(...)` only to checkIn, and plain
+ * `testMode.active` to the other four. These assert the rule that wiring must
+ * satisfy.
+ */
+describe("sandbox unblock is scoped to check-in only", () => {
+  const SANDBOX = 87177;
+  // The most permissive state that exists: simulating the sandbox, from a
+  // session really in the sandbox, with the sandbox configured.
+  const checkInGate = () => writesBlocked(true, SANDBOX, SANDBOX, SANDBOX);
+  const otherActionGate = (testModeActive: boolean) => testModeActive;
+
+  it("unblocks check-in in the fully-matching sandbox state", () => {
+    expect(checkInGate()).toBe(false);
+  });
+
+  it.each([
+    ["joinByCode"],
+    ["chooseGroup"],
+    ["saveProfile"],
+    ["getOrCreateJoinCode"],
+  ])("keeps %s blocked even in the fully-matching sandbox state", () => {
+    expect(otherActionGate(true)).toBe(true);
+  });
+
+  it("never calls joinByCode in the sandbox state", async () => {
+    const joinAction = vi.fn(async () => ({ ok: true as const }));
+    const guarded = guardWrite(otherActionGate(true), joinAction);
+
+    const result = await guarded();
+
+    expect(joinAction).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: TEST_MODE_BLOCKED_MESSAGE });
+  });
+
+  it("still passes the four through untouched when test mode is off", async () => {
+    const joinAction = vi.fn(async () => ({ ok: true as const }));
+    const guarded = guardWrite(otherActionGate(false), joinAction);
+
+    const result = await guarded();
+
+    expect(joinAction).toHaveBeenCalled();
+    expect(result).toEqual({ ok: true });
+  });
+});

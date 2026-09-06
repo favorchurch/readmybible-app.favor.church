@@ -8,8 +8,10 @@ import { profiles } from "@/db/schema";
 import { resolveAvatar } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import { getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
+import { GROUP_TYPE_CONNECT_GROUP, ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER } from "@/lib/rock/constants";
 import { getGroupMembersReadingHistory, getGroupStats, type GroupStats } from "@/lib/data/stats";
 import { getSessionContext } from "@/lib/session";
+import { testWritableGroupId } from "@/lib/test-mode-config";
 
 const inputSchema = z.object({
   groupId: z.number().int().positive(),
@@ -56,6 +58,18 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
     return { ok: false, error: `Group ${groupId} not found.` };
   }
 
+  // The picker only offers campus Connect Groups plus the sandbox, but a server
+  // action is a directly callable HTTP endpoint -- so the action must enforce
+  // the same scope the picker displays, rather than trusting its caller.
+  if (groupBasic.GroupTypeId !== GROUP_TYPE_CONNECT_GROUP) {
+    return { ok: false, error: `Group ${groupId} is not a Connect Group.` };
+  }
+  const writableGroupId = testWritableGroupId();
+  const isSandbox = writableGroupId !== null && groupId === writableGroupId;
+  if (!isSandbox && groupBasic.CampusId !== session.campusId) {
+    return { ok: false, error: `Group ${groupId} is not at your campus.` };
+  }
+
   const rockRoster = await getRoster(groupId);
   if (rockRoster.length === 0) {
     return { ok: false, error: `Group ${groupId} has an empty roster.` };
@@ -83,7 +97,10 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
       avatar: resolveAvatar(m.PersonId, m.Person?.Gender, savedAvatars.get(m.PersonId)),
       isSelf: m.PersonId === session.rockPersonId,
       name: m.Person?.NickName || m.Person?.FirstName || `Reader ${m.PersonId}`,
-      isLeader: m.GroupRoleId !== undefined && m.GroupRoleId !== null && [24, 81].includes(m.GroupRoleId),
+      isLeader:
+        m.GroupRoleId !== undefined &&
+        m.GroupRoleId !== null &&
+        [ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER].includes(m.GroupRoleId),
       readToday: groupStats.readersTodayIds.includes(m.PersonId),
       chapters: history?.chapters ?? [],
       readingDates: history?.dates ?? [],

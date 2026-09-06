@@ -96,11 +96,24 @@ export function AppShell(props: AppShellProps) {
       ),
     [testMode.active, testMode.state.groupId, props.activeGroup?.groupId, props.testWritableGroupId],
   );
+  // Only checkIn is ever unblocked by the sandbox group. It writes a check-in
+  // row against the server's real active group, which `writesBlocked` has
+  // already pinned to the sandbox -- so the write cannot land anywhere else.
+  //
+  // The other four are blocked whenever test mode is on, sandbox or not.
+  // joinByCode is the reason this is per-action rather than one flag: it joins
+  // whatever group the *entered code* belongs to, not the simulated group, so
+  // a sandbox unblock would let any code perform a real Rock write and move the
+  // tester's active group. chooseGroup and getOrCreateJoinCode are Rock writes
+  // for the same reason; saveProfile persists outside the group entirely.
   const guardedCheckIn = useMemo(() => guardWrite(blocked, checkIn), [blocked]);
-  const guardedSaveProfile = useMemo(() => guardWrite(blocked, saveProfile), [blocked]);
-  const guardedChooseGroup = useMemo(() => guardWrite(blocked, chooseGroup), [blocked]);
-  const guardedJoinByCode = useMemo(() => guardWrite(blocked, joinByCode), [blocked]);
-  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(blocked, getOrCreateJoinCode), [blocked]);
+  const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
+  const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
+  const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
+  const guardedGetOrCreateJoinCode = useMemo(
+    () => guardWrite(testMode.active, getOrCreateJoinCode),
+    [testMode.active],
+  );
 
   const [snapshot, setSnapshot] = useState<{
     groupId: number;
@@ -172,10 +185,26 @@ export function AppShell(props: AppShellProps) {
   const currentSnapshot =
     testMode.active && snapshot && snapshot.groupId === testMode.state.groupId ? snapshot : null;
 
-  const groupName = currentSnapshot ? currentSnapshot.groupName : (props.activeGroup?.groupName ?? null);
-  const campusName = currentSnapshot ? currentSnapshot.campusName : props.campusName;
+  // A group is being simulated but its snapshot hasn't arrived (still loading,
+  // or the action errored). Falling back to props.* here would render the
+  // reader's OWN group's members and stats under the selected group's name --
+  // the wrong group, silently, in a tool whose whole value is trusting what you
+  // see. Render an explicit empty state instead.
+  const awaitingSnapshot = testMode.active && testMode.state.groupId !== null && !currentSnapshot;
+
+  const groupName = currentSnapshot
+    ? currentSnapshot.groupName
+    : awaitingSnapshot
+      ? null
+      : (props.activeGroup?.groupName ?? null);
+  const campusName = currentSnapshot
+    ? currentSnapshot.campusName
+    : awaitingSnapshot
+      ? null
+      : props.campusName;
 
   const groupStats = useMemo((): GroupStats | null => {
+    if (awaitingSnapshot) return null;
     const baseStats = currentSnapshot ? currentSnapshot.groupStats : props.groupStats;
     if (!testMode.active) return baseStats;
     const ratio = simulatedGroupRatio(testMode.state.groupPct);
@@ -186,10 +215,11 @@ export function AppShell(props: AppShellProps) {
       ratio,
       readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
-  }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats]);
+  }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
   const isLeader = testMode.active ? testMode.state.viewer === "leader" : props.isLeader;
 
   const roster = useMemo(() => {
+    if (awaitingSnapshot) return [];
     const baseRoster = currentSnapshot ? currentSnapshot.roster : props.roster;
     if (!testMode.active) return baseRoster;
     return baseRoster.map((member) => {
@@ -201,7 +231,7 @@ export function AppShell(props: AppShellProps) {
         readingDates: simulated.readingDates,
       };
     });
-  }, [testMode.active, currentSnapshot, props.roster, testMode.state.completionPct, today.todayLocal]);
+  }, [testMode.active, currentSnapshot, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);

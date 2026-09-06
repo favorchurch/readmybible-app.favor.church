@@ -6,6 +6,10 @@ vi.mock("@/lib/session", () => ({
   getSessionContext: vi.fn(),
 }));
 
+vi.mock("@/lib/test-mode-config", () => ({
+  testWritableGroupId: vi.fn(() => null),
+}));
+
 vi.mock("@/lib/rock/client", () => ({
   getGroupBasic: vi.fn(),
   getRoster: vi.fn(),
@@ -96,6 +100,92 @@ describe("getTestGroupSnapshot", () => {
     }
   });
 
+  /**
+   * The picker only offers campus Connect Groups plus the sandbox, but a
+   * server action is a directly callable HTTP endpoint, so the action must
+   * enforce that scope itself rather than trusting its caller.
+   */
+  const okSession = {
+    status: "ok" as const,
+    rockPersonId: 123,
+    rockGender: null,
+    displayName: "Admin",
+    memberships: [],
+    sectionMemberships: [],
+    activeGroup: null,
+    needsGroupChoice: false,
+    campusId: 1,
+    isLeader: false,
+    isAdminScope: true,
+    defaultTranslation: "NET" as const,
+  };
+
+  it("refuses a group that is not a Connect Group (GT25)", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+    const { getGroupBasic } = await import("@/lib/rock/client");
+
+    vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
+    vi.mocked(getGroupBasic).mockResolvedValueOnce({
+      Id: 23870,
+      Name: "A GT24 section, not a Connect Group",
+      GroupTypeId: 24,
+      CampusId: 1,
+      ParentGroupId: null,
+      IsActive: true,
+      IsArchived: false,
+    });
+
+    const result = await getTestGroupSnapshot({ groupId: 23870 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/not a Connect Group/i);
+  });
+
+  it("refuses a Connect Group at another campus when it is not the sandbox", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+    const { getGroupBasic } = await import("@/lib/rock/client");
+
+    vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
+    vi.mocked(getGroupBasic).mockResolvedValueOnce({
+      Id: 24999,
+      Name: "Another campus's group",
+      GroupTypeId: 25,
+      CampusId: 2,
+      ParentGroupId: null,
+      IsActive: true,
+      IsArchived: false,
+    });
+
+    const result = await getTestGroupSnapshot({ groupId: 24999 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/not at your campus/i);
+  });
+
+  it("allows the sandbox group even though it sits on another campus", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+    const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
+    const { testWritableGroupId } = await import("@/lib/test-mode-config");
+
+    vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
+    vi.mocked(testWritableGroupId).mockReturnValueOnce(87177);
+    vi.mocked(getGroupBasic).mockResolvedValueOnce({
+      Id: 87177,
+      Name: "TEST // Connect Group",
+      GroupTypeId: 25,
+      // Campus 5 (OPEN ACCESS), deliberately not the caller's campus 1.
+      CampusId: 5,
+      ParentGroupId: null,
+      IsActive: true,
+      IsArchived: false,
+    });
+    // Empty roster short-circuits before the data layer; the point of this test
+    // is that it got PAST the campus check, not what it returns after.
+    vi.mocked(getRoster).mockResolvedValueOnce([]);
+
+    const result = await getTestGroupSnapshot({ groupId: 87177 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/empty roster/i);
+  });
+
   it("returns an explicit error when group roster is empty (A1)", async () => {
     const { getSessionContext } = await import("@/lib/session");
     const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
@@ -155,7 +245,10 @@ describe("getTestGroupSnapshot", () => {
       Id: 87177,
       Name: "Sandbox GT25",
       GroupTypeId: 25,
-      CampusId: 2,
+      // Must match the session's campusId (1). A group at another campus is
+      // refused now unless it is the configured sandbox -- see the scope tests
+      // above.
+      CampusId: 1,
       ParentGroupId: null,
       IsActive: true,
       IsArchived: false,
