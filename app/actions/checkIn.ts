@@ -10,10 +10,19 @@ import { appNow } from "@/lib/dev-clock";
 import { getGroupStatsFresh } from "@/lib/data/stats";
 import { groupStateFor, type Stage } from "@/lib/game";
 import { getSessionContext } from "@/lib/session";
+import { testWritableGroupId } from "@/lib/test-mode-config";
 
 const inputSchema = z.object({
   chapter: z.number().int().min(1).max(28),
   timezone: z.string().min(1),
+  /**
+   * Test mode only. The client sets this when its write guard believes the
+   * session's active group is the sandbox. The client's belief comes from
+   * props captured at page render, which go stale if the active group changes
+   * elsewhere -- so the server re-checks it here against the session it just
+   * resolved. Absent on every normal check-in, leaving that path untouched.
+   */
+  sandboxGroupId: z.number().int().positive().optional(),
 });
 
 export type CheckInGroupState = {
@@ -50,6 +59,22 @@ export async function checkIn(input: z.infer<typeof inputSchema>): Promise<Check
   const session = await getSessionContext();
   if (session.status !== "ok") {
     return { ok: false, error: "You need to be logged in to check in." };
+  }
+
+  // The sandbox unblock is the one place test mode permits a real write, and
+  // the client cannot verify its own precondition -- only the session resolved
+  // above knows the current active group. Refuse unless the configured
+  // sandbox, the claimed sandbox, and the live active group are all the same
+  // group, so a stale client prop can never redirect a write to another group.
+  if (parsed.data.sandboxGroupId !== undefined) {
+    const writable = testWritableGroupId();
+    if (
+      writable === null ||
+      parsed.data.sandboxGroupId !== writable ||
+      session.activeGroup?.groupId !== writable
+    ) {
+      return { ok: false, error: "Test mode: writes are disabled." };
+    }
   }
 
   const validation = validateCheckIn({ chapter, timezone }, appNow());

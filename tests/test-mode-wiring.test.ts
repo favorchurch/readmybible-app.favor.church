@@ -24,14 +24,15 @@ vi.mock("server-only", () => ({}));
 
 const SANDBOX = 87177;
 
-const checkIn = vi.fn(async () => ({ ok: true, group: null }));
+type CheckInInput = { chapter: number; timezone: string; sandboxGroupId?: number };
+const checkIn = vi.fn(async (input: CheckInInput) => ({ ok: true, group: null, input }));
 const joinByCode = vi.fn(async () => ({ ok: true }));
 const chooseGroup = vi.fn(async () => ({ ok: true }));
 const saveProfile = vi.fn(async () => ({ ok: true }));
 const getOrCreateJoinCode = vi.fn(async () => ({ ok: true, code: "TEST12" }));
 const getTestGroupSnapshot = vi.fn(async () => ({ ok: false, error: "not used" }));
 
-vi.mock("@/app/actions/checkIn", () => ({ checkIn: (...a: unknown[]) => checkIn(...(a as [])) }));
+vi.mock("@/app/actions/checkIn", () => ({ checkIn: (input: CheckInInput) => checkIn(input) }));
 vi.mock("@/app/actions/joinByCode", () => ({ joinByCode: (...a: unknown[]) => joinByCode(...(a as [])) }));
 vi.mock("@/app/actions/chooseGroup", () => ({ chooseGroup: (...a: unknown[]) => chooseGroup(...(a as [])) }));
 vi.mock("@/app/actions/saveProfile", () => ({ saveProfile: (...a: unknown[]) => saveProfile(...(a as [])) }));
@@ -120,15 +121,32 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
    * Asserting checkIn IS reached proves `blocked === false` here, which is the
    * only state in which the joinByCode assertion has any teeth.
    */
-  it("reaches the unblocked sandbox state (control: proves writes are NOT blocked)", async () => {
+  /**
+   * CONTROL. Reaching `checkIn` is the only assertion that proves
+   * `blocked === false` INDEPENDENTLY. The panel's "writes are REAL" note is
+   * not a control on its own: TestModePanel calls `writesBlocked` itself, so
+   * that text only restates the function under test and would still render if
+   * AppShell stopped honouring the result (round-3 finding 2).
+   *
+   * This also pins checkIn's own binding: change AppShell to pass
+   * `testMode.active` to checkIn like the other four and this goes red.
+   */
+  it("actually calls checkIn in the sandbox state (control: writes are NOT blocked)", async () => {
     render(React.createElement(AppShell, baseProps()));
     selectSandbox();
 
-    // The panel renders this note only when `writesBlocked(...)` returned
-    // false. If the selection had not taken, it would read "View-only. Writes
-    // disabled" instead and every assertion below would pass for the wrong
-    // reason.
-    expect(await screen.findByText(/writes are REAL/i)).toBeTruthy();
+    // Today screen -> opens the reading sheet; the sheet's own confirm button
+    // carries the same label, so take the last one once both are mounted.
+    fireEvent.click(screen.getByRole("button", { name: /i read today/i }));
+    const confirms = await screen.findAllByRole("button", { name: /i read today/i });
+    fireEvent.click(confirms[confirms.length - 1]);
+
+    await waitFor(() => {
+      expect(checkIn).toHaveBeenCalled();
+    });
+    // And it carries the sandbox id, so the server can re-check the claim
+    // against the live session instead of trusting this page's stale props.
+    expect(checkIn.mock.calls[0][0]).toMatchObject({ sandboxGroupId: SANDBOX });
   });
 
   it("never calls joinByCode in that same unblocked state", async () => {

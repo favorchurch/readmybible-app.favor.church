@@ -106,7 +106,16 @@ export function AppShell(props: AppShellProps) {
   // a sandbox unblock would let any code perform a real Rock write and move the
   // tester's active group. chooseGroup and getOrCreateJoinCode are Rock writes
   // for the same reason; saveProfile persists outside the group entirely.
-  const guardedCheckIn = useMemo(() => guardWrite(blocked, checkIn), [blocked]);
+  // In test mode, tell the server which group the client believes it is
+  // writing to. `blocked` is computed from props captured at page render, so it
+  // goes stale if the active group changes in another tab; checkIn re-resolves
+  // the session and refuses the write when the two disagree (round-3 finding 1).
+  const sandboxCheckIn = useMemo(() => {
+    if (!testMode.active) return checkIn;
+    const sandboxGroupId = props.testWritableGroupId ?? undefined;
+    return (input: { chapter: number; timezone: string }) => checkIn({ ...input, sandboxGroupId });
+  }, [testMode.active, props.testWritableGroupId]);
+  const guardedCheckIn = useMemo(() => guardWrite(blocked, sandboxCheckIn), [blocked, sandboxCheckIn]);
   const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
   const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
@@ -142,9 +151,17 @@ export function AppShell(props: AppShellProps) {
           roster: result.roster,
           groupStats: result.groupStats,
         });
+        // A retry that succeeds must clear the earlier failure for this same
+        // group, or the panel keeps showing a stale error beside a good roster.
+        setSnapshotError(null);
       } else {
         setSnapshotError({ groupId: currentGroupId, error: result.error });
       }
+    }).catch(() => {
+      // A rejected request would otherwise leave the panel awaiting forever
+      // with nothing rendered and nothing explaining why.
+      if (cancelled) return;
+      setSnapshotError({ groupId: currentGroupId, error: "Could not load that group." });
     });
 
     return () => {

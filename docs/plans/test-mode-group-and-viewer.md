@@ -48,6 +48,7 @@ sandbox group.
 ### Known-open, deliberately not done
 
 - **The write-unblock ships dormant.** Rico declined to add his real PersonId 152 to group 87177, and A2 requires the sandbox to be the session's *real* active group. So writes stay blocked and the panel says why: *"View-only. Writes disabled (session not in group 87177)."* Adding 152 to the group is the single remaining step to make a live check-in testable.
+- **`?test=1` renders the panel in production (round-3 finding 3, F3).** `useTestMode` activates on the query param alone, with no environment check. In production the exposure is bounded -- `testWritableGroupId()` returns null, `getTestGroupSnapshot` refuses outright, `campusGroups` is empty, and every write stays blocked -- so the panel renders controls that cannot do anything. **Not changed here, and not a regression:** `components/test-mode/use-test-mode.ts` is untouched in `7d991b0..HEAD`, so this is pre-existing #47 behaviour, and gating it to non-production would remove `?test=1` from prod, which Rico uses. Rico's call, not the reviewer's and not mine.
 - **"Fully try in rock-preview with mocks" is unresolved.** Preview 404s on group 87177, and `lib/rock/constants.ts` warns that preview is an unsynced database whose GroupType/role ids are not guaranteed to match prod. Scoped as separate work, not attempted here.
 
 ## Global Constraints
