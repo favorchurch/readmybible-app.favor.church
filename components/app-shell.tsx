@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
 import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
+import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
 import {
@@ -25,6 +26,7 @@ import {
   simulatedTodayState,
   useTestMode,
   dateForSimulatedDay,
+  writesBlocked,
 } from "@/components/test-mode";
 import { useToday } from "@/components/use-today";
 import { BottomNav, type Tab } from "@/components/screens/bottom-nav";
@@ -67,6 +69,8 @@ export type AppShellProps = {
   campusBoard: GroupStanding[];
   appBaseUrl: string;
   devMockToday: string | null;
+  campusGroups: { groupId: number; groupName: string }[];
+  testWritableGroupId: number | null;
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -82,11 +86,58 @@ export function AppShell(props: AppShellProps) {
     [testMode.state.day, testMode.state.phase, realToday.timezone],
   );
   const today = testMode.active ? simulatedToday : realToday;
-  const guardedCheckIn = useMemo(() => guardWrite(testMode.active, checkIn), [testMode.active]);
-  const guardedSaveProfile = useMemo(() => guardWrite(testMode.active, saveProfile), [testMode.active]);
-  const guardedChooseGroup = useMemo(() => guardWrite(testMode.active, chooseGroup), [testMode.active]);
-  const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
-  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(testMode.active, getOrCreateJoinCode), [testMode.active]);
+  const blocked = useMemo(
+    () =>
+      writesBlocked(
+        testMode.active,
+        testMode.state.groupId,
+        props.activeGroup?.groupId ?? null,
+        props.testWritableGroupId,
+      ),
+    [testMode.active, testMode.state.groupId, props.activeGroup?.groupId, props.testWritableGroupId],
+  );
+  const guardedCheckIn = useMemo(() => guardWrite(blocked, checkIn), [blocked]);
+  const guardedSaveProfile = useMemo(() => guardWrite(blocked, saveProfile), [blocked]);
+  const guardedChooseGroup = useMemo(() => guardWrite(blocked, chooseGroup), [blocked]);
+  const guardedJoinByCode = useMemo(() => guardWrite(blocked, joinByCode), [blocked]);
+  const guardedGetOrCreateJoinCode = useMemo(() => guardWrite(blocked, getOrCreateJoinCode), [blocked]);
+
+  const [snapshot, setSnapshot] = useState<{
+    groupId: number;
+    groupName: string;
+    campusName: string | null;
+    roster: RosterMemberView[];
+    groupStats: GroupStats;
+  } | null>(null);
+  const [snapshotError, setSnapshotError] = useState<{ groupId: number; error: string } | null>(null);
+
+  useEffect(() => {
+    if (!testMode.active || testMode.state.groupId === null) {
+      return;
+    }
+
+    const currentGroupId = testMode.state.groupId;
+    let cancelled = false;
+
+    getTestGroupSnapshot({ groupId: currentGroupId }).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setSnapshot({
+          groupId: currentGroupId,
+          groupName: result.groupName,
+          campusName: result.campusName,
+          roster: result.roster,
+          groupStats: result.groupStats,
+        });
+      } else {
+        setSnapshotError({ groupId: currentGroupId, error: result.error });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [testMode.active, testMode.state.groupId]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -117,24 +168,31 @@ export function AppShell(props: AppShellProps) {
   const chaptersRead = chapters.length;
   const coins = coinsFor(chaptersRead);
   const currentStreak = computeStreak(props.readingDates, today.todayLocal);
-  const groupName = props.activeGroup?.groupName ?? null;
+
+  const currentSnapshot =
+    testMode.active && snapshot && snapshot.groupId === testMode.state.groupId ? snapshot : null;
+
+  const groupName = currentSnapshot ? currentSnapshot.groupName : (props.activeGroup?.groupName ?? null);
+  const campusName = currentSnapshot ? currentSnapshot.campusName : props.campusName;
 
   const groupStats = useMemo((): GroupStats | null => {
-    if (!testMode.active) return props.groupStats;
+    const baseStats = currentSnapshot ? currentSnapshot.groupStats : props.groupStats;
+    if (!testMode.active) return baseStats;
     const ratio = simulatedGroupRatio(testMode.state.groupPct);
-    const memberCount = props.groupStats?.memberCount ?? 1;
+    const memberCount = baseStats?.memberCount ?? 1;
     return {
       checkinCount: Math.round(ratio * memberCount),
       memberCount,
       ratio,
-      readersTodayIds: props.groupStats?.readersTodayIds ?? [],
+      readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
-  }, [testMode.active, testMode.state.groupPct, props.groupStats]);
-  const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
+  }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats]);
+  const isLeader = testMode.active ? testMode.state.viewer === "leader" : props.isLeader;
 
   const roster = useMemo(() => {
-    if (!testMode.active) return props.roster;
-    return props.roster.map((member) => {
+    const baseRoster = currentSnapshot ? currentSnapshot.roster : props.roster;
+    if (!testMode.active) return baseRoster;
+    return baseRoster.map((member) => {
       const simulated = simulatedMemberHistory(member.personId, testMode.state.completionPct, today.todayLocal);
       return {
         ...member,
@@ -143,7 +201,7 @@ export function AppShell(props: AppShellProps) {
         readingDates: simulated.readingDates,
       };
     });
-  }, [testMode.active, props.roster, testMode.state.completionPct, today.todayLocal]);
+  }, [testMode.active, currentSnapshot, props.roster, testMode.state.completionPct, today.todayLocal]);
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
@@ -227,16 +285,54 @@ export function AppShell(props: AppShellProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (props.needsGroupChoice) {
-    return (
-      <GroupPickerScreen memberships={props.memberships} pending={pending} onChoose={handleChooseGroup} />
-    );
-  }
+  const currentSnapshotError =
+    testMode.active && snapshotError && snapshotError.groupId === testMode.state.groupId
+      ? snapshotError.error
+      : null;
 
-  if (!props.activeGroup) {
+  const testModePanel = testMode.active ? (
+    <TestModePanel
+      state={testMode.state}
+      onChange={testMode.setState}
+      realActiveGroup={
+        props.activeGroup
+          ? { groupId: props.activeGroup.groupId, groupName: props.activeGroup.groupName }
+          : null
+      }
+      campusGroups={props.campusGroups}
+      writableGroupId={props.testWritableGroupId}
+      error={currentSnapshotError}
+    />
+  ) : null;
+
+  if (testMode.active && testMode.state.viewer === "non-member") {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
+        {testModePanel}
+        <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
+      </div>
+    );
+  }
+
+  if (props.needsGroupChoice) {
+    return (
+      <div className="app-shell">
+        <div className="paper-noise" />
+        {testModePanel}
+        <GroupPickerScreen memberships={props.memberships} pending={pending} onChoose={handleChooseGroup} />
+      </div>
+    );
+  }
+
+  const effectiveHasGroup =
+    testMode.active && testMode.state.groupId !== null ? true : !!props.activeGroup;
+
+  if (!effectiveHasGroup) {
+    return (
+      <div className="app-shell">
+        <div className="paper-noise" />
+        {testModePanel}
         <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
       </div>
     );
@@ -245,7 +341,7 @@ export function AppShell(props: AppShellProps) {
   return (
     <div className="app-shell">
       <div className="paper-noise" />
-      {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
+      {testModePanel}
       {tab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
@@ -269,7 +365,7 @@ export function AppShell(props: AppShellProps) {
       {tab === "connect" && (
         <ConnectScreen
           groupName={groupName}
-          campusName={props.campusName}
+          campusName={campusName}
           isLeader={isLeader}
           roster={roster}
           groupStats={groupStats}
@@ -296,7 +392,7 @@ export function AppShell(props: AppShellProps) {
           coins={coins}
           streakDays={currentStreak}
           groupName={groupName}
-          campusName={props.campusName}
+          campusName={campusName}
           campusBoard={props.campusBoard}
           profile={profile}
           onCatchUp={startReading}

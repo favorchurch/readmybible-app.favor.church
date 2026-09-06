@@ -29,12 +29,14 @@ export function TestModePanel({
   realActiveGroup,
   campusGroups = [],
   writableGroupId = null,
+  error = null,
 }: {
   state: TestModeState;
   onChange: (next: TestModeState) => void;
   realActiveGroup?: { groupId: number; groupName: string } | null;
   campusGroups?: CampusGroupOption[];
   writableGroupId?: number | null;
+  error?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
 
@@ -53,6 +55,11 @@ export function TestModePanel({
       </div>
       {!collapsed && (
         <div className="test-mode-body">
+          {error && (
+            <p className="test-mode-note test-mode-note-error" role="alert">
+              {error}
+            </p>
+          )}
           {!isBlocked ? (
             <p className="test-mode-note test-mode-note-sandbox">Sandbox group — writes are REAL.</p>
           ) : isA2Mismatch ? (

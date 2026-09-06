@@ -12,7 +12,8 @@ import {
   getGroupStats,
   getPersonReadingState,
 } from "@/lib/data/stats";
-import { getCampusName, getRoster } from "@/lib/rock/client";
+import { getCampusGroups, getCampusName, getRoster } from "@/lib/rock/client";
+import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import { getSessionContext } from "@/lib/session";
 
 export default async function Page() {
@@ -25,21 +26,41 @@ export default async function Page() {
     redirect("/not-found-in-rock");
   }
 
+  const isDev = process.env.NODE_ENV !== "production";
+
   const activeGroupId = session.activeGroup?.groupId;
   const rosterP = activeGroupId ? getRoster(activeGroupId) : Promise.resolve([]);
   const memberReadingMapP = activeGroupId
     ? rosterP.then((members) => getGroupMembersReadingHistory(activeGroupId, members.map((m) => m.PersonId)))
     : Promise.resolve(new Map());
 
-  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap] = await Promise.all([
-    db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
-    getPersonReadingState(session.rockPersonId),
-    rosterP,
-    session.activeGroup ? getGroupStats(session.activeGroup.groupId, session.activeGroup.campusId) : Promise.resolve(null),
-    session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
-    session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
-    memberReadingMapP,
-  ]);
+  const campusGroupsP =
+    isDev && session.campusId
+      ? getCampusGroups(session.campusId).then((groups) =>
+          groups
+            .filter((g) => g.GroupTypeId === GROUP_TYPE_CONNECT_GROUP)
+            .map((g) => ({ groupId: g.Id, groupName: g.Name })),
+        )
+      : Promise.resolve([]);
+
+  const testWritableGroupId =
+    isDev && process.env.TEST_MODE_WRITABLE_GROUP_ID
+      ? Number.parseInt(process.env.TEST_MODE_WRITABLE_GROUP_ID, 10) || null
+      : null;
+
+  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap, campusGroups] =
+    await Promise.all([
+      db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
+      getPersonReadingState(session.rockPersonId),
+      rosterP,
+      session.activeGroup
+        ? getGroupStats(session.activeGroup.groupId, session.activeGroup.campusId)
+        : Promise.resolve(null),
+      session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
+      session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
+      memberReadingMapP,
+      campusGroupsP,
+    ]);
 
   const profileRow = profileRows[0];
   const avatar = resolveAvatar(session.rockPersonId, session.rockGender, profileRow?.avatar);
@@ -79,6 +100,8 @@ export default async function Page() {
     campusBoard,
     appBaseUrl: process.env.APP_BASE_URL ?? "",
     devMockToday: devMockToday(),
+    campusGroups,
+    testWritableGroupId,
   };
 
   return <AppShell {...props} />;
