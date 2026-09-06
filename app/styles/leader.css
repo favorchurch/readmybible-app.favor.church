@@ -45,6 +45,18 @@
   line-height: 1.4;
 }
 
+.leader-code-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.leader-code {
+  display: grid;
+  gap: 4px;
+}
+
 .leader-section .eyebrow {
   color: var(--coral);
 }
@@ -60,6 +72,12 @@
   border: 1px solid rgba(255, 250, 240, .2);
   border-radius: 4px;
   background: #fff;
+}
+
+.leader-nudge {
+  margin-top: 16px;
+  border-top: 1px solid rgba(255, 250, 240, .12);
+  padding-top: 14px;
 }
 
 .leader-nudge span {
@@ -79,6 +97,11 @@
 }
 
 .connect-portal-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 24px;
+  font-size: 13px;
   color: var(--coral);
 }
 
