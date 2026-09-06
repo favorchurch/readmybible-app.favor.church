@@ -22,7 +22,6 @@ import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
-import type { GroupStanding } from "@/lib/game";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -361,7 +360,6 @@ describe("ProgressScreen campus groups", () => {
         coins: 50,
         streakDays: 5,
         groupName: "Manila Central",
-        campusName: "Favor Manila",
         campusBoard: [
           { groupId: 1, name: "Makati Adults", ratio: 0.45, readersToday: 10, locality: "Makati" },
           { groupId: 2, name: "BGC Youth", ratio: 0.15, readersToday: 5, locality: "Taguig" },
@@ -389,7 +387,6 @@ describe("ProgressScreen campus groups", () => {
         coins: 0,
         streakDays: 0,
         groupName: null,
-        campusName: "Favor Manila",
         campusBoard: [],
         profile: testProfile,
         onCatchUp: () => {},

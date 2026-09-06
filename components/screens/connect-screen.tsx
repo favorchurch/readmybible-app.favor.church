@@ -68,7 +68,6 @@ export function ConnectScreen({
               <p className="eyebrow">CURRENT HOME</p>
               <h2 className="stage-name-row">
                 {stage}
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <span className="stage-name-mini" aria-hidden="true" />
               </h2>
               <span className="home-note">{homeStages[selectedStage].note}</span>

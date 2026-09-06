@@ -24,7 +24,6 @@ export function ProgressScreen({
   chaptersRead,
   coins,
   streakDays,
-  campusName,
   campusBoard,
   profile,
   onCatchUp,
@@ -37,7 +36,6 @@ export function ProgressScreen({
   coins: number;
   streakDays: number;
   groupName: string | null;
-  campusName: string | null;
   campusBoard: GroupStanding[];
   profile: UserProfile;
   onCatchUp: (chapter: number) => void;

@@ -137,7 +137,9 @@ export function AppShell(props: AppShellProps) {
   // fall back to Today. `tab` has no persistence, so this is the only protection against
   // rendering a blank leader screen for a member.
   useEffect(() => {
-    if (!isLeader && tab === "leader") setTab("today");
+    if (isLeader || tab !== "leader") return;
+    const fallback = window.setTimeout(() => setTab("today"), 0);
+    return () => window.clearTimeout(fallback);
   }, [isLeader, tab]);
 
   const roster = useMemo(() => {
@@ -301,7 +303,6 @@ export function AppShell(props: AppShellProps) {
           coins={coins}
           streakDays={currentStreak}
           groupName={groupName}
-          campusName={props.campusName}
           campusBoard={props.campusBoard}
           profile={profile}
           onCatchUp={startReading}

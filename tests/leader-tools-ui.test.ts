@@ -188,13 +188,13 @@ describe("AppShell leader role guard and paper noise", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
     const testMode = screen.getByRole("region", { name: "Test mode" });
-    fireEvent.click(within(testMode).getByRole("button", { name: "Leader", exact: true }));
+    fireEvent.click(within(testMode).getByRole("button", { name: /^Leader$/ }));
     fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
 
     await waitFor(() => expect(container.querySelector(".leader-screen")).not.toBeNull());
     expect(container.querySelector(".paper-noise")).toBeNull();
 
-    fireEvent.click(within(testMode).getByRole("button", { name: "Member", exact: true }));
+    fireEvent.click(within(testMode).getByRole("button", { name: /^Member$/ }));
     await waitFor(() => expect(container.querySelector('.bottom-nav [data-tab="today"]')?.classList.contains("active")).toBe(true));
     expect(container.querySelector(".leader-screen")).toBeNull();
     expect(container.querySelector(".paper-noise")).not.toBeNull();
