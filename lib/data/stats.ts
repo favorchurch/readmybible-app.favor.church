@@ -2,7 +2,7 @@
  * DB-backed reading stats: personal check-in history, a group's check-in
  * count and today's readers, and the campus leaderboard. Aggregate reads
  * are cached in Redis with the same key names app/actions/checkIn.ts busts
- * on write (group:{id}:stats, campus:{id}:board).
+ * on write (group:{id}:stats, campus:{id}:board:v2).
  *
  * "Today" for group/campus aggregates uses that campus's own IANA timezone
  * (lib/campus-timezones.ts) as a single reference point per campus --
