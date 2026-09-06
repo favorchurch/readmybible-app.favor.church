@@ -13,6 +13,7 @@
 /* Low-emphasis explanatory line reused by the group picker, solo, and join
    confirmation screens (Task 11). */
 .onboarding-note { max-width: 420px; margin: 0 auto 18px; font-size: 12px; color: var(--ink-muted); line-height: 1.5; }
+.picker-error { max-width: 420px; margin: -8px auto 14px; text-align: left; }
 
 .reading-data-note {
   margin-top: 18px;

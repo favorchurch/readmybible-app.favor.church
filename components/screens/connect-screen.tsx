@@ -7,6 +7,7 @@ import { FullHome } from "@/components/full-home";
 import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
 import type { RosterMemberView } from "@/components/app-shell";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { ReadingVisibilityNote } from "@/components/reading-visibility-note";
@@ -25,6 +26,7 @@ export function ConnectScreen({
   profile,
   onEditProfile,
   today,
+  connectSwitcher,
 }: {
   groupName: string | null;
   campusName: string | null;
@@ -33,6 +35,7 @@ export function ConnectScreen({
   profile: UserProfile;
   onEditProfile: () => void;
   today: TodayState;
+  connectSwitcher?: ConnectSwitcherContext;
 }) {
   const phase = today.displayPhase;
 
@@ -53,7 +56,7 @@ export function ConnectScreen({
 
   return (
     <main className="screen connect-screen frame">
-      <Header heading={groupName ?? "Connect"} profile={profile} onEditProfile={onEditProfile} />
+      <Header heading={groupName ?? "Connect"} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
       <section className="connect-title">
         <h1>{groupName ?? "Your Connect Group"}</h1>
         <p>

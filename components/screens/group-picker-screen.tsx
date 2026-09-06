@@ -3,16 +3,19 @@
 import { useState } from "react";
 
 import { Brand } from "@/components/brand";
+import type { ChooseGroupHandler } from "@/components/connect-switcher";
 import type { GroupMembership } from "@/lib/session";
 
 export function GroupPickerScreen({
   memberships,
   pending,
+  error,
   onChoose,
 }: {
   memberships: GroupMembership[];
   pending: boolean;
-  onChoose: (groupId: number) => void;
+  error: string | null;
+  onChoose: ChooseGroupHandler;
 }) {
   const [selected, setSelected] = useState<number | null>(memberships.find((m) => m.isLeader)?.groupId ?? memberships[0]?.groupId ?? null);
   return (
@@ -41,7 +44,8 @@ export function GroupPickerScreen({
             </button>
           ))}
         </div>
-        <button className="primary-button" disabled={pending || selected === null} aria-busy={pending} onClick={() => selected !== null && onChoose(selected)}>
+        {error && <p className="error-note picker-error" role="alert">{error}</p>}
+        <button className="primary-button" disabled={pending || selected === null} aria-busy={pending} onClick={() => selected !== null && void onChoose(selected)}>
           <strong>Read with this group</strong>
         </button>
       </main>

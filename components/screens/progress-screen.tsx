@@ -6,6 +6,7 @@ import { type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import { Header } from "@/components/screens/header";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { REWARD_TITLES } from "@/components/screens/rewards-screen";
 import type { useToday } from "@/components/use-today";
 import { nextMedal, TOTAL_CHAPTERS } from "@/lib/game";
@@ -33,6 +34,7 @@ export function ProgressScreen({
   onCatchUp,
   onEditProfile,
   onTranslationChange,
+  connectSwitcher,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -45,6 +47,7 @@ export function ProgressScreen({
   onCatchUp: (chapter: number) => void;
   onEditProfile: () => void;
   onTranslationChange: (translation: Translation) => void;
+  connectSwitcher?: ConnectSwitcherContext;
 }) {
   const completedDays = useMemo(() => new Set(chapters), [chapters]);
   const next = nextMedal(chaptersRead);
@@ -70,7 +73,7 @@ export function ProgressScreen({
 
   return (
     <main className="screen progress-screen frame frame--rail">
-      <Header heading="Your progress" profile={profile} onEditProfile={onEditProfile} />
+      <Header heading="Your progress" profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
       <div className="frame__span">
         <section className="page-title compact">
           <p className="eyebrow">YOUR OCTOBER</p>

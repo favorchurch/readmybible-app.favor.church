@@ -10,6 +10,7 @@ import { ScripturePopup } from "@/components/scripture-popup";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { RosterMemberView } from "@/components/app-shell";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
 import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
@@ -41,6 +42,7 @@ export function TodayScreen({
   onViewConnect,
   onViewProgress,
   onTranslationChange,
+  connectSwitcher,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -58,6 +60,7 @@ export function TodayScreen({
   onViewConnect: () => void;
   onViewProgress: () => void;
   onTranslationChange: (translation: Translation) => void;
+  connectSwitcher?: ConnectSwitcherContext;
 }) {
   const entry = today.entry;
   const [quickVerseOpen, setQuickVerseOpen] = useState(false);
@@ -110,7 +113,7 @@ export function TodayScreen({
   if (today.displayPhase === "pre-launch" && dayOneEntry) {
     return (
       <main className="screen today-screen prelaunch-screen frame">
-        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
+        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
         <div className="frame--rail">
           <div className="frame__main">
             <section className="hero-copy" data-section="prelaunch-hero">
@@ -232,7 +235,7 @@ export function TodayScreen({
 
     return (
       <main className="screen today-screen frame">
-        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
+        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
         <section className="hero-copy">
           <h1>{graceHero}</h1>
           <p>
@@ -279,7 +282,7 @@ export function TodayScreen({
 
     return (
       <main className="screen today-screen frame">
-        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
+        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
         <section className="hero-copy">
           <h1>That&apos;s Matthew, start to finish.</h1>
           <p>Thank you for reading with us this October.</p>
@@ -310,7 +313,7 @@ export function TodayScreen({
 
   return (
     <main className="screen today-screen frame">
-      <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} />
+      <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
       <div className="frame--rail">
         <div className="frame__main">
           <section className="hero-copy">

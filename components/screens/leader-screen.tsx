@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { Header } from "@/components/screens/header";
+import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -17,17 +18,7 @@ import { LeaderTopBanner } from "@/components/leader-tools/LeaderTopBanner";
 
 export const MIN_RATIO_TO_SHOW = 0;
 
-export function LeaderScreen({
-  groupName,
-  campusBoard,
-  roster,
-  today,
-  profile,
-  appBaseUrl,
-  readerGroupId,
-  onGetOrCreateJoinCode,
-  onEditProfile,
-}: {
+type LeaderScreenProps = {
   groupName: string | null;
   campusBoard: GroupStanding[];
   roster: RosterMemberView[];
@@ -37,7 +28,25 @@ export function LeaderScreen({
   readerGroupId: number | null;
   onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   onEditProfile: () => void;
-}) {
+  connectSwitcher?: ConnectSwitcherContext;
+};
+
+export function LeaderScreen(props: LeaderScreenProps) {
+  return <LeaderScreenContent key={props.readerGroupId ?? "no-active-group"} {...props} />;
+}
+
+function LeaderScreenContent({
+  groupName,
+  campusBoard,
+  roster,
+  today,
+  profile,
+  appBaseUrl,
+  readerGroupId,
+  onGetOrCreateJoinCode,
+  onEditProfile,
+  connectSwitcher,
+}: LeaderScreenProps) {
   const phase = today.displayPhase;
   const stillReading = roster.filter((m) => !m.readToday);
 
@@ -87,7 +96,7 @@ export function LeaderScreen({
     return () => {
       cancelled = true;
     };
-  }, [onGetOrCreateJoinCode]);
+  }, [readerGroupId, onGetOrCreateJoinCode]);
 
   // Moved verbatim from connect-screen.tsx:77-88
   useEffect(() => {
@@ -110,7 +119,7 @@ export function LeaderScreen({
 
   return (
     <main className="screen leader-screen">
-      <Header heading="Leader" profile={profile} onEditProfile={onEditProfile} />
+      <Header heading="Leader" profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
 
       <LeaderPrototypeSwitcher mode={prototypeMode} onChange={setPrototypeMode} />
 
