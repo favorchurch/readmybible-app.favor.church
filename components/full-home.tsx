@@ -50,7 +50,11 @@ export function FullHome({ onClose, groupName, coins, stage, progress, chapter, 
           {roster.map((member, index) => {
             const angle = (index / Math.max(roster.length, 1)) * Math.PI * 2;
             const ring = 1 + Math.floor(index / 14) * .22;
-            return <div className="home-person" key={member.personId} style={{ left: `${50 + Math.cos(angle) * 35 * ring}%`, top: `${58 + Math.sin(angle) * 18 * ring}%` }}>
+            // A real ring on the ground plane, not an ellipse painted on a flat
+            // sheet: --px/--pz are scene coordinates, so people stay standing
+            // and correctly in front of or behind the home at every angle.
+            const radius = 168 * ring;
+            return <div className="home-person" key={member.personId} style={{ "--px": `${Math.cos(angle) * radius}px`, "--pz": `${Math.sin(angle) * radius}px` } as React.CSSProperties}>
               {names && <span className="home-person-label">{member.name}</span>}
               <Avatar color="coral" {...(member.isSelf ? profile : member.avatar)} />
             </div>;

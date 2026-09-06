@@ -88,7 +88,12 @@ export function RotatableHome({
         aria-label={`Interactive 3D ${selected.name}. Drag, swipe, or use arrow keys to rotate.`}
       >
         {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-        <div className="home3d-turntable" style={{ transform: `translateY(${pan}px) rotateX(-9deg) rotateY(${rotation}deg)` }}>
+        {/* --home-rotation lets scene children counter-rotate to face the
+            camera (billboarding) without prop-drilling the drag state. */}
+        <div
+          className="home3d-turntable"
+          style={{ transform: `translateY(${pan}px) rotateX(-9deg) rotateY(${rotation}deg)`, "--home-rotation": `${rotation}deg` } as React.CSSProperties}
+        >
           <div className="home3d-ground">
             <span className="path3d" />
             <span className="shrub shrub-one" />

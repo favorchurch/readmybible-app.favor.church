@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, avatarSeedFor } from "@/components/avatar";
+import { Avatar } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
 import { recentFiveDayStreak } from "@/lib/member-progress";
 import { PLAN } from "@/lib/plan";
@@ -19,7 +19,6 @@ export function MemberProfileSheet({
 }) {
   if (!member) return null;
 
-  const seed = avatarSeedFor(member.personId);
   const streakMarks = recentFiveDayStreak(member.readingDates ?? [], todayLocal);
   const readChapters = new Set(member.chapters ?? []);
   const readCount = readChapters.size;
@@ -35,7 +34,7 @@ export function MemberProfileSheet({
         <div className="sheet-header">
           <div className="member-profile-identity">
             <div className="member-profile-avatar-wrap">
-              <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} />
+              <Avatar color="coral" {...member.avatar} />
               {member.readToday && <b className="member-profile-check" aria-hidden="true">✓</b>}
             </div>
             <div>

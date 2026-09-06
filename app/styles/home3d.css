@@ -24,7 +24,15 @@
 .home3d-viewport { position: absolute; inset: 0; perspective: 850px; cursor: grab; touch-action: pan-y; user-select: none; outline: none; }
 .home3d-viewport:active { cursor: grabbing; }
 .home3d-viewport:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
-.home3d-turntable { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 68%; will-change: transform; transition: transform .08s linear; }
+/* Registered so it interpolates: the turntable transitions its transform, and
+   an un-registered custom property would jump instantly, briefly desyncing the
+   billboarded avatars and squashing them mid-turn. */
+@property --home-rotation {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+.home3d-turntable { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 68%; will-change: transform; transition: transform .08s linear, --home-rotation .08s linear; }
 .home3d-viewport:active .home3d-turntable { transition: none; }
 .home3d-ground { position: absolute; width: var(--ground-size); height: var(--ground-size); left: 50%; top: var(--ground-top); transform: translate(-50%,-50%) rotateX(90deg) translateZ(calc(-1 * var(--ground-drop))); transform-style: preserve-3d; border-radius: 50%; background: #819d76; box-shadow: inset 0 0 0 2px rgba(23,41,67,.08), 0 18px 38px rgba(23,41,67,.2); }
 .path3d { position: absolute; width: 45px; height: 130px; left: 50%; top: 54%; transform: translateX(-50%); border-radius: 60% 60% 20% 20%; background: #d6bf91; }

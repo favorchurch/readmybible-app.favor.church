@@ -26,8 +26,24 @@
 .home-floating-actions { display: flex; justify-content: center; gap: 28px; margin-top: 14px; }
 .home-floating-actions button { display: grid; justify-items: center; gap: 4px; border: 0; background: var(--paper); color: var(--ink); border-radius: var(--radius-md); min-width: 64px; min-height: 62px; padding: 6px; font-size: 12px; cursor: pointer; pointer-events: auto; }
 .home-floating-actions button > span { font-size: 25px; line-height: 1; }
-.home-gathering { position: absolute; inset: 0; transform: translateZ(100px); pointer-events: none; }
-.home-person { position: absolute; transform: translate(-50%, -50%); text-align: center; }
+/* People stand ON the ground plane, each billboarded to face the camera.
+   The old version put them all on one flat sheet at translateZ(100px), which
+   read as paper cut-outs head-on and collapsed to slivers edge-on. */
+.home-gathering { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.home-person {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--ground-top) + var(--ground-drop));
+  transform-style: preserve-3d;
+  /* Move to the spot in scene coordinates, then undo the turntable's rotation
+     (rotateY) and tilt (rotateX -9deg) so the avatar always faces the viewer,
+     then stand it on that spot. */
+  transform: translate3d(var(--px, 0px), 0, var(--pz, 0px))
+             rotateY(calc(-1 * var(--home-rotation, 0deg)))
+             rotateX(9deg)
+             translate(-50%, -100%);
+  text-align: center;
+}
 .home-person .avatar { width: clamp(38px, 11vw, 58px); height: clamp(38px, 11vw, 58px); box-shadow: 0 5px 0 rgba(23,41,67,.15); }
 .home-person-label { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 108px; padding: 3px 6px; background: var(--paper); color: var(--ink); border-radius: 4px; font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; }
 .full-home .home-coachmark { bottom: 180px; }

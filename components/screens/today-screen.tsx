@@ -441,7 +441,6 @@ export function TodayScreen({
                 {tentPeopleOpen && (
                   <div className="tent-people-overlay" role="group" aria-label="Group members gathered around the home">
                     {roster.map((member) => {
-                      const seed = avatarSeedFor(member.personId);
                       return (
                         <button
                           type="button"
@@ -455,7 +454,7 @@ export function TodayScreen({
                           aria-label={`View ${member.name}'s profile`}
                         >
                           <div className="tent-person-avatar">
-                            <Avatar color={seed.color} skin={seed.skin} hair={seed.hair} small />
+                            <Avatar color="coral" {...member.avatar} small />
                             {member.readToday && <b className="tent-person-check" aria-hidden="true">✓</b>}
                           </div>
                           <span className="tent-person-name">{member.name}</span>
