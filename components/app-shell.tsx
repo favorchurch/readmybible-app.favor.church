@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
@@ -132,15 +132,7 @@ export function AppShell(props: AppShellProps) {
     };
   }, [testMode.active, testMode.state.groupPct, props.groupStats]);
   const isLeader = testMode.active ? testMode.state.role === "leader" : props.isLeader;
-
-  // Guard: if the leader tab is open and isLeader becomes false (e.g. test-mode role toggle),
-  // fall back to Today. `tab` has no persistence, so this is the only protection against
-  // rendering a blank leader screen for a member.
-  useEffect(() => {
-    if (isLeader || tab !== "leader") return;
-    const fallback = window.setTimeout(() => setTab("today"), 0);
-    return () => window.clearTimeout(fallback);
-  }, [isLeader, tab]);
+  const activeTab = isLeader || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
     if (!testMode.active) return props.roster;
@@ -254,9 +246,9 @@ export function AppShell(props: AppShellProps) {
 
   return (
     <div className="app-shell">
-      {tab !== "leader" && <div className="paper-noise" />}
+      {activeTab !== "leader" && <div className="paper-noise" />}
       {testMode.active && <TestModePanel state={testMode.state} onChange={testMode.setState} />}
-      {tab === "today" && (
+      {activeTab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
           today={today}
@@ -276,7 +268,7 @@ export function AppShell(props: AppShellProps) {
           onTranslationChange={handleTranslationChange}
         />
       )}
-      {tab === "connect" && (
+      {activeTab === "connect" && (
         <ConnectScreen
           groupName={groupName}
           campusName={props.campusName}
@@ -287,7 +279,7 @@ export function AppShell(props: AppShellProps) {
           today={today}
         />
       )}
-      {tab === "rewards" && (
+      {activeTab === "rewards" && (
         <RewardsScreen
           profile={profile}
           chapters={chaptersRead}
@@ -295,7 +287,7 @@ export function AppShell(props: AppShellProps) {
           today={today}
         />
       )}
-      {tab === "progress" && (
+      {activeTab === "progress" && (
         <ProgressScreen
           today={today}
           chapters={chapters}
@@ -310,7 +302,7 @@ export function AppShell(props: AppShellProps) {
           onTranslationChange={handleTranslationChange}
         />
       )}
-      {tab === "leader" && isLeader && (
+      {activeTab === "leader" && (
         <LeaderScreen
           groupName={groupName}
           campusBoard={props.campusBoard}
@@ -323,7 +315,7 @@ export function AppShell(props: AppShellProps) {
           onEditProfile={() => setProfileOpen(true)}
         />
       )}
-      <BottomNav tab={tab} onSelect={selectTab} isLeader={isLeader} />
+      <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
       {flowChapter !== null && (
         <CompletionFlow
           step={flowStep}
