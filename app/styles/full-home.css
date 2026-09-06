@@ -7,8 +7,9 @@
 .full-home .sheet-scroll { position: relative; }
 .full-home .home3d-immersive { height: 100%; border: 0; }
 .full-home .home3d-viewport { touch-action: none; }
-.full-home .home3d-model { top: 46%; scale: 1.45; }
-.full-home .home3d-ground { top: 59%; width: 330px; height: 330px; }
+/* Immersive scene: move the shared ground line and model scale, never the
+   model's own `top` -- .home3d-model is base-anchored to --ground-top. */
+.full-home .home3d-immersive { --ground-top: 59%; --ground-size: 330px; --model-scale: 1.45; }
 .full-home .home3d-sky:before { top: 20%; right: 14%; }
 .full-home .home3d-sky i { top: 26%; }
 .full-home .home3d-sky > span { height: 40%; }
@@ -56,7 +57,7 @@
 .home-option-reset { min-height: 48px; background: transparent; border: 0; margin: 8px 0; cursor: pointer; }
 .home-options h2 { font-size: 26px; }
 @media (orientation: landscape) {
-  .full-home .home3d-model { top: 48%; scale: 1.15; }
+  .full-home .home3d-immersive { --model-scale: 1.15; }
   .full-home-header { padding-top: max(10px, env(safe-area-inset-top)); }
   .full-home-identity { max-width: 460px; }
   .full-home .coin-chip { margin-left: auto; }
@@ -66,15 +67,5 @@
   .home-floating-actions { margin: 0 0 0 auto; gap: 10px; }
   .full-home .home-coachmark { bottom: 85px; }
   .home-person .avatar { width: 42px; height: 42px; }
-}
-/* The Tent's floor line is lower than taller homes, so anchor its base to the
-   shared ground plane in the portrait immersive view instead of its center. */
-@media (orientation: portrait) {
-  .full-home .home3d-model.tent { top: 50%; }
-  .full-home .home3d-model.trailer { top: 49%; }
-  .full-home .home3d-model.cabin3d { top: 50%; }
-  .full-home .home3d-model.apartment { top: 46%; }
-  .full-home .home3d-model.house3d { top: 49%; }
-  .full-home .home3d-model.mansion { top: 46%; }
 }
 @media (prefers-reduced-motion: reduce) { .home3d-turntable { transition: none; } }
