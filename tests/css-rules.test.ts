@@ -334,4 +334,22 @@ describe("css-rules", () => {
     }
     expect(violations).toEqual([]);
   });
+
+  it("keeps .header-person free of percentage max-width to prevent cyclic flex-item collapse", () => {
+    const typography = loadAll().find(({ path }) => path === "app/styles/typography.css");
+    const base = loadAll().find(({ path }) => path === "app/styles/base.css");
+    const personRules = [...(typography?.rules ?? []), ...(base?.rules ?? [])].filter(
+      ({ selector }) => selector === ".header-person",
+    );
+    for (const rule of personRules) {
+      expect(rule.decls).not.toMatch(/max-width\s*:\s*[^;]*%/);
+    }
+  });
+
+  it("keeps .header-name and edit profile on non-wrapping whitespace", () => {
+    const base = loadAll().find(({ path }) => path === "app/styles/base.css");
+    const smallRule = base?.rules.find(({ selector }) => selector.includes(".header-person small"));
+    expect(smallRule?.decls).toContain("white-space: nowrap");
+  });
 });
+
