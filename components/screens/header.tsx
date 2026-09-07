@@ -17,7 +17,7 @@ export function Header({
       <Brand />
       <div className="header-actions">
         {connectSwitcher && <ConnectSwitcher {...connectSwitcher} />}
-        <button className="header-person" onClick={onEditProfile} aria-label="Edit your avatar">
+        <button type="button" className="header-person" onClick={onEditProfile} aria-label="Edit your avatar">
           <span>
             <span className="header-name">{profile.displayName ? `Hey, ${profile.displayName}!` : "Hey, you!"}</span>
             <small>Edit profile</small>
