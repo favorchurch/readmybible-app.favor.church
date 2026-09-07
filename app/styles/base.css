@@ -7,7 +7,7 @@ summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
 .app-shell { min-height: 100dvh; max-width: 1120px; margin: auto; background: var(--cream); position: relative; overflow-x: hidden; }
 .paper-noise { position: fixed; inset: 0; pointer-events: none; z-index: 20; opacity: .16; background-image: radial-gradient(rgba(23,41,67,.35) .45px, transparent .55px); background-size: 5px 5px; mix-blend-mode: multiply; }
-.screen { min-height: 100dvh; padding: 22px 18px 116px; animation: pageIn var(--dur-base) var(--ease-out); }
+.screen { min-height: 100dvh; padding: 22px 18px calc(116px + env(safe-area-inset-bottom, 0px)); animation: pageIn var(--dur-base) var(--ease-out); }
 
 .topbar { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1040px; margin: auto; gap: 12px; }
 .header-actions { display: flex; align-items: center; gap: 8px; min-width: 0; justify-content: flex-end; }

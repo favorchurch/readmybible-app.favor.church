@@ -3,7 +3,13 @@
   background: var(--paper);
   color: var(--navy);
   min-height: 100dvh;
-  padding: 22px 18px 116px;
+  padding: 22px 18px calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 760px) {
+  .leader-screen {
+    padding: 32px 42px 140px;
+  }
 }
 
 .leader-screen .topbar .brand {
@@ -362,6 +368,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.breakdown-empty-note {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  margin: 4px 0 0;
 }
 
 .breakdown-item {

@@ -137,11 +137,15 @@ function LeaderScreenContent({
             <div className="breakdown-col">
               <h3>Read Today <span>({readMembers.length})</span></h3>
               <div className="breakdown-list">
-                {readMembers.map((m) => (
-                  <div key={m.personId} className="breakdown-item read">
-                    <span>✓ {m.name}</span>
-                  </div>
-                ))}
+                {readMembers.length === 0 ? (
+                  <p className="breakdown-empty-note">Nobody yet. Check-ins will appear here as members read.</p>
+                ) : (
+                  readMembers.map((m) => (
+                    <div key={m.personId} className="breakdown-item read">
+                      <span>✓ {m.name}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             <div className="breakdown-col">
