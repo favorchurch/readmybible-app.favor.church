@@ -12,9 +12,6 @@ import type { TodayState } from "@/components/use-today";
 import type { UserProfile } from "@/components/avatar";
 import { groupByLocality, stageFor, UNKNOWN_LOCALITY } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
-import { LeaderPrototypeSwitcher, type LeaderPrototypeMode } from "@/components/leader-tools/LeaderPrototypeSwitcher";
-import { LeaderPresenterSheet } from "@/components/leader-tools/LeaderPresenterSheet";
-import { LeaderTopBanner } from "@/components/leader-tools/LeaderTopBanner";
 
 export const MIN_RATIO_TO_SHOW = 0;
 
@@ -66,25 +63,11 @@ function LeaderScreenContent({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [showNames, setShowNames] = useState(false);
   const [expandedLocalities, setExpandedLocalities] = useState<ReadonlySet<string>>(() => new Set());
-  const [prototypeMode, setPrototypeMode] = useState<LeaderPrototypeMode>("standard");
-  const [presenterOpen, setPresenterOpen] = useState(false);
-  const [copiedEncouragement, setCopiedEncouragement] = useState(false);
   const [cheeredMember, setCheeredMember] = useState<string | null>(null);
 
   const readMembers = roster.filter((m) => m.readToday);
   const memberCount = roster.length;
   const pctRead = memberCount > 0 ? Math.round((readMembers.length / memberCount) * 100) : 0;
-
-  const handleCopyEncouragement = async () => {
-    const text = "Hey friend! Just diving into Matthew with our Connect Group today. Cheering you on! 🕊️";
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedEncouragement(true);
-      setTimeout(() => setCopiedEncouragement(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
 
   const handleCheerMember = async (memberName: string) => {
     const text = `Hey ${memberName}! Hope you're having a great day. Cheering you on for today's chapter in Matthew with our Connect Group! 🕊️`;
@@ -133,69 +116,54 @@ function LeaderScreenContent({
     <main className="screen leader-screen">
       <Header heading="Leader" profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
 
-      <LeaderPrototypeSwitcher mode={prototypeMode} onChange={setPrototypeMode} />
-
-      {prototypeMode === "option3" && (
-        <LeaderTopBanner
-          joinCode={joinCode}
-          phase={phase}
-          readersToday={readMembers.length}
-          memberCount={memberCount}
-          appBaseUrl={appBaseUrl}
-          onOpenPresenter={() => setPresenterOpen(true)}
-        />
-      )}
-
-      {prototypeMode === "option2" && (
-        <section className="pulse-metric-card" data-section="group-pulse">
-          <div className="pulse-metric-header">
-            <div>
-              <p className="eyebrow">
-                {phase === "pre-launch" ? "PRE-LAUNCH ONBOARDING" : "DAILY GROUP PULSE"}
-              </p>
-              <h2>{phase === "pre-launch" ? "Get ready for Oct 1" : `${readMembers.length} of ${memberCount} read today`}</h2>
-            </div>
-            <div className="pulse-badge">{pctRead}%</div>
+      <section className="pulse-metric-card" data-section="group-pulse">
+        <div className="pulse-metric-header">
+          <div>
+            <p className="eyebrow">
+              {phase === "pre-launch" ? "PRE-LAUNCH ONBOARDING" : "DAILY GROUP PULSE"}
+            </p>
+            <h2>{phase === "pre-launch" ? "Get ready for Oct 1" : `${readMembers.length} of ${memberCount} read today`}</h2>
           </div>
-          <div className="pulse-progress-track" aria-hidden="true">
-            <div className="pulse-progress-fill" style={{ width: `${pctRead}%` }} />
-          </div>
-          <p className="pulse-stats-note">
-            {phase === "active" ? `${readMembers.length} members checked in for today's chapter` : "Ensure all members join before October 1"}
-          </p>
-          {phase === "active" && (
-            <div className="leader-roster-breakdown">
-              <div className="breakdown-col">
-                <h3>Read Today <span>({readMembers.length})</span></h3>
-                <div className="breakdown-list">
-                  {readMembers.map((m) => (
-                    <div key={m.personId} className="breakdown-item read">
-                      <span>✓ {m.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="breakdown-col">
-                <h3>Still Reading <span>({stillReading.length})</span></h3>
-                <div className="breakdown-list">
-                  {stillReading.map((m) => (
-                    <div key={m.personId} className="breakdown-item pending">
-                      <span>○ {m.name}</span>
-                      <button
-                        type="button"
-                        className="breakdown-cheer-btn"
-                        onClick={() => handleCheerMember(m.name)}
-                      >
-                        {cheeredMember === m.name ? "✓ Copied" : "Cheer on"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+          <div className="pulse-badge">{pctRead}%</div>
+        </div>
+        <div className="pulse-progress-track" aria-hidden="true">
+          <div className="pulse-progress-fill" style={{ width: `${pctRead}%` }} />
+        </div>
+        <p className="pulse-stats-note">
+          {phase === "active" ? `${readMembers.length} members checked in for today's chapter` : "Ensure all members join before October 1"}
+        </p>
+        {phase === "active" && (
+          <div className="leader-roster-breakdown">
+            <div className="breakdown-col">
+              <h3>Read Today <span>({readMembers.length})</span></h3>
+              <div className="breakdown-list">
+                {readMembers.map((m) => (
+                  <div key={m.personId} className="breakdown-item read">
+                    <span>✓ {m.name}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-        </section>
-      )}
+            <div className="breakdown-col">
+              <h3>Still Reading <span>({stillReading.length})</span></h3>
+              <div className="breakdown-list">
+                {stillReading.map((m) => (
+                  <div key={m.personId} className="breakdown-item pending">
+                    <span>○ {m.name}</span>
+                    <button
+                      type="button"
+                      className="breakdown-cheer-btn"
+                      onClick={() => handleCheerMember(m.name)}
+                    >
+                      {cheeredMember === m.name ? "✓ Copied" : "Cheer on"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Bring someone in */}
       <section className="leader-section" data-section="bring-someone-in">
@@ -221,17 +189,6 @@ function LeaderScreenContent({
           )}
         </div>
         {codeError && <p className="error-note">{codeError}</p>}
-        {prototypeMode === "option1" && (
-          <div className="presenter-trigger-row">
-            <button
-              type="button"
-              className="primary-button presenter-trigger-btn"
-              onClick={() => setPresenterOpen(true)}
-            >
-              📲 Present to Room (Large QR) ↗
-            </button>
-          </div>
-        )}
       </section>
 
       {/* Still reading — active phase, non-empty only */}
@@ -239,17 +196,6 @@ function LeaderScreenContent({
         <section className="leader-section leader-nudge" data-section="still-reading">
           <p className="eyebrow">STILL READING</p>
           <span>{stillReading.map((m) => m.name).join(", ")} haven&apos;t checked in today. A quick message goes a long way.</span>
-          {prototypeMode === "option1" && (
-            <div>
-              <button
-                type="button"
-                className="copy-encouragement-btn"
-                onClick={handleCopyEncouragement}
-              >
-                {copiedEncouragement ? "✓ Encouragement Copied" : "Copy Gentle Encouragement 💌"}
-              </button>
-            </div>
-          )}
         </section>
       )}
 
@@ -387,17 +333,6 @@ function LeaderScreenContent({
           })
         )}
       </section>
-
-      <LeaderPresenterSheet
-        open={presenterOpen}
-        onClose={() => setPresenterOpen(false)}
-        joinCode={joinCode}
-        qrDataUrl={qrDataUrl}
-        groupName={groupName}
-        phase={phase}
-        stillReading={stillReading}
-        appBaseUrl={appBaseUrl}
-      />
     </main>
   );
 }

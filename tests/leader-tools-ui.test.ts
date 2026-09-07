@@ -137,6 +137,22 @@ describe("LeaderScreen", () => {
     expect(screen.getByText(/haven't checked in today/)).toBeTruthy();
   });
 
+  it("shows the daily group pulse card with read/still-reading breakdown and cheer action", async () => {
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+
+    renderLeader();
+
+    expect(screen.getByText("1 of 2 read today")).toBeTruthy();
+    expect(screen.getByText("50%")).toBeTruthy();
+    expect(screen.getByText("Read Today").parentElement?.textContent).toContain("(1)");
+    expect(screen.getByText("Still Reading").parentElement?.textContent).toContain("(1)");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cheer on" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "✓ Copied" })).toBeTruthy());
+
+    vi.unstubAllGlobals();
+  });
+
   it("includes leader links for the portal and add-member flow", () => {
     renderLeader();
     const links = screen.getAllByRole("link");
