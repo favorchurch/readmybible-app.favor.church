@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import { HomeModel } from "@/components/home-model";
 import { homeStages } from "@/components/rotatable-home";
 import type { Stage } from "@/lib/game";
@@ -18,8 +20,16 @@ const REFERENCE_DIAMETER = 300;
  * be "more accurate" to what the hero actually shows. Not interactive: no
  * drag, no rotation, no focus stop. `size` has a 32px floor below which the
  * model's detail collapses into noise (verify visually before going lower).
+ *
+ * Wrapped in `memo`: every prop is a primitive (name/size/className), so a
+ * shallow-equal bail-out is exact, not an approximation. This matters at
+ * scale -- the Leader "Other Connects" board mounts one `StageMini` per
+ * campus group (200+ across localities), each instance a ~19-node 3D CSS
+ * `HomeModel` subtree. Without memo, any state change on an ancestor (join
+ * code fetch, QR generation, clipboard timeouts) re-renders and re-diffs
+ * every one of those subtrees even though their props never changed.
  */
-export function StageMini({ name, size = 40, className }: { name: Stage; size?: number; className?: string }) {
+function StageMiniBase({ name, size = 40, className }: { name: Stage; size?: number; className?: string }) {
   const stageClassName = homeStages.find((s) => s.name === name)?.className ?? "tent";
   // scale3d, not scale: the 2-arg `scale()` shorthand leaves Z untouched, so
   // every translateZ() inside HomeModel would stay at full (unscaled) depth
@@ -36,3 +46,5 @@ export function StageMini({ name, size = 40, className }: { name: Stage; size?: 
     </div>
   );
 }
+
+export const StageMini = memo(StageMiniBase);

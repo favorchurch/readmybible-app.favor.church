@@ -239,6 +239,27 @@
   color: var(--ink-muted);
 }
 
+.locality-show-more {
+  display: block;
+  margin: 10px auto 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease-out);
+  min-height: 36px;
+}
+
+@media (hover: hover) {
+  .locality-show-more:hover {
+    background: var(--cream);
+  }
+}
+
 @media (max-width: 480px) {
   .leader-screen .campus-groups-grid {
     grid-template-columns: 1fr;
