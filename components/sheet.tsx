@@ -9,7 +9,6 @@ const FOCUSABLE_SELECTOR =
 
 let locks = 0;
 let bodyOverflow = "";
-const INTERACTIVE = 'a, button, input, select, textarea, summary, [role="button"], [contenteditable="true"]';
 
 /**
  * The one accessible modal/sheet shell every popup in the app renders
@@ -95,9 +94,12 @@ export function Sheet({
     if (immersive || !event.isPrimary || event.button !== 0) return;
     const target = event.target as HTMLElement;
     const handle = target.closest('.sheet-drag-handle');
-    if (!handle && target.closest(INTERACTIVE)) return;
+    // Drag-to-dismiss only ever starts from the handle. Everywhere else
+    // (including buttons/rows in the scrollable content) starts as a scroll
+    // gesture so a flick up always scrolls, regardless of what's under the
+    // finger.
     const scrollTop = scrollRef.current?.scrollTop ?? 0;
-    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, lastY: event.clientY, time: event.timeStamp, startedAt: event.timeStamp, velocity: 0, offset: 0, active: false, mode: handle || scrollTop === 0 ? 'sheet' : 'scroll', scrollTop };
+    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, lastY: event.clientY, time: event.timeStamp, startedAt: event.timeStamp, velocity: 0, offset: 0, active: false, mode: handle ? 'sheet' : 'scroll', scrollTop };
   }
 
   function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -105,24 +107,10 @@ export function Sheet({
     const panel = sheetRef.current;
     if (!gesture || !panel || gesture.id !== event.pointerId) return;
     const dy = event.clientY - gesture.y;
-    // Decide after the first few pixels whether an upward gesture from the
-    // top is content scrolling. Pointer Events give us the direction before
-    // the sheet has moved, so the same surface can support both gestures.
-    if (gesture.mode === 'sheet' && !gesture.active && dy < -8 && scrollRef.current && scrollRef.current.scrollHeight > scrollRef.current.clientHeight) {
-      gesture.mode = 'scroll';
-      gesture.scrollTop = scrollRef.current.scrollTop;
-    }
     if (gesture.mode === 'scroll') {
       const nextScrollTop = Math.max(0, gesture.scrollTop - dy);
-      if (!(nextScrollTop === 0 && dy > 0)) {
-        if (scrollRef.current) scrollRef.current.scrollTop = nextScrollTop;
-        return;
-      }
-      gesture.mode = 'sheet';
-      gesture.y = event.clientY;
-      gesture.startedAt = event.timeStamp;
-      gesture.lastY = event.clientY;
-      gesture.time = event.timeStamp;
+      if (scrollRef.current) scrollRef.current.scrollTop = nextScrollTop;
+      return;
     }
     if (!gesture.active) {
       if (dy < -8 || Math.abs(event.clientX - gesture.x) > Math.max(10, dy)) { drag.current = null; return; }
