@@ -346,6 +346,13 @@ describe("css-rules", () => {
     }
   });
 
+  it("centers the shared brand contents within its 44px touch target", () => {
+    const base = loadAll().find(({ path }) => path === "app/styles/base.css");
+    const brandRule = base?.rules.find(({ selector }) => selector === ".brand");
+    expect(brandRule?.decls).toContain("align-items: center");
+    expect(brandRule?.decls).not.toContain("align-items: end");
+  });
+
   it("keeps .header-name and edit profile on non-wrapping whitespace", () => {
     const base = loadAll().find(({ path }) => path === "app/styles/base.css");
     const smallRule = base?.rules.find(({ selector }) => selector.includes(".header-person small"));
