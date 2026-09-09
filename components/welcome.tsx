@@ -9,6 +9,17 @@
 export function WelcomeLanding() {
   return (
     <div className="welcome-page">
+      {/*
+       * Measured: cold-load CLS was 0.152 (over the 0.1 budget) with plain
+       * font-display:swap alone, because the huge display headline reflows
+       * when Agharti swaps in over the fallback font. Preloading it (the
+       * one large, above-the-fold use of that font on this page) removed
+       * the shift in testing -- see .office/login-landing/evidence/.
+       * Warm-cache loads already had 0 CLS; this only helps first visits.
+       * A rendered <link> (React hoists it to <head>), not react-dom's
+       * preload() API -- the latter silently no-op'd under this RSC render.
+       */}
+      <link rel="preload" as="font" type="font/ttf" href="/fonts/Agharti-Bold.ttf" crossOrigin="anonymous" />
       <header className="welcome-header">
         <div className="welcome-brand">Read My Bible</div>
         <div className="welcome-eyebrow">A little every day. Together.</div>
