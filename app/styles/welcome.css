@@ -14,7 +14,26 @@
  *   - Keyboard focus uses the shared app-wide gold ring (var(--gold)),
  *     not the mockup's literal accent color, for a11y consistency with
  *     every other focusable control in the app.
+ *
+ * Measured on the real deployed Preview edge (not just localhost): a font
+ * preload alone still left cold-load CLS at a consistent, deterministic
+ * 0.124 (over the plan's 0.1 budget) on every one of 10 cold runs, 0 on
+ * every warm run -- the preload narrows the race but doesn't always win it
+ * over a real network round trip. A page-local @font-face alias with
+ * `font-display: optional` removes the race entirely: if this specific
+ * font isn't ready almost immediately, the page keeps the fallback for the
+ * whole view instead of swapping later and reflowing. This does NOT touch
+ * the shared `Agharti` face in globals.css (font-display: swap, used
+ * app-wide) -- only this page's headline opts into the stricter behavior.
  */
+
+@font-face {
+  font-family: "AghartiWelcome";
+  src: url("/fonts/Agharti-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+}
 
 .welcome-page {
   --welcome-accent: #b4422c;
@@ -76,7 +95,7 @@
 }
 
 .welcome-headline {
-  font: 700 clamp(52px, 8.5vw, 138px) / 0.94 var(--font-display);
+  font: 700 clamp(52px, 8.5vw, 138px) / 0.94 "AghartiWelcome", "Favor Sans", Arial, Helvetica, sans-serif;
   letter-spacing: -1px;
   text-transform: uppercase;
   margin: 30px 0;
