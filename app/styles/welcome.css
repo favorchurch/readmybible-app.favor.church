@@ -1,0 +1,315 @@
+/*
+ * Public welcome screen (logged-out `/`). Scoped under .welcome-page so it
+ * never collides with in-app screen styles; reuses shared tokens from
+ * globals.css (--navy, --cream, --paper, --gold, --line) rather than
+ * forking them, per DESIGN.md. The one page-local token, --welcome-accent,
+ * is the approved visual's own rust-terracotta accent (#b4422c) -- a tonal
+ * variation of the existing coral hue family, not a new hue (D2).
+ *
+ * Deliberate departures from the in-app typography system, both approved
+ * with the visual and both scoped to this page only:
+ *   - The display headline is uppercase, not the lowercase-only in-app
+ *     Agharti treatment (typography.css) -- a marketing hero, not a screen
+ *     title.
+ *   - Keyboard focus uses the shared app-wide gold ring (var(--gold)),
+ *     not the mockup's literal accent color, for a11y consistency with
+ *     every other focusable control in the app.
+ */
+
+.welcome-page {
+  --welcome-accent: #b4422c;
+  background: var(--cream);
+  color: var(--navy);
+}
+
+.welcome-header,
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 5vw;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.welcome-header {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.welcome-brand {
+  font: 700 19px var(--font-sans);
+  letter-spacing: -0.6px;
+}
+
+.welcome-eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.welcome-main {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 690px;
+}
+
+.welcome-intro {
+  padding: 75px 4vw 72px 8vw;
+}
+
+.welcome-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.welcome-kicker::before {
+  content: "";
+  width: 28px;
+  height: 2px;
+  background: var(--welcome-accent);
+}
+
+.welcome-headline {
+  font: 700 clamp(52px, 8.5vw, 138px) / 0.94 var(--font-display);
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  margin: 30px 0;
+}
+
+.welcome-headline em {
+  font-style: normal;
+  color: var(--welcome-accent);
+}
+
+.welcome-description {
+  max-width: 360px;
+  color: var(--ink-2);
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+.welcome-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  background: var(--navy);
+  color: var(--paper);
+  padding: 19px 25px;
+  margin-top: 25px;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font: 800 14px var(--font-sans);
+  min-height: 44px;
+}
+
+.welcome-login:hover {
+  background: #294561;
+}
+
+.welcome-login:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.welcome-hint {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 13px;
+}
+
+.welcome-art {
+  background: var(--surface-3);
+  padding: 60px 5vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-orbit {
+  position: absolute;
+  width: 510px;
+  height: 510px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  left: 6%;
+  top: 13%;
+}
+
+.welcome-reading {
+  position: relative;
+  background: var(--paper);
+  padding: 33px 34px 40px;
+  max-width: 380px;
+  margin: auto;
+  transform: rotate(-4deg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+}
+
+.welcome-reading-eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.welcome-reading h2 {
+  font: 700 38px/1.1 var(--font-sans);
+  letter-spacing: -1.5px;
+  margin: 27px 0 6px;
+}
+
+.welcome-reference {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.welcome-rule {
+  height: 1px;
+  background: var(--line);
+  margin: 27px 0;
+}
+
+.welcome-verse {
+  font: 25px/1.55 Georgia, serif; /* serif-exception: scripture passage text */
+  margin: 0;
+}
+
+.welcome-verse span {
+  background: color-mix(in srgb, var(--gold) 33%, transparent);
+}
+
+.welcome-reading-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 30px;
+  color: var(--ink-2);
+}
+
+.welcome-caption {
+  position: relative;
+  text-align: center;
+  margin-top: 42px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.welcome-benefits {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line-strong);
+  padding: 24px 5vw;
+  font-size: 13px;
+}
+
+.welcome-benefits span {
+  display: flex;
+  gap: 12px;
+}
+
+.welcome-benefits b {
+  color: var(--welcome-accent);
+  font-weight: 400;
+}
+
+.welcome-footer {
+  font-size: 11px;
+  color: var(--ink-2);
+  padding-top: 14px;
+}
+
+.welcome-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcome-footer-brand img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0);
+  opacity: 0.7;
+}
+
+@media (max-width: 700px) {
+  .welcome-header,
+  .welcome-footer {
+    padding: 20px 6vw;
+  }
+
+  .welcome-header .welcome-eyebrow {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .welcome-main {
+    display: block;
+  }
+
+  .welcome-intro {
+    padding: 42px 7vw 44px;
+  }
+
+  .welcome-headline {
+    font-size: 68px;
+    margin: 25px 0;
+  }
+
+  .welcome-description {
+    font-size: 16px;
+  }
+
+  .welcome-login {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .welcome-art {
+    padding: 46px 12vw 32px;
+  }
+
+  .welcome-reading {
+    padding: 28px;
+    transform: rotate(-3deg);
+  }
+
+  .welcome-reading h2 {
+    font-size: 32px;
+  }
+
+  .welcome-verse {
+    font-size: 23px;
+  }
+
+  .welcome-caption {
+    margin-top: 30px;
+  }
+
+  .welcome-benefits {
+    gap: 12px;
+    padding: 25px 7vw;
+    flex-direction: column;
+  }
+
+  .welcome-footer {
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .welcome-orbit {
+    width: 360px;
+    height: 360px;
+  }
+}
