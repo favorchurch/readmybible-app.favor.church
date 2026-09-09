@@ -37,6 +37,7 @@
 
 .welcome-page {
   --welcome-accent: #b4422c;
+  min-height: 100dvh;
   background: var(--cream);
   color: var(--navy);
 }
