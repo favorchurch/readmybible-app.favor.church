@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     ".worktrees/**",
+    ".office/**",
     "next-env.d.ts",
   ]),
   eslint.configs.recommended,

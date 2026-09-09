@@ -16,12 +16,13 @@ import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, g
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import { getSessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
+import { WelcomeLanding } from "@/components/welcome";
 
 export default async function Page() {
   const session = await getSessionContext();
 
   if (session.status === "logged-out") {
-    redirect("/auth/login");
+    return <WelcomeLanding />;
   }
   if (session.status === "not-found-in-rock") {
     redirect("/not-found-in-rock");
