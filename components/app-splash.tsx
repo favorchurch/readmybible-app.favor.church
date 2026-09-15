@@ -11,6 +11,17 @@ type CompanionScene =
   | { kind: "home"; stage: number };
 
 const COMPANION_INTERVAL_MS = 2400;
+const DEFAULT_COMPANION_SIZE = 72;
+
+/**
+ * The scene rendered on first paint, both on the server and on the client.
+ * Fixed at module scope -- not Math.random(), not the wall clock, not
+ * anything else that could differ between the two -- so the markup is
+ * identical and there is no SSR/CSR hydration mismatch to guard against.
+ * That's what lets the splash show a glyph immediately instead of an empty
+ * slot until mount.
+ */
+const INITIAL_SCENE: CompanionScene = { kind: "avatar", seed: 0, gender: "male" };
 
 function randomScene(): CompanionScene {
   if (Math.random() < 0.5) {
@@ -24,27 +35,30 @@ function randomScene(): CompanionScene {
  * Rotates a random avatar or home-stage glyph next to the wordmark while the
  * shell loads. Purely decorative -- aria-hidden, same as the wordmark itself
  * -- so it never competes with the "Loading Read My Bible" status label.
- * Starts empty and only randomizes after mount to avoid an SSR/CSR mismatch,
- * and freezes on the first pick under prefers-reduced-motion.
+ * Renders the deterministic `INITIAL_SCENE` on first paint (same markup on
+ * server and client), then randomizes on an interval after mount, freezing
+ * on the first pick under prefers-reduced-motion.
+ *
+ * Reusable outside the splash: `size` sets the square box both the avatar
+ * and home-stage branches render into, so callers (e.g. issue #125's
+ * reading-sheet companion) get consistent sizing without depending on
+ * splash-only CSS.
  */
-function SplashCompanion() {
-  const [scene, setScene] = useState<CompanionScene | null>(null);
+export function SplashCompanion({ size = DEFAULT_COMPANION_SIZE }: { size?: number } = {}) {
+  const [scene, setScene] = useState<CompanionScene>(INITIAL_SCENE);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only randomization has to run post-mount to avoid an SSR/CSR hydration mismatch.
-    setScene(randomScene());
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
     const id = setInterval(() => setScene(randomScene()), COMPANION_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 
-  if (!scene) return <div className="splash-companion" aria-hidden="true" />;
-
   return (
-    <div className="splash-companion" aria-hidden="true">
+    <div className="splash-companion" style={{ width: size, height: size }} aria-hidden="true">
       <div
         className="splash-companion-figure"
+        style={{ width: size, height: size }}
         key={scene.kind === "avatar" ? `avatar-${scene.seed}` : `home-${scene.stage}`}
       >
         {scene.kind === "avatar" ? (
@@ -55,7 +69,7 @@ function SplashCompanion() {
             hair={avatarSeedFor(scene.seed).hair}
           />
         ) : (
-          <StageMini name={homeStages[scene.stage].name} size={72} />
+          <StageMini name={homeStages[scene.stage].name} size={size} />
         )}
       </div>
     </div>

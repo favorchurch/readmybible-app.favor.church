@@ -30,9 +30,9 @@
   gap: var(--space-3);
 }
 
+/* Box size is prop-driven (see SplashCompanion's `size`, applied inline) so
+   this works at any size, in or out of the splash -- no fixed px here. */
 .splash-companion {
-  width: 84px;
-  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,8 +46,8 @@
 }
 
 .splash-companion-figure .avatar {
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 100%;
 }
 
 @keyframes splashCompanionIn {
