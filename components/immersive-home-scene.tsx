@@ -7,6 +7,8 @@ import type { RosterMemberView } from "@/components/app-shell";
 import type { UserProfile } from "@/components/avatar";
 import { createPerson } from "./scene-person";
 import { addLandscape } from "./scene-landscape";
+import { groundPosition, homePlacement } from "./scene-home-contract";
+import { modelFor } from "./scene-home-registry";
 import styles from "./immersive-home-scene.module.css";
 
 type SceneMode = "tent" | "campfire";
@@ -35,11 +37,6 @@ type SceneRuntime = {
   render: () => void;
 };
 
-const HOME_NAMES = ["Tent", "Trailer", "Cabin", "Apartment", "House", "Mansion"];
-const CAMERA_HEIGHT = 7.4;
-const CAMERA_RADIUS = 15.6;
-const CAMERA_MIN_YAW = -0.72;
-const CAMERA_MAX_YAW = 0.72;
 const GROUND_Y = 0;
 
 function clamp(value: number, min: number, max: number) {
@@ -80,54 +77,6 @@ function addTree(scene: THREE.Scene, x: number, z: number, scale: number, tint: 
   scene.add(tree);
 }
 
-
-function roof(width: number, depth: number, color: number) {
-  const w = width * .72;
-  const d = depth * .72;
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute([
-    -w, -1.17, d, w, -1.17, d, 0, 1.17, d,
-    w, -1.17, -d, -w, -1.17, -d, 0, 1.17, -d,
-    -w, -1.17, -d, -w, -1.17, d, 0, 1.17, d,
-    -w, -1.17, -d, 0, 1.17, d, 0, 1.17, -d,
-    0, 1.17, -d, 0, 1.17, d, w, -1.17, d,
-    0, 1.17, -d, w, -1.17, d, w, -1.17, -d,
-  ], 3));
-  geometry.computeVertexNormals();
-  const value = mesh(geometry, color);
-  value.material.side = THREE.DoubleSide;
-  return value;
-}
-
-function createHome() {
-  const home = new THREE.Group();
-    const tent = roof(4.25, 3.8, 0xca673b);
-    tent.scale.y = 1.7;
-    tent.position.y = 1.99;
-    home.add(tent);
-    const openingGeometry = new THREE.BufferGeometry();
-    openingGeometry.setAttribute('position', new THREE.Float32BufferAttribute([-1.55, .04, 2.75, 1.55, .04, 2.75, 0, 3.55, 2.75], 3));
-    openingGeometry.computeVertexNormals();
-    const opening = mesh(openingGeometry, 0xffd084, { emissive: 0xa64c15 });
-    home.add(opening);
-    const pole = mesh(new THREE.CylinderGeometry(.045, .045, 4.05, 8), 0x633821);
-    pole.position.set(0, 2, 2.79);
-    home.add(pole);
-    for (const side of [-1, 1]) {
-      const ropeGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(side * .12, 3.8, 2.76), new THREE.Vector3(side * 3.6, .04, 3.35)]);
-      home.add(new THREE.Line(ropeGeometry, new THREE.LineBasicMaterial({ color: 0xb89d6d })));
-      const stake = mesh(new THREE.CylinderGeometry(.04, .045, .35, 6), 0x523b2c);
-      stake.position.set(side * 3.6, .13, 3.35);
-      stake.rotation.z = side * .35;
-      home.add(stake);
-    }
-    const lamp = new THREE.PointLight(0xffb555, 4, 6, 2);
-    lamp.position.set(0, 1.4, 3);
-    home.add(lamp);
-  home.name = "Tent";
-  home.scale.setScalar(.88);
-  return home;
-}
 
 function addFire(scene: THREE.Scene, x: number, z: number, strong: boolean) {
   const fire = new THREE.Group();
@@ -179,24 +128,10 @@ function defaultPersonPosition(index: number, count: number, mode: SceneMode) {
 }
 
 function validGroundPosition(point: THREE.Vector3, mode: SceneMode, stage: number) {
-  const focusX = 0;
-  const focusZ = mode === "campfire" ? .5 : 1.15;
-  let x = clamp(point.x, -7.2, 7.2);
-  let z = clamp(point.z, -2.8, 5.2);
-  const dx = x - focusX;
-  const dz = z - focusZ;
-  const distance = Math.hypot(dx, dz);
-  if (distance < 1.65) {
-    const angle = distance < .001 ? 0 : Math.atan2(dz, dx);
-    x = focusX + Math.cos(angle) * 1.65;
-    z = focusZ + Math.sin(angle) * 1.65;
-  }
-  if (mode === "tent") {
-    const safeStage = clamp(Math.round(stage), 0, 5);
-    const halfWidth = [2.6, 2.7, 2.7, 2.45, 3, 4.35][safeStage];
-    if (Math.abs(x) < halfWidth && z < -.15) z = -.15;
-  }
-  return new THREE.Vector3(x, GROUND_Y, z);
+  const model = modelFor(stage);
+  if (!model) return new THREE.Vector3(0, GROUND_Y, 4);
+  const { x, y, z } = groundPosition(point, mode, model);
+  return new THREE.Vector3(x, y, z);
 }
 
 function disposeScene(scene: THREE.Scene) {
@@ -231,6 +166,7 @@ export function ImmersiveHomeScene({
   const rosterRef = useRef(roster);
   const [webGlFailed, setWebGlFailed] = useState(false);
   const [showHint, setShowHint] = useState(true);
+  const model = modelFor(stage);
 
   useEffect(() => {
     selectedRef.current = selectedMemberId;
@@ -240,12 +176,12 @@ export function ImmersiveHomeScene({
 
   useEffect(() => {
     positionsRef.current.clear();
-  }, [resetKey]);
+  }, [resetKey, stage]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const root = rootRef.current;
-    if (!canvas || !root) return;
+    if (!canvas || !root || !model?.supported) return;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -273,14 +209,15 @@ export function ImmersiveHomeScene({
     scene.fog = new THREE.Fog(isCampfire ? 0x173936 : palette.fog, 15, 35);
 
     const camera = new THREE.PerspectiveCamera(42, 1, .1, 70);
+    const { height, radius, minYaw, maxYaw } = model.framing;
     let yaw = 0;
     const updateCamera = () => {
-      const portraitScale = camera.aspect < .78 ? .78 / Math.max(camera.aspect, .35) : 1;
-      const radius = CAMERA_RADIUS * portraitScale;
-      camera.position.set(Math.sin(yaw) * radius, CAMERA_HEIGHT, Math.cos(yaw) * radius);
-      camera.lookAt(0, 1.75, -.1);
+      camera.position.set(model.focalPoint.x + Math.sin(yaw) * radius, height, model.focalPoint.z + Math.cos(yaw) * radius);
+      camera.lookAt(model.focalPoint.x, model.focalPoint.y, model.focalPoint.z);
       root.dataset.cameraYaw = yaw.toFixed(3);
-      root.dataset.cameraY = CAMERA_HEIGHT.toFixed(1);
+      root.dataset.cameraY = camera.position.y.toFixed(3);
+      root.dataset.cameraRadius = radius.toFixed(3);
+      root.dataset.cameraPitchRadians = Math.atan2(height - model.focalPoint.y, radius).toFixed(6);
     };
     updateCamera();
 
@@ -310,9 +247,11 @@ export function ImmersiveHomeScene({
       addTree(scene, -19 + index * 1.65, -12 - (index % 3) * 1.9, 1.1 + (index % 4) * .18, index % 2 ? 0x234d43 : 0x1b403b);
     }
 
-    const home = createHome();
-    home.position.set(0, 0, isCampfire ? -4.8 : -2.6);
-    if (isCampfire) home.scale.multiplyScalar(.78);
+    const home = model.create(THREE);
+    const placement = homePlacement(mode);
+    home.position.set(0, GROUND_Y, placement.z);
+    home.scale.multiplyScalar(placement.scale);
+    root.dataset.homePosition = home.position.toArray().join(",");
     scene.add(home);
     const fire = addFire(scene, 0, isCampfire ? .5 : 1.15, isCampfire);
     if (isCampfire) {
@@ -374,7 +313,7 @@ export function ImmersiveHomeScene({
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       // Fit the clearing's width in portrait without changing camera elevation.
-      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(46) / 2) / Math.min(camera.aspect, 1.25)));
+      camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(model.framing.fov) / 2) / Math.min(camera.aspect, 1.25)));
       camera.setViewOffset(width, height, 0, height * (width < height ? .08 : .015), width, height);
       camera.updateProjectionMatrix();
     };
@@ -384,7 +323,7 @@ export function ImmersiveHomeScene({
         const button = labelRefs.current.get(memberId);
         if (!button) continue;
         const projected = person.position.clone();
-        projected.y = 2.8;
+        projected.y = model.labelClearance * person.scale.y;
         projected.project(camera);
         const visible = projected.z < 1;
         button.style.display = visible ? "grid" : "none";
@@ -433,7 +372,7 @@ export function ImmersiveHomeScene({
     const move = (event: PointerEvent) => {
       if (!drag || drag.pointerId !== event.pointerId) return;
       if (drag.kind === "camera") {
-        yaw = clamp(drag.startYaw - (event.clientX - drag.startX) * .0048, CAMERA_MIN_YAW, CAMERA_MAX_YAW);
+        yaw = clamp(drag.startYaw - (event.clientX - drag.startX) * .0048, minYaw, maxYaw);
         updateCamera();
       } else {
         drag.moved ||= Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 4;
@@ -465,7 +404,7 @@ export function ImmersiveHomeScene({
     const wheel = (event: WheelEvent) => {
       if (drag) { event.preventDefault(); return; }
       const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      yaw = clamp(yaw + horizontal * .0016, CAMERA_MIN_YAW, CAMERA_MAX_YAW);
+      yaw = clamp(yaw + horizontal * .0016, minYaw, maxYaw);
       updateCamera();
       setShowHint(false);
       event.preventDefault();
@@ -473,7 +412,7 @@ export function ImmersiveHomeScene({
     const key = (event: KeyboardEvent) => {
       if (drag) return;
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-        yaw = clamp(yaw + (event.key === "ArrowLeft" ? -.12 : .12), CAMERA_MIN_YAW, CAMERA_MAX_YAW);
+        yaw = clamp(yaw + (event.key === "ArrowLeft" ? -.12 : .12), minYaw, maxYaw);
         updateCamera();
         setShowHint(false);
         event.preventDefault();
@@ -512,7 +451,7 @@ export function ImmersiveHomeScene({
       if (scene.background instanceof THREE.Texture) scene.background.dispose();
       renderer.dispose();
     };
-  }, [mode, people, profile, resetKey, roster, stage, time]);
+  }, [mode, model, people, profile, resetKey, roster, stage, time]);
 
   function moveMemberWithKeyboard(memberId: number, dx: number, dz: number) {
     const person = runtimeRef.current?.people.get(memberId);
@@ -533,15 +472,15 @@ export function ImmersiveHomeScene({
       ref={rootRef}
       className={styles.scene}
       data-scene-mode={mode}
-      data-home-stage={HOME_NAMES[clamp(Math.round(stage), 0, 5)]}
+      data-home-stage={model?.name}
       data-camera-pitch="locked"
-      aria-label={`${mode === "campfire" ? "Campfire" : "Tent"} scene with ${HOME_NAMES[clamp(Math.round(stage), 0, 5)]} home`}
+      aria-label={`${mode === "campfire" ? "Campfire" : "Home"} scene with ${model?.name} home`}
     >
       <canvas
         ref={canvasRef}
         className={styles.canvas}
         tabIndex={0}
-        aria-label={`Interactive 3D ${HOME_NAMES[clamp(Math.round(stage), 0, 5)]}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering.`}
+        aria-label={`Interactive 3D ${model?.name}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering.`}
       />
       {webGlFailed && <div className={styles.fallback} role="img">Your group is gathered around a warm campfire.</div>}
       {showHint && !webGlFailed && <p className={styles.hint}>Drag to look around · drag a person to move them</p>}

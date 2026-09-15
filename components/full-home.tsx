@@ -7,6 +7,7 @@ import { homeStages, RotatableHome } from "@/components/rotatable-home";
 import { Sheet } from "@/components/sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import type { TodayState } from "@/components/use-today";
+import { modelFor } from "./scene-home-registry";
 
 const TIMES = ['Day', 'Sunset', 'Night'] as const;
 const ImmersiveHomeScene = lazy(() => import('@/components/immersive-home-scene').then(module => ({ default: module.ImmersiveHomeScene })));
@@ -32,7 +33,8 @@ export function FullHome({ onClose, groupName, coins, stage, progress, milestone
   const [names, setNames] = useState(true);
   const [time, setTime] = useState<typeof TIMES[number]>('Sunset');
   const [mode, setMode] = useState<'classic' | 'tent' | 'campfire'>('classic');
-  const isCampsite = stage === 0 && mode !== 'classic';
+  const supportsScene = modelFor(stage)?.supported ?? false;
+  const isCampsite = supportsScene && mode !== 'classic';
   const [options, setOptions] = useState(false);
   const [reset, setReset] = useState(0);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
@@ -95,9 +97,9 @@ export function FullHome({ onClose, groupName, coins, stage, progress, milestone
           {today.displayPhase === "closed" && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
           </div>
         </details>
-        {stage === 0 && <div className="home-scene-switch" role="group" aria-label="Scene presentation">
+        {supportsScene && <div className="home-scene-switch" role="group" aria-label="Scene presentation">
           <button type="button" aria-pressed={mode === 'classic'} onClick={() => setMode('classic')}>Classic</button>
-          <button type="button" aria-pressed={mode === 'tent'} onClick={() => setMode('tent')}>Tent</button>
+          <button type="button" aria-pressed={mode === 'tent'} onClick={() => setMode('tent')}>{modelFor(stage)?.name}</button>
           <button type="button" aria-pressed={mode === 'campfire'} onClick={() => setMode('campfire')}>Campfire</button>
         </div>}
         <div className="home-floating-actions">
