@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { CheckInGroupState } from "@/app/actions/checkIn";
 import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
+import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
 import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
-type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
-type PassageState = { text: string | null; bibleComUrl: string; attribution: string } | "loading" | "error";
+type PassageResponse = {
+  ref: string;
+  translation: Translation;
+  text: string | null;
+  verses: Record<string, string> | null;
+  bibleComUrl: string;
+  attribution: string;
+};
+type PassageState =
+  | { text: string | null; verses: Record<string, string> | null; bibleComUrl: string; attribution: string }
+  | "loading"
+  | "error";
 
 /**
  * `preview` is pre-launch (D12): the passage is readable, nothing ticks.
@@ -24,7 +35,7 @@ async function fetchPassage(ref: string, translation: Translation): Promise<Pass
     const res = await fetch(`/api/scripture?ref=${encodeURIComponent(ref)}&t=${translation}`);
     if (!res.ok) return "error";
     const data = (await res.json()) as PassageResponse;
-    return { text: data.text, bibleComUrl: data.bibleComUrl, attribution: data.attribution };
+    return { text: data.text, verses: data.verses, bibleComUrl: data.bibleComUrl, attribution: data.attribution };
   } catch {
     return "error";
   }
@@ -43,7 +54,6 @@ export function ReadingDialog({
   chapter,
   passageRef,
   keyPassageRef,
-  hasFullText,
   translation,
   mode,
   isCatchUp,
@@ -60,7 +70,6 @@ export function ReadingDialog({
   chapter: number;
   passageRef: string;
   keyPassageRef: string | null;
-  hasFullText: boolean;
   translation: Translation;
   mode: ReadingDialogMode;
   isCatchUp: boolean;
@@ -78,7 +87,7 @@ export function ReadingDialog({
   // so a stale result for the previous translation reads as "loading" during
   // the next render instead of needing a synchronous reset in the effect.
   const [fetched, setFetched] = useState<{ ref: string; translation: Translation; value: PassageState } | null>(null);
-  const [fetchedKeyVerse, setFetchedKeyVerse] = useState<{ ref: string; translation: Translation; text: string | null } | null>(null);
+  const bodyStyle = useReadingBodyStyle();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
   const [replayKey, setReplayKey] = useState(0);
@@ -86,17 +95,18 @@ export function ReadingDialog({
   const passage: PassageState =
     fetched && fetched.ref === passageRef && fetched.translation === translation ? fetched.value : "loading";
 
-  // A1: the pull-quote only exists for the two full-text versions. For the
-  // other eight the key passage IS the body, so quoting it above would print
-  // the same verses twice in one scroll.
-  const keyVerse =
-    hasFullText &&
-    keyPassageRef &&
-    fetchedKeyVerse &&
-    fetchedKeyVerse.ref === keyPassageRef &&
-    fetchedKeyVerse.translation === translation
-      ? fetchedKeyVerse.text
-      : null;
+  // The key passage used to be pulled out into a blockquote above the body.
+  // Now that every version renders its whole chapter, quoting it there printed
+  // the same verses twice in one scroll, so it is tinted in place instead --
+  // this is just which verse numbers get the tint.
+  const keyVerseNumbers = useMemo(() => {
+    const parsedKey = keyPassageRef ? parseReference(keyPassageRef) : null;
+    if (!parsedKey || parsedKey.chapter !== chapter) return new Set<number>();
+    const end = parsedKey.verseEnd ?? parsedKey.verseStart;
+    const numbers = new Set<number>();
+    for (let v = parsedKey.verseStart; v <= end; v++) numbers.add(v);
+    return numbers;
+  }, [keyPassageRef, chapter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,22 +117,6 @@ export function ReadingDialog({
       cancelled = true;
     };
   }, [passageRef, translation]);
-
-  useEffect(() => {
-    if (!hasFullText || !keyPassageRef) return;
-    let cancelled = false;
-    void fetchPassage(keyPassageRef, translation).then((next) => {
-      if (cancelled) return;
-      setFetchedKeyVerse({
-        ref: keyPassageRef,
-        translation,
-        text: next === "loading" || next === "error" ? null : next.text,
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [hasFullText, keyPassageRef, translation]);
 
   const resolved = passage !== "loading";
   // F3: arm only once scripture is actually on screen. `resolved` alone counts
@@ -225,6 +219,7 @@ export function ReadingDialog({
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>
+      <ReadingBodySwitch />
       <p className="eyebrow">{eyebrow}</p>
       <div className="scripture-heading">
         <h2 id="reading-dialog-title">Matthew {chapter}</h2>
@@ -242,26 +237,37 @@ export function ReadingDialog({
         </select>
       </div>
 
-      {keyVerse && keyPassageRef && (
-        <blockquote className="reading-pullquote" data-section="key-verse">
-          <p>{keyVerse}</p>
-          <cite>{keyPassageRef}</cite>
-        </blockquote>
-      )}
-
       {passage === "loading" && <p className="passage-note">Loading…</p>}
       {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
-      {resolved && passage !== "error" && passage.text && <p className="passage-text">{passage.text}</p>}
-      {resolved && passage !== "error" && !passage.text && (
+      {resolved && passage !== "error" && passage.verses && (
+        <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
+          {Object.keys(passage.verses)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map((n) => (
+              <p
+                key={n}
+                className="passage-verse"
+                data-key-verse={keyVerseNumbers.has(n) ? "true" : undefined}
+              >
+                <sup className="passage-verse-number" aria-hidden="true">
+                  {n}
+                </sup>
+                {passage.verses?.[String(n)]}
+              </p>
+            ))}
+        </div>
+      )}
+      {resolved && passage !== "error" && !passage.verses && (
         <p className="passage-note">This passage is available at Bible.com.</p>
       )}
 
-      {parsed && !hasFullText && (
+      {parsed && (
         <a className="primary-button scripture-chapter-action" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
-          Read the rest of Matthew {chapter} on Bible.com ↗
+          Read the entire chapter on Bible.com ↗
         </a>
       )}
-      {parsed && hasFullText && (
+      {parsed && (
         <div className="link-groups">
           <details className="link-group link-disclosure">
             <summary>Commentaries</summary>

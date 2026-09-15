@@ -6,7 +6,6 @@ import type { Translation } from "@/components/avatar";
 import { ReadingDialog } from "@/components/reading-dialog";
 import { Sheet } from "@/components/sheet";
 import { checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
-import { TRANSLATION_META } from "@/lib/scripture/types";
 
 export function DayPreviewSheet({
   open,
@@ -31,9 +30,8 @@ export function DayPreviewSheet({
   const isGraceDay = entry.day >= 29;
   // D11/D12: the same reading dialog as everywhere else, in preview mode --
   // this sheet shows plan days that may not be readable yet, so nothing here
-  // ever ticks. Only the two full-text versions can show a whole chapter, so
-  // the rest preview their key passage (R1).
-  const hasFullText = TRANSLATION_META[translation].fullText && !isGraceDay;
+  // ever ticks. Every version previews the whole chapter now, so there is no
+  // longer a per-translation fork here.
 
   return (
     <Sheet open={open} onClose={onClose} labelledBy="day-preview-title" className="day-preview-sheet">
@@ -78,9 +76,8 @@ export function DayPreviewSheet({
       {readingOpen && entry.keyPassage && (
         <ReadingDialog
           chapter={entry.chapter}
-          passageRef={hasFullText ? `Matthew ${entry.chapter}` : entry.keyPassage}
+          passageRef={`Matthew ${entry.chapter}`}
           keyPassageRef={entry.keyPassage}
-          hasFullText={hasFullText}
           translation={translation}
           mode="preview"
           isCatchUp={false}
