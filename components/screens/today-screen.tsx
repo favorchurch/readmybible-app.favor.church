@@ -1,7 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
@@ -29,9 +28,35 @@ import type { GroupStats } from "@/lib/data/stats";
 // PROTOTYPE QUESTION: which single reading entrypoint makes the full chapter
 // feel discoverable without presenting Quick Verse as a competing destination?
 type ReadingVariant = "A" | "B" | "C";
+// "shipped" is the reviewed production card. A/B/C are design prototypes and
+// are unreachable outside development, so a shared ?variant= link cannot put a
+// real user on one.
+type ReadingSurface = "shipped" | ReadingVariant;
+
+const PROTOTYPES_ENABLED = process.env.NODE_ENV !== "production";
 
 function isReadingVariant(value: string | null): value is ReadingVariant {
   return value === "A" || value === "B" || value === "C";
+}
+
+function isReadingSurface(value: string | null): value is ReadingSurface {
+  return value === "shipped" || isReadingVariant(value);
+}
+
+function subscribeToReadingSurface(onChange: () => void) {
+  if (!PROTOTYPES_ENABLED) return () => {};
+  window.addEventListener("reading-prototype-change", onChange);
+  return () => window.removeEventListener("reading-prototype-change", onChange);
+}
+
+function readReadingSurface(): ReadingSurface {
+  if (!PROTOTYPES_ENABLED) return "shipped";
+  const value = new URLSearchParams(window.location.search).get("variant");
+  return isReadingSurface(value) ? value : "shipped";
+}
+
+function readingSurfaceServerSnapshot(): ReadingSurface {
+  return "shipped";
 }
 
 type ReadingVariantProps = {
@@ -48,10 +73,44 @@ function ReadingAction({ chapter, alreadyRead, onStart, className = "" }: Pick<R
     <button type="button" className={`reading-prototype-action ${className}`} onClick={() => onStart(chapter)}>
       <span>
         <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${chapter}`}</strong>
-        <small>Opens the full chapter when it&apos;s available</small>
+        <small>Opens the full chapter</small>
       </span>
       <b aria-hidden="true">→</b>
     </button>
+  );
+}
+
+type ShippedReadingCardProps = ReadingVariantProps & { isToday: boolean };
+
+function ShippedReadingCard({ chapter, day, isToday, alreadyRead, streakDays, onStart }: ShippedReadingCardProps) {
+  return (
+    <section
+      className={`reading-card ${alreadyRead ? "is-complete" : ""}`}
+      data-section="reading-card"
+      aria-live="polite"
+    >
+      <div className="reading-topline">
+        <span>
+          {isToday ? "TODAY'S READING" : `DAY ${day}`}
+          {alreadyRead ? " · COMPLETE" : ""}
+        </span>
+        <span className="streak">● {streakDays} day streak</span>
+      </div>
+      <div className="reading-main">
+        <div>
+          <span className="book-label">GOSPEL OF</span>
+          <h2>Matthew {chapter}</h2>
+          <p>Earns 10 coins for your group&apos;s home.</p>
+        </div>
+        <div className="chapter-mark">{String(chapter).padStart(2, "0")}</div>
+      </div>
+      {/* D1: one entrypoint. Reading is what records the day, so
+          there is nothing else here to tap. */}
+      <button className="primary-button today-reading-button" onClick={() => onStart(chapter)}>
+        <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${chapter}`}</strong>
+        <span className="button-arrow" aria-hidden="true">→</span>
+      </button>
+    </section>
   );
 }
 
@@ -160,19 +219,11 @@ export function TodayScreen({
   connectSwitcher?: ConnectSwitcherContext;
 }) {
   const entry = today.entry;
-  const searchParams = useSearchParams();
-  const rawReadingVariant = searchParams?.get("variant") ?? null;
-  const initialReadingVariant: ReadingVariant = isReadingVariant(rawReadingVariant) ? rawReadingVariant : "A";
-  const [readingVariant, setReadingVariant] = useState<ReadingVariant>(initialReadingVariant);
-  useEffect(() => {
-    function onPrototypeVariantChange(event: Event) {
-      const next = event instanceof CustomEvent ? event.detail : null;
-      if (typeof next === "string" && isReadingVariant(next)) setReadingVariant(next);
-    }
-
-    window.addEventListener("reading-prototype-change", onPrototypeVariantChange);
-    return () => window.removeEventListener("reading-prototype-change", onPrototypeVariantChange);
-  }, []);
+  const readingVariant = useSyncExternalStore(
+    subscribeToReadingSurface,
+    readReadingSurface,
+    readingSurfaceServerSnapshot,
+  );
   const [growthSheetOpen, setGrowthSheetOpen] = useState(false);
   const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
@@ -479,6 +530,17 @@ export function TodayScreen({
               ) : (
                 viewedEntry && (
                   <>
+                    {readingVariant === "shipped" && (
+                      <ShippedReadingCard
+                        chapter={viewedChapter}
+                        day={viewedEntry.day}
+                        isToday={viewedChapter === entry.chapter}
+                        keyPassage={viewedEntry.keyPassage}
+                        alreadyRead={alreadyRead}
+                        streakDays={streakDays}
+                        onStart={onStart}
+                      />
+                    )}
                     {readingVariant === "A" && (
                       <VariantA
                         chapter={viewedChapter}

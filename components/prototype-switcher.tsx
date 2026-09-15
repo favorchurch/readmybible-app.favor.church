@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 export const PROTOTYPE_VARIANTS = [
+  { key: "shipped", name: "Shipped card" },
   { key: "A", name: "One reading card" },
   { key: "B", name: "Chapter rail" },
   { key: "C", name: "Reading sheet" },
@@ -11,12 +12,12 @@ export const PROTOTYPE_VARIANTS = [
 type PrototypeVariant = (typeof PROTOTYPE_VARIANTS)[number]["key"];
 
 function isPrototypeVariant(value: string | null): value is PrototypeVariant {
-  return value === "A" || value === "B" || value === "C";
+  return value === "shipped" || value === "A" || value === "B" || value === "C";
 }
 
 function variantFromSearch(search: string): PrototypeVariant {
   const value = new URLSearchParams(search).get("variant");
-  return isPrototypeVariant(value) ? value : "A";
+  return isPrototypeVariant(value) ? value : "shipped";
 }
 
 function updateVariantUrl(next: PrototypeVariant) {
@@ -29,7 +30,7 @@ function updateVariantUrl(next: PrototypeVariant) {
 
 export function PrototypeSwitcher() {
   const [current, setCurrent] = useState<PrototypeVariant>(() =>
-    typeof window === "undefined" ? "A" : variantFromSearch(window.location.search),
+    typeof window === "undefined" ? "shipped" : variantFromSearch(window.location.search),
   );
   const currentIndex = PROTOTYPE_VARIANTS.findIndex(({ key }) => key === current);
 
@@ -69,11 +70,11 @@ export function PrototypeSwitcher() {
 
   return (
     <aside className="prototype-switcher" aria-label="Reading prototype choices">
-      <button type="button" onClick={() => setVariant(PROTOTYPE_VARIANTS[(currentIndex + 2) % 3].key)} aria-label="Previous prototype">
+      <button type="button" onClick={() => setVariant(PROTOTYPE_VARIANTS[(currentIndex + PROTOTYPE_VARIANTS.length - 1) % PROTOTYPE_VARIANTS.length].key)} aria-label="Previous prototype">
         ←
       </button>
       <span><b>Prototype</b> {current} · {variantName}</span>
-      <button type="button" onClick={() => setVariant(PROTOTYPE_VARIANTS[(currentIndex + 1) % 3].key)} aria-label="Next prototype">
+      <button type="button" onClick={() => setVariant(PROTOTYPE_VARIANTS[(currentIndex + 1) % PROTOTYPE_VARIANTS.length].key)} aria-label="Next prototype">
         →
       </button>
     </aside>
