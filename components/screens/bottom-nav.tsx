@@ -12,13 +12,16 @@ const BASE_NAV_ITEMS: { id: Tab; label: string; icon: NavIconName }[] = [
 export function BottomNav({
   tab,
   onSelect,
-  isLeader,
+  showLeaderTab,
 }: {
   tab: Tab;
   onSelect: (next: Tab) => void;
-  isLeader: boolean;
+  // True when the viewer should see the Leader tab: group leaders AND
+  // admin-scope viewers (regional/cluster/department heads, ADMIN_PERSON_IDS)
+  // who may have no Connect Group of their own.
+  showLeaderTab: boolean;
 }) {
-  const items = isLeader
+  const items = showLeaderTab
     ? [...BASE_NAV_ITEMS, { id: "leader" as const, label: "Leader", icon: "key" as const }]
     : BASE_NAV_ITEMS;
   return (

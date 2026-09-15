@@ -76,6 +76,7 @@ function appShellProps(): AppShellProps {
     campusBoard: [],
     appBaseUrl: "http://localhost:3000",
     devMockToday: "2026-10-05",
+    sectionSlot: null,
     campusGroups: [],
     testWritableGroupId: null,
   };

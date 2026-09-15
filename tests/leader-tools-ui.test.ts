@@ -178,11 +178,11 @@ describe("LeaderScreen", () => {
 
 describe("BottomNav leader visibility", () => {
   it("shows five items for a leader and four for a member", () => {
-    const { container, rerender } = render(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, isLeader: true }));
+    const { container, rerender } = render(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, showLeaderTab: true }));
     expect(container.querySelectorAll("button")).toHaveLength(5);
     expect(container.querySelector('[data-tab="leader"]')).not.toBeNull();
 
-    rerender(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, isLeader: false }));
+    rerender(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, showLeaderTab: false }));
     expect(container.querySelectorAll("button")).toHaveLength(4);
     expect(container.querySelector('[data-tab="leader"]')).toBeNull();
   });
@@ -220,6 +220,7 @@ describe("AppShell leader role guard and paper noise", () => {
         campusBoard,
         appBaseUrl: "http://localhost:3000",
         devMockToday: "2026-10-05",
+        sectionSlot: null,
       }),
     );
 
