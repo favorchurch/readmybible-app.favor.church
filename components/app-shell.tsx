@@ -624,6 +624,7 @@ export function AppShell(props: AppShellProps) {
       <BottomNav tab={activeTab} onSelect={selectTab} showLeaderTab={canSeeLeaderTab} />
       {readingChapter !== null && (
         <ReadingDialog
+          key={readingChapter}
           chapter={readingChapter}
           passageRef={readingPassage.passageRef}
           keyPassageRef={readingPassage.keyPassageRef}
@@ -635,7 +636,6 @@ export function AppShell(props: AppShellProps) {
           group={tick.kind === "ticked" ? tick.group : null}
           tick={tick}
           onReachBottom={() => recordReading(readingChapter)}
-          onReplay={() => recordReading(readingChapter)}
           onRetry={() => retryReading(readingChapter)}
           onTranslationChange={handleTranslationChange}
           onClose={() => {

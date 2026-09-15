@@ -85,7 +85,6 @@ export function ReadingDialog({
   group,
   tick,
   onReachBottom,
-  onReplay,
   onRetry,
   onTranslationChange,
   onClose,
@@ -101,7 +100,6 @@ export function ReadingDialog({
   group: CheckInGroupState | null;
   tick: TickState;
   onReachBottom: () => void;
-  onReplay: () => void;
   onRetry: () => void;
   onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
@@ -114,6 +112,7 @@ export function ReadingDialog({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
   const [replayKey, setReplayKey] = useState(0);
+  const [celebrationVisible, setCelebrationVisible] = useState(true);
 
   const passage: PassageState =
     fetched && fetched.ref === passageRef && fetched.translation === translation ? fetched.value : "loading";
@@ -236,14 +235,6 @@ export function ReadingDialog({
       observer.disconnect();
     };
   }, [armed]);
-
-  // D6/D7: a replay re-mounts the celebration to re-run its entry animation,
-  // and pulls it into view so the tap has a visible result.
-  function replay() {
-    setReplayKey((n) => n + 1);
-    onReplay();
-    celebrationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 
   const parsed = parseReference(passageRef);
   const attribution = resolved && passage !== "error" ? passage.attribution : null;
@@ -369,13 +360,21 @@ export function ReadingDialog({
             </p>
           )}
           {ticked && (
-            <div className="reading-tick-mark" key={replayKey}>
+            <button
+              type="button"
+              className="reading-tick-mark"
+              key={replayKey}
+              aria-controls="today-completion"
+              aria-expanded={celebrationVisible}
+              aria-label={celebrationVisible ? "Read today. Hide completion details" : "Read today"}
+              onClick={() => setCelebrationVisible(false)}
+            >
               <span className="reading-tick-check" aria-hidden="true">
                 ✓
               </span>
               <strong>Read today</strong>
               <span className="reading-tick-coins">+10</span>
-            </div>
+            </button>
           )}
           {tick.kind === "failed" && (
             <button type="button" className="reading-tick-retry" onClick={onRetry}>
@@ -385,7 +384,7 @@ export function ReadingDialog({
         </div>
       )}
 
-      {ticked && (
+      {ticked && celebrationVisible && (
         <div ref={celebrationRef}>
           <Celebration
             chapter={chapter}
@@ -396,9 +395,6 @@ export function ReadingDialog({
             simulated={tick.kind === "ticked" && tick.simulated}
             replayKey={replayKey}
           />
-          <button type="button" className="primary-button today-reading-button" onClick={replay}>
-            <strong>I read today</strong> <span aria-hidden="true">✓</span>
-          </button>
         </div>
       )}
     </Sheet>

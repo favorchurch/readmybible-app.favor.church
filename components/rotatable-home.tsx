@@ -128,7 +128,7 @@ export function RotatableHome({
           </button>
         </div>
       </div>}
-      {completed && <div className="home3d-complete">✦ 10 coins added</div>}
+      {completed && <div className="home3d-complete">✦ 10 points added</div>}
     </div>
   );
 }

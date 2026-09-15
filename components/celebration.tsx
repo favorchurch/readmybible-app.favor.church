@@ -40,7 +40,7 @@ export function Celebration({
   const stageChange = group ? stageTransition(group.before.ratio, group.after.ratio) : null;
 
   return (
-    <div className="today-completion reading-celebration" key={replayKey} data-section="celebration">
+    <div id="today-completion" className="today-completion reading-celebration" key={replayKey} data-section="celebration">
       {isCatchUp && <p className="eyebrow centered">CAUGHT UP</p>}
       <p className="completion-note">
         {isCatchUp
@@ -55,7 +55,7 @@ export function Celebration({
       <div className="coin-reward-card">
         <strong>+{COINS_PER_CHAPTER}</strong>
         <div>
-          <span>COINS ADDED</span>
+          <span>POINTS ADDED</span>
           <b>To {home}</b>
         </div>
       </div>

@@ -86,7 +86,6 @@ export function DayPreviewSheet({
           group={null}
           tick={{ kind: "idle" }}
           onReachBottom={() => {}}
-          onReplay={() => {}}
           onRetry={() => {}}
           onTranslationChange={onTranslationChange}
           onClose={() => {

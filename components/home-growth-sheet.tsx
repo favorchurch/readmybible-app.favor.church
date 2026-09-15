@@ -31,7 +31,7 @@ export function HomeGrowthSheet({
         </p>
 
         <p className="home-growth-principle">
-          Coins celebrate every chapter. Group completion percentage decides the home stage.
+          Points celebrate every chapter. Group completion percentage decides the home stage.
         </p>
 
         <div className="home-growth-formula">
