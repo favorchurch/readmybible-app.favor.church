@@ -3,6 +3,11 @@
 .picker-option { border: 1px solid var(--line); background: var(--paper); padding: 16px; border-radius: 4px; font-weight: 800; font-size: 14px; cursor: pointer; text-align: left; }
 .picker-option.selected { border: 2px solid var(--coral); background: #fff5eb; color: var(--coral); }
 .solo-screen .primary-button, .picker-screen .primary-button, .join-screen .primary-button { max-width: 420px; margin: 0 auto; }
+.login-screen { display: grid; align-content: center; min-height: 100dvh; padding-bottom: calc(44px + env(safe-area-inset-bottom)); }
+.login-screen .hero-copy { margin-top: 0; }
+.login-actions { width: min(100%, 420px); margin: 10px auto 0; }
+.login-actions .primary-button { text-decoration: none; }
+.login-actions .secondary-link { margin-top: 16px; }
 .join-code-form { max-width: 320px; margin: 0 auto 18px; display: grid; gap: 14px; }
 .join-code-form label { display: grid; gap: 6px; text-align: left; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
 .join-code-form input { border: 1px solid var(--line); background: var(--paper); border-radius: 4px; padding: 14px; font-size: 22px; letter-spacing: .3em; text-align: center; font-weight: 900; text-transform: uppercase; }

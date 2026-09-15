@@ -323,6 +323,9 @@ export function ProfileEditor({
             your private reading details.
           </p>
         </details>
+        <div className="profile-account-actions">
+          <a href="/auth/logout">Log out</a>
+        </div>
     </Sheet>
   );
 }

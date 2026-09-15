@@ -473,6 +473,8 @@ describe("ProfileEditor reading data disclosure", () => {
     expect(html).toContain("check-in history for this journey");
     expect(html).toContain("which days you read and your recent five-day streak");
     expect(html).toContain("Section leaders see group totals in their dashboard, not your private reading details");
+    expect(html).toContain('href="/auth/logout"');
+    expect(html).toContain(">Log out</a>");
 
     expect(html).not.toContain("can see today&#x27;s check-in status");
     expect(html).not.toContain("can see today's check-in status");

@@ -1,10 +1,9 @@
 /**
  * Public welcome screen for a logged-out visitor at `/`. Server Component,
  * no client JS: the only interactive element is a plain anchor to
- * `/auth/login` (SDK-mounted route) so the SDK's own redirect handles the
- * login flow -- see lib/auth0.ts and proxy.ts. Do not add `"use client"`
- * or an onClick handler here; that is exactly the client-side routing this
- * screen is required to avoid.
+ * `/login`, which explains the two clear next steps before handing off to
+ * Auth0. Do not add `"use client"` or an onClick handler here; that is
+ * exactly the client-side routing this screen is required to avoid.
  */
 export function WelcomeLanding() {
   return (
@@ -40,7 +39,7 @@ export function WelcomeLanding() {
             <br />
             One passage, one day at a time — with your Favor community.
           </p>
-          <a className="welcome-login" href="/auth/login">
+          <a className="welcome-login" href="/login">
             Log in with Favor
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
               <path d="M4 12h15m-6-6 6 6-6 6" />

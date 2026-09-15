@@ -9,12 +9,12 @@ import { WelcomeLanding } from "@/components/welcome";
 afterEach(() => cleanup());
 
 describe("WelcomeLanding", () => {
-  it("links to /auth/login with a plain anchor, not a Next Link", () => {
+  it("links to the login choice screen with a plain anchor, not a Next Link", () => {
     render(React.createElement(WelcomeLanding));
 
     const link = screen.getByRole("link", { name: /log in with favor/i });
     expect(link.tagName).toBe("A");
-    expect(link.getAttribute("href")).toBe("/auth/login");
+    expect(link.getAttribute("href")).toBe("/login");
     // next/link renders <a> too, but always stamps a prefetch marker via the
     // router; a plain <a> never does. This is the "no client-side prefetch"
     // requirement made observable.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Read My Bible: Login didn't finish",
@@ -28,9 +29,15 @@ export default async function AuthErrorPage({
           </p>
         )}
       </section>
-      <a className="primary-button" href="/auth/login">
-        Try again
-      </a>
+      <div className="login-actions">
+        <Link className="primary-button" href="/login">
+          <span>Choose a login option</span>
+          <span aria-hidden="true">→</span>
+        </Link>
+        <Link className="secondary-link" href="/">
+          Back to landing page
+        </Link>
+      </div>
     </main>
   );
 }
