@@ -87,3 +87,21 @@ describe("SplashCompanion", () => {
     expect(container.querySelector(".stage-mini")).not.toBeNull();
   });
 });
+
+describe("SplashCompanion without matchMedia (#125)", () => {
+  it("renders instead of throwing when the environment has no matchMedia", () => {
+    // Since #125 this component also mounts inside the reading sheet, so it is
+    // rendered by suites that never stub matchMedia. jsdom does not implement
+    // it, and the unguarded call threw
+    // `TypeError: window.matchMedia is not a function` at mount.
+    const original = window.matchMedia;
+    // @ts-expect-error -- deleting an lib.dom member is the whole point here.
+    delete window.matchMedia;
+    try {
+      expect(() => render(<SplashCompanion />)).not.toThrow();
+      expect(document.querySelector(".splash-companion-figure")).not.toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});

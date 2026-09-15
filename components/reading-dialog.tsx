@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { CheckInGroupState } from "@/app/actions/checkIn";
+import { SplashCompanion } from "@/components/app-splash";
 import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
 import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
@@ -264,7 +265,18 @@ export function ReadingDialog({
         </select>
       </div>
 
-      {passage === "loading" && <p className="passage-note">Loading…</p>}
+      {passage === "loading" && (
+        <div className="passage-loading" role="status">
+          {/* The glyph is aria-hidden because it is decorative, and a live
+              region is announced from its TEXT content -- an aria-label names
+              the region but is not what gets read out on update, and `status`
+              is not a name-from-content role either. Without this span a
+              screen-reader user gets silence where they previously heard
+              "Loading", which is the regression issue #125 called out. */}
+          <span className="sr-only">Loading {chapterReference(chapter)}</span>
+          <SplashCompanion size={48} />
+        </div>
+      )}
       {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
       {resolved && passage !== "error" && passage.verses && (
         <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
