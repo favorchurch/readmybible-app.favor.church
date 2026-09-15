@@ -119,9 +119,7 @@ Visual review covered Tent, Trailer, Cabin, Apartment, House and Mansion in port
 
 ## Pending checks handoff
 
-- Run and record the final production build on the merged branch.
 - Physical iOS/Android touch, low-end GPU performance, repeated context loss, and every avatar customization combination remain untested.
-- The temporary `/scene-review` development fixture is removed before shipping.
 - No product decisions remain for approved option B. Issue #101 remains open unless separately closed by its owner.
 
 ## Remaining-home rollout plan
