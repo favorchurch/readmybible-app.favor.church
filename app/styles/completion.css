@@ -352,8 +352,7 @@
   background: transparent;
   color: var(--ink-muted);
   font-family: inherit;
-  font-size: 11px;
-  /* decorative */
+  font-size: 11px; /* decorative */
   cursor: pointer;
 }
 
