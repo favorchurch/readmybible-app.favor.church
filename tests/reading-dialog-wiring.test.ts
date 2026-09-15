@@ -469,6 +469,73 @@ describe("review regressions", () => {
   });
 });
 
+describe("issue #123: the heading shows the chapter's full verse range", () => {
+  it("shows the full range immediately, before the passage fetch resolves", async () => {
+    // The heading must be correct off the static MATTHEW_VERSE_COUNTS table
+    // while passage === "loading" -- it cannot wait on the fetch. Hold the
+    // fetch open to freeze the dialog in the loading state and assert first.
+    let resolveFetch!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          }),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 12:1-50");
+
+    // Release the pending fetch so it does not leak into the next test.
+    resolveFetch(
+      new Response(
+        JSON.stringify({
+          ref: "Matthew 12",
+          translation: "NIV",
+          text: "Then one said unto him.",
+          verses: { "1": "Then one said unto him." },
+          bibleComUrl: "",
+          attribution: "NIV attribution",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+  });
+
+  it("shows the whole chapter's range, not the 2-3 verse fallback range, under key-passage-fallback", async () => {
+    // The loaded body only carries Matthew 12:11-12 here. Deriving the
+    // heading from passage.verses would render "Matthew 12:11-12" instead of
+    // the full chapter -- the static table must win.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ref: "Matthew 12",
+            translation: "NIV",
+            text: "eleven twelve",
+            verses: { "11": "eleven", "12": "twelve" },
+            bibleComUrl: "",
+            attribution: "NIV attribution",
+            source: "key-passage-fallback",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-section="passage-degraded"]')).toBeTruthy();
+    });
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 12:1-50");
+  });
+});
+
 describe("D13: a body that needs no scrolling must not tick on open", () => {
   it("does not record the day just because the dialog opened", async () => {
     // Eight of the ten translations bundle only the key passage, so the end of
