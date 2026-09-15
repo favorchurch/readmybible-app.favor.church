@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
@@ -9,6 +10,7 @@ import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
+import { PrototypeSwitcher } from "@/components/prototype-switcher";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
@@ -23,6 +25,106 @@ import {
   syncViewedChapter,
 } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
+
+// PROTOTYPE QUESTION: which single reading entrypoint makes the full chapter
+// feel discoverable without presenting Quick Verse as a competing destination?
+type ReadingVariant = "A" | "B" | "C";
+
+function isReadingVariant(value: string | null): value is ReadingVariant {
+  return value === "A" || value === "B" || value === "C";
+}
+
+type ReadingVariantProps = {
+  chapter: number;
+  day: number;
+  keyPassage: string | null;
+  alreadyRead: boolean;
+  streakDays: number;
+  onStart: (chapter: number) => void;
+};
+
+function ReadingAction({ chapter, alreadyRead, onStart, className = "" }: Pick<ReadingVariantProps, "chapter" | "alreadyRead" | "onStart"> & { className?: string }) {
+  return (
+    <button type="button" className={`reading-prototype-action ${className}`} onClick={() => onStart(chapter)}>
+      <span>
+        <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${chapter}`}</strong>
+        <small>Opens the full chapter when it&apos;s available</small>
+      </span>
+      <b aria-hidden="true">→</b>
+    </button>
+  );
+}
+
+function VariantA({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  return (
+    <section className={`reading-prototype reading-prototype-a ${alreadyRead ? "is-complete" : ""}`} data-section="reading-prototype-a">
+      <div className="prototype-reading-topline">
+        <span>TODAY&apos;S READING</span>
+        <span>● {streakDays} day streak</span>
+      </div>
+      <div className="prototype-reading-lockup">
+        <div>
+          <span className="book-label">GOSPEL OF</span>
+          <h2>Matthew {chapter}</h2>
+          <p>Day {day} of 28 · Earns 10 coins for your group&apos;s home.</p>
+        </div>
+        <div className="prototype-chapter-mark">{String(chapter).padStart(2, "0")}</div>
+      </div>
+      {keyPassage && <p className="prototype-key-passage"><span>KEY PASSAGE</span>{keyPassage}</p>}
+      <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
+    </section>
+  );
+}
+
+function VariantB({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  return (
+    <section className="reading-prototype reading-prototype-b" data-section="reading-prototype-b">
+      <div className="chapter-rail-meta">
+        <span><b>DAY {String(day).padStart(2, "0")}</b> / 28</span>
+        <span>● {streakDays} day streak</span>
+      </div>
+      <div className="chapter-rail-body">
+        <div className="chapter-rail-number">{String(chapter).padStart(2, "0")}</div>
+        <div>
+          <span className="book-label">MATTHEW</span>
+          <h2>Make space for Matthew {chapter}.</h2>
+          <p>One chapter today. Ten coins toward your group&apos;s home.</p>
+        </div>
+      </div>
+      <div className="chapter-rail-footer">
+        <div>
+          <span className="book-label">TODAY&apos;S FOCUS</span>
+          <strong>{keyPassage ?? `Matthew ${chapter}`}</strong>
+        </div>
+        <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} className="compact" />
+      </div>
+    </section>
+  );
+}
+
+function VariantC({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  return (
+    <section className="reading-prototype reading-prototype-c" data-section="reading-prototype-c">
+      <div className="reading-sheet-heading">
+        <span className="book-label">YOUR READING / DAY {day}</span>
+        <span>● {streakDays} day streak</span>
+      </div>
+      <div className="reading-sheet-title">
+        <div className="reading-sheet-number">{String(chapter).padStart(2, "0")}</div>
+        <div>
+          <p>Gospel of</p>
+          <h2>Matthew</h2>
+          <strong>Chapter {chapter}</strong>
+        </div>
+      </div>
+      <div className="reading-sheet-note">
+        <span>Carry this with you</span>
+        <strong>{keyPassage ?? "A chapter to read at your pace."}</strong>
+      </div>
+      <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
+    </section>
+  );
+}
 
 export function TodayScreen({
   today,
@@ -58,6 +160,19 @@ export function TodayScreen({
   connectSwitcher?: ConnectSwitcherContext;
 }) {
   const entry = today.entry;
+  const searchParams = useSearchParams();
+  const rawReadingVariant = searchParams?.get("variant") ?? null;
+  const initialReadingVariant: ReadingVariant = isReadingVariant(rawReadingVariant) ? rawReadingVariant : "A";
+  const [readingVariant, setReadingVariant] = useState<ReadingVariant>(initialReadingVariant);
+  useEffect(() => {
+    function onPrototypeVariantChange(event: Event) {
+      const next = event instanceof CustomEvent ? event.detail : null;
+      if (typeof next === "string" && isReadingVariant(next)) setReadingVariant(next);
+    }
+
+    window.addEventListener("reading-prototype-change", onPrototypeVariantChange);
+    return () => window.removeEventListener("reading-prototype-change", onPrototypeVariantChange);
+  }, []);
   const [growthSheetOpen, setGrowthSheetOpen] = useState(false);
   const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
@@ -363,36 +478,38 @@ export function TodayScreen({
                 </section>
               ) : (
                 viewedEntry && (
-                  <section
-                    className={`reading-card ${alreadyRead ? "is-complete" : ""}`}
-                    data-section="reading-card"
-                    aria-live="polite"
-                  >
-                    <div className="reading-topline">
-                      <span>
-                        {viewedChapter === entry.chapter ? "TODAY'S READING" : `DAY ${viewedEntry.day}`}
-                        {alreadyRead ? " · COMPLETE" : ""}
-                      </span>
-                      <span className="streak">● {streakDays} day streak</span>
-                    </div>
-                    <div className="reading-main">
-                      <div>
-                        <span className="book-label">GOSPEL OF</span>
-                        <h2>Matthew {viewedChapter}</h2>
-                        <p>Earns 10 coins for your group&apos;s home.</p>
-                      </div>
-                      <div className="chapter-mark">{String(viewedChapter).padStart(2, "0")}</div>
-                    </div>
-                    {/* D1: one entrypoint. Reading is what records the day, so
-                        there is nothing else here to tap. */}
-                    <button
-                      className="primary-button today-reading-button"
-                            onClick={() => onStart(viewedChapter)}
-                    >
-                      <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${viewedChapter}`}</strong>
-                      <span className="button-arrow" aria-hidden="true">→</span>
-                    </button>
-                  </section>
+                  <>
+                    {readingVariant === "A" && (
+                      <VariantA
+                        chapter={viewedChapter}
+                        day={viewedEntry.day}
+                        keyPassage={viewedEntry.keyPassage}
+                        alreadyRead={alreadyRead}
+                        streakDays={streakDays}
+                        onStart={onStart}
+                      />
+                    )}
+                    {readingVariant === "B" && (
+                      <VariantB
+                        chapter={viewedChapter}
+                        day={viewedEntry.day}
+                        keyPassage={viewedEntry.keyPassage}
+                        alreadyRead={alreadyRead}
+                        streakDays={streakDays}
+                        onStart={onStart}
+                      />
+                    )}
+                    {readingVariant === "C" && (
+                      <VariantC
+                        chapter={viewedChapter}
+                        day={viewedEntry.day}
+                        keyPassage={viewedEntry.keyPassage}
+                        alreadyRead={alreadyRead}
+                        streakDays={streakDays}
+                        onStart={onStart}
+                      />
+                    )}
+                  </>
                 )
               )}
             </>
@@ -531,6 +648,7 @@ export function TodayScreen({
           onViewPlan={onViewProgress}
         />
       )}
+      <PrototypeSwitcher />
     </main>
   );
 }

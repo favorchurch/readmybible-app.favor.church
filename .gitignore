@@ -45,3 +45,4 @@ tsconfig.tsbuildinfo
 /.worktrees/
 /graft/
 .office/
+/scratch/
