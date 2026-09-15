@@ -41,7 +41,10 @@ export function TestModePanel({
   writableGroupId?: number | null;
   error?: string | null;
 }) {
-  const [collapsed, setCollapsed] = useState(true);
+  // Expanded by default: ?test=1 is an explicit opt-in, so the tester has
+  // already asked for these controls. The Show/Hide toggle stays for
+  // getting them out of the way mid-session.
+  const [collapsed, setCollapsed] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null | undefined>(undefined);
   const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
 

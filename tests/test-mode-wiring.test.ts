@@ -107,7 +107,12 @@ function baseProps(): AppShellProps {
  * selection is already the sandbox.
  */
 function selectSandbox() {
-  fireEvent.click(screen.getByRole("button", { name: /show/i }));
+  // The panel is expanded by default (#127); click Show only if a test or a
+  // future default leaves it collapsed, so this setup asserts nothing about it.
+  {
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
+  }
 }
 
 /**
@@ -237,7 +242,12 @@ describe("AppShell wiring: a simulated group never falls back to the real group"
     props.campusGroups = [{ groupId: 999, groupName: "Some Other Group" }];
     render(React.createElement(AppShell, props));
 
-    fireEvent.click(screen.getByRole("button", { name: /show/i }));
+    // The panel is expanded by default (#127); click Show only if a test or a
+  // future default leaves it collapsed, so this setup asserts nothing about it.
+  {
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
+  }
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "999" } });
 
     // "Rico Test" is the REAL group's only member. It must not appear under a

@@ -244,7 +244,12 @@ describe("AppShell leader role guard and paper noise", () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    // The panel is expanded by default (#127); click Show only if a test or a
+  // future default leaves it collapsed, so this setup asserts nothing about it.
+  {
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
+  }
     const testMode = screen.getByRole("region", { name: "Test mode" });
     fireEvent.click(within(testMode).getByRole("button", { name: /^Leader$/ }));
     fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
