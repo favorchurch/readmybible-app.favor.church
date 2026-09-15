@@ -95,6 +95,29 @@ phone.
 The dwell is a local gate only. Nothing about how long the sheet was open is recorded, sent,
 or shown, so the reading-time non-goal below still holds.
 
+### D14 — every version shows the whole chapter
+
+Supersedes the earlier split where only the `fullText` versions rendered a chapter and the rest
+showed their curated key passage plus a Bible.com link for the remainder.
+
+Five versions (NET, CSB, NIV, NASB2020, KRV) resolve the chapter from bundled data; the other
+six (ESV, NLT, MSG, NKJV, NASB, AMP) resolve it from a live per-chapter fetch. Both paths
+already existed — `LIVE_FETCH_VERSIONS` covered exactly those six — so the change is that the
+dialog now *asks* for `Matthew {chapter}` on every version instead of forking on `fullText`.
+
+Consequences worth naming:
+
+- The key-verse pull-quote is gone. With the whole chapter on screen it printed the same verses
+  twice in one scroll. Those verses are tinted where they sit instead (`data-key-verse`).
+- `getPassage` returns `verses`, the passage keyed by verse number, so each verse can carry a
+  numbered superscript. `text` stays on the response, derived from `verses`, because the tick
+  arming check and the tests read it.
+- `hasFullText` is no longer a rendering input to `ReadingDialog` and was removed from its
+  props rather than left as a dead one.
+- This widens what the app serves beyond the original per-publisher quotation limit that
+  `D-csb-niv-source` recorded (that decision lived in `intent/DECISIONS.md`, archived in
+  `docs/history.jsonl`). It was taken deliberately and with the licensing tradeoff stated.
+
 ## Non-goals
 
 - Any change to what a check-in writes server-side. `app/actions/checkIn.ts` is untouched.
