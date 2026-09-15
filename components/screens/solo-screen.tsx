@@ -25,10 +25,6 @@ export function SoloScreen({
         <h1>Join a connect to start!</h1>
         <p>Ask a Connect Group leader for their group code and join in. Your coins come with you.</p>
       </section>
-      <p className="onboarding-note">
-        You can join a Connect Group anytime this October. Chapters you&apos;ve already read stay
-        counted.
-      </p>
       {!entering ? (
         <button className="primary-button" onClick={() => setEntering(true)}>
           <strong>Enter a group code</strong>
@@ -59,7 +55,7 @@ export function SoloScreen({
         </form>
       )}
       <p className="onboarding-note">
-        Looking for a connect group? Sign up at <Link href="https://favor.church/connect" target="_blank">
+        Looking for a connect group? Sign up at <Link href="https://favor.church/connect" target="_blank" className="text-orange-600 underline-offset-2 underline hover:underline-offset-4">
           favor.church/connect
         </Link>
       </p>
