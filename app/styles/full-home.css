@@ -42,11 +42,11 @@
   top: calc(var(--ground-top) + var(--ground-drop));
   transform-style: preserve-3d;
   /* Move to the spot in scene coordinates, then undo the turntable's rotation
-     (rotateY) and tilt (rotateX -9deg) so the avatar always faces the viewer,
+     (rotateY) and tilt (--home-pitch) so the avatar always faces the viewer,
      then stand it on that spot. */
   transform: translate3d(var(--px, 0px), 0, var(--pz, 0px))
              rotateY(calc(-1 * var(--home-rotation, 0deg)))
-             rotateX(9deg)
+             rotateX(calc(-1 * var(--home-pitch, -9deg)))
              translate(-50%, -100%);
   text-align: center;
   border: 0;
