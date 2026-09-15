@@ -41,7 +41,7 @@ export function Celebration({
 
   return (
     <div className="today-completion reading-celebration" key={replayKey} data-section="celebration">
-      <p className="eyebrow centered">{isCatchUp ? "CAUGHT UP" : "TODAY'S READING COMPLETE"}</p>
+      {isCatchUp && <p className="eyebrow centered">CAUGHT UP</p>}
       <p className="completion-note">
         {isCatchUp
           ? `Matthew ${chapter} is complete. This chapter counts toward finishing Matthew with ${home}.`

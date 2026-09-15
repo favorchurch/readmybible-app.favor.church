@@ -183,7 +183,7 @@
 .reading-tick-coins { padding: 3px 10px; border-radius: 999px; background: var(--gold); color: var(--navy); font-size: 14px; font-weight: 900; animation: coinRise .6s .16s cubic-bezier(.2, .9, .3, 1.3) both; }
 .reading-tick-retry { width: 100%; min-height: 44px; border: 1px solid var(--coral); border-radius: var(--radius-md); background: transparent; color: var(--coral); font-weight: 900; cursor: pointer; }
 .reading-celebration { animation: celebrationIn .45s .1s ease-out both; }
-.simulated-badge { margin: 0 0 var(--space-4); padding: 5px 10px; display: inline-block; border-radius: 999px; border: 1px dashed var(--violet); color: var(--violet); letter-spacing: .12em; font-size: 12px; font-weight: 900; }
+.simulated-badge { margin: 0 auto var(--space-4); padding: 5px 10px; display: table; border-radius: 999px; border: 1px dashed var(--violet); color: var(--violet); letter-spacing: .12em; font-size: 12px; font-weight: 900; }
 
 @media (hover: hover) {
   .reading-tick-retry:hover { background: var(--coral); color: var(--paper); }
