@@ -295,11 +295,9 @@ describe("TodayScreen tent people toggle", () => {
         profile: testProfile,
         avatarCustomized: true,
         onStart: () => {},
-        onReplayCelebration: () => {},
         onEditProfile: () => {},
         onViewConnect: () => {},
         onViewProgress: () => {},
-        onTranslationChange: () => {},
       }),
     );
 
@@ -322,11 +320,9 @@ describe("TodayScreen tent people toggle", () => {
         profile: testProfile,
         avatarCustomized: true,
         onStart: () => {},
-        onReplayCelebration: () => {},
         onEditProfile: () => {},
         onViewConnect: () => {},
         onViewProgress: () => {},
-        onTranslationChange: () => {},
       }),
     );
 

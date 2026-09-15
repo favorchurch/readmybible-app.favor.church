@@ -5,3 +5,12 @@
 @keyframes sheetUp { from { transform: translateY(100%); } } @keyframes pop { from { transform: scale(.3) rotate(-20deg); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+/* Reading-dialog tick (D3). One-shot only: tests/css-rules.test.ts fails the
+   suite on any infinite animation, and the reduced-motion rule above already
+   flattens each of these to .01ms. */
+@keyframes tickIn { from { opacity: 0; transform: translateY(10px); } }
+@keyframes tickPop { from { transform: scale(.2) rotate(-35deg); opacity: 0; } 60% { transform: scale(1.18) rotate(6deg); } }
+@keyframes coinRise { from { opacity: 0; transform: translateY(12px) scale(.7); } }
+@keyframes celebrationIn { from { opacity: 0; transform: translateY(14px); } }
+@keyframes dwellFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
