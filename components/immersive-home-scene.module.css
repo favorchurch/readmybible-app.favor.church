@@ -1,0 +1,107 @@
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #173a37;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.scene[data-dragging="camera"] { cursor: grabbing; }
+.scene[data-dragging="person"] { cursor: move; }
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.canvas:focus-visible {
+  outline: 3px solid rgba(255, 235, 171, .95);
+  outline-offset: -5px;
+}
+
+.labels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.memberLabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: end center;
+  border: 0;
+  border-radius: 999px;
+  padding: 28px 7px 5px;
+  color: #fffdf4;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-shadow: 0 1px 3px #071713, 0 0 8px #071713;
+  transform: translate(-50%, -72%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.memberLabel:focus-visible {
+  outline: 3px solid #ffd86a;
+  background: rgba(7, 23, 19, .6);
+}
+
+.selected { color: #ffe182; }
+
+.hint {
+  position: absolute;
+  left: 50%;
+  top: 17%;
+  z-index: 3;
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: #fffdf4;
+  background: rgba(8, 27, 25, .65);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  animation: hint-in .45s ease-out both;
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #fff8df;
+  text-align: center;
+  background: radial-gradient(circle at 50% 65%, #b95d2c 0 5%, #23463b 26%, #102c31 68%);
+}
+
+@keyframes hint-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint { animation: none; }
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .hint { top: 13%; max-width: 70%; text-align: center; }
+  .memberLabel { font-size: 12px; }
+}

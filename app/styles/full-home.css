@@ -119,3 +119,41 @@
   .full-home .home3d-immersive.stage-mansion { --model-scale: 1.2; }
 }
 @media (prefers-reduced-motion: reduce) { .home3d-turntable { transition: none; } }
+
+/* The landscape owns the screen; controls sit along its edges. */
+.scene-home { background: #172943; color: var(--paper); }
+.scene-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--paper); background: #173a37; }
+.scene-home .sheet-scroll { overflow: hidden; }
+.scene-home .full-home-header { background: linear-gradient(#172943b8, transparent); color: var(--paper); pointer-events: none; }
+.scene-home .full-home-header button { pointer-events: auto; }
+.scene-home .home-float-button { display: grid; place-items: center; color: var(--paper); background: #172943a8; }
+.scene-home .coin-chip { background: var(--gold-soft); color: var(--navy); }
+.scene-home .full-home-identity h2 { font-size: 15px; }
+.scene-home .full-home-identity > span { color: var(--paper); }
+.scene-home .full-home-footer { display: grid; grid-template-columns: 1fr; gap: 12px; background: linear-gradient(transparent, #142b27b3); }
+.scene-progress { width: min(100%, 430px); display: block; padding: 0; border-radius: 22px; pointer-events: auto; background: #fffaf0ed; }
+.scene-progress summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 10px 16px; cursor: pointer; font-size: 12px; font-weight: 700; list-style: none; }
+.scene-progress summary::-webkit-details-marker { display: none; }
+.scene-progress summary > span:last-child { font-size: 23px; line-height: 1; }
+.scene-progress-details { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 14px; max-height: min(280px, 40dvh); overflow: auto; }
+.scene-progress-details > strong, .scene-progress-details > span { flex-basis: 100%; }
+.home-scene-switch { pointer-events: auto; justify-self: center; display: flex; padding: 3px; gap: 3px; border-radius: var(--radius-pill); background: #172943d9; }
+.home-scene-switch button { min-height: 40px; min-width: 92px; padding: 8px 14px; border: 0; border-radius: var(--radius-pill); color: var(--paper); background: transparent; cursor: pointer; font-size: 13px; font-weight: 700; }
+.home-scene-switch button[aria-pressed="true"] { background: var(--paper); color: var(--navy); }
+.full-home:not(.scene-home) .home-scene-switch { width: max-content; margin: 12px auto 0; }
+.scene-home .home-floating-actions { margin: 0; gap: 28px; }
+.scene-home .home-floating-actions button { color: var(--paper); background: transparent; padding: 0; min-height: 66px; min-width: 62px; }
+.scene-home .home-floating-actions button > span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--paper); color: var(--navy); font-size: 25px; }
+.scene-home button:focus-visible, .scene-progress summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+@media (orientation: landscape) {
+  .scene-home .full-home-footer { grid-template-columns: minmax(190px, 340px) 1fr auto; align-items: end; gap: 18px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .scene-home .scene-progress { margin: 0; }
+  .scene-home .home-scene-switch { justify-self: center; }
+  .scene-home .home-floating-actions { gap: 14px; }
+  .scene-home .full-home-identity { max-width: none; }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  .scene-home .full-home-footer { gap: 10px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .scene-home .home-floating-actions { gap: 8px; }
+  .home-scene-switch button { min-width: 76px; padding-inline: 10px; }
+}
