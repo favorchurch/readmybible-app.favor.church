@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
   // AppShell is a "use client" component with a heavy tree of its own; the
   // branching test only needs to know Page() reached it, not how it renders.
-  AppShellMarker: () => null,
+  AppShellMarker: vi.fn(() => null),
   // WelcomeLanding's own markup (anchor target, sample-content labelling,
   // image dimensions) is covered separately in welcome-landing.test.ts; this
   // file only asserts Page() selects it for the logged-out branch.
@@ -93,5 +93,68 @@ describe("Page() session branching", () => {
 
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect((result as { type: unknown }).type).toBe(mocks.AppShellMarker);
+  });
+
+  it("passes all connect groups across all campuses to AppShell even in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      mocks.getSessionContext.mockResolvedValue({
+        status: "ok",
+        rockPersonId: 13358,
+        rockGender: 1,
+        displayName: "Alex",
+        memberships: [],
+        sectionMemberships: [],
+        activeGroup: null,
+        needsGroupChoice: false,
+        campusId: null,
+        isLeader: false,
+        isAdminScope: false,
+        defaultTranslation: "NIV",
+      });
+
+      const { getAllConnectGroups, getAllCampusNames } = await import("@/lib/rock/client");
+      vi.mocked(getAllConnectGroups).mockResolvedValueOnce([
+        {
+          Id: 101,
+          Name: "Group Manila",
+          GroupTypeId: 25,
+          CampusId: 1,
+          ParentGroupId: null,
+          IsActive: true,
+          IsArchived: false,
+          locality: null,
+        },
+        {
+          Id: 202,
+          Name: "Group Brisbane",
+          GroupTypeId: 25,
+          CampusId: 2,
+          ParentGroupId: null,
+          IsActive: true,
+          IsArchived: false,
+          locality: null,
+        },
+      ]);
+      vi.mocked(getAllCampusNames).mockResolvedValueOnce(
+        new Map([
+          [1, "Manila"],
+          [2, "Brisbane"],
+        ]),
+      );
+
+      const result = await Page();
+
+      expect((result as { props: unknown }).props).toEqual(
+        expect.objectContaining({
+          campusGroups: [
+            { groupId: 202, groupName: "Group Brisbane — Brisbane" },
+            { groupId: 101, groupName: "Group Manila — Manila" },
+          ],
+        }),
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

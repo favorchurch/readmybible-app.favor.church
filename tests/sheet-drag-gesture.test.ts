@@ -32,12 +32,15 @@ function firePointer(el: Element, type: string, clientY: number, clientX = 100) 
 describe("Sheet touch gesture", () => {
   it("scrolls content on an upward drag (flick up) that starts on a button/row, not just empty space", () => {
     render(
-      React.createElement(Sheet, {
-        open: true,
-        onClose: () => {},
-        labelledBy: "t",
-        children: React.createElement("button", { type: "button", "data-testid": "row" }, "Row"),
-      })
+      React.createElement(
+        Sheet,
+        {
+          open: true,
+          onClose: () => {},
+          labelledBy: "t",
+        },
+        React.createElement("button", { type: "button", "data-testid": "row" }, "Row"),
+      )
     );
     const scroll = document.querySelector(".sheet-scroll") as HTMLElement;
     const row = document.querySelector('[data-testid="row"]') as HTMLElement;
@@ -53,12 +56,15 @@ describe("Sheet touch gesture", () => {
   it("does not close the sheet when dragging down starting on a button/row", () => {
     const onClose = vi.fn();
     render(
-      React.createElement(Sheet, {
-        open: true,
-        onClose,
-        labelledBy: "t",
-        children: React.createElement("button", { type: "button", "data-testid": "row" }, "Row"),
-      })
+      React.createElement(
+        Sheet,
+        {
+          open: true,
+          onClose,
+          labelledBy: "t",
+        },
+        React.createElement("button", { type: "button", "data-testid": "row" }, "Row"),
+      )
     );
     const row = document.querySelector('[data-testid="row"]') as HTMLElement;
 
@@ -72,12 +78,15 @@ describe("Sheet touch gesture", () => {
   it("still closes the sheet when dragging down from the drag handle", () => {
     const onClose = vi.fn();
     render(
-      React.createElement(Sheet, {
-        open: true,
-        onClose,
-        labelledBy: "t",
-        children: React.createElement("div", null, "content"),
-      })
+      React.createElement(
+        Sheet,
+        {
+          open: true,
+          onClose,
+          labelledBy: "t",
+        },
+        React.createElement("div", null, "content"),
+      )
     );
     const handle = document.querySelector(".sheet-drag-handle") as HTMLElement;
 

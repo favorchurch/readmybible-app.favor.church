@@ -30,14 +30,10 @@ export type TestGroupSnapshotResult =
 
 /**
  * Returns snapshot data (roster, stats, campus name) for any Connect Group,
- * allowing test-mode simulation of that group.
- * Refuses unless NODE_ENV !== "production" AND caller has admin scope.
+ * allowing test-mode simulation of that group across all campuses org-wide.
+ * Requires an authenticated session and a GT25 Connect Group.
  */
 export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Promise<TestGroupSnapshotResult> {
-  if (process.env.NODE_ENV === "production") {
-    return { ok: false, error: "Test mode is not available in production." };
-  }
-
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Invalid group ID." };
@@ -48,9 +44,6 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
   if (session.status !== "ok") {
     return { ok: false, error: "You need to be logged in." };
   }
-  if (!session.isAdminScope) {
-    return { ok: false, error: "Admin scope required to view test groups." };
-  }
 
   const groupBasic = await getGroupBasic(groupId);
   if (!groupBasic) {
@@ -60,11 +53,8 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
   // A server action is a directly callable HTTP endpoint, so it enforces scope
   // itself rather than trusting the picker that displays it.
   //
-  // The campus fence is deliberately GONE: test mode simulates any Connect
-  // Group org-wide. What still bounds this is the pair of checks above -- it
-  // refuses entirely in production, and requires admin scope otherwise -- plus
-  // the group type check below. A non-admin, or anyone at all in production,
-  // reaches nothing.
+  // Test mode simulates any Connect Group org-wide across all campuses.
+  // What bounds this is the authentication check above and the group type check below.
   if (groupBasic.GroupTypeId !== GROUP_TYPE_CONNECT_GROUP) {
     return { ok: false, error: `Group ${groupId} is not a Connect Group.` };
   }
