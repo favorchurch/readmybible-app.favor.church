@@ -445,3 +445,6 @@
   font-size: 13px;
   text-decoration: none;
 }
+
+/* A group with no join code yet: informational, not a failure. */
+.code-empty-note { margin: 6px 0 0; color: var(--ink-muted); font-weight: 600; }

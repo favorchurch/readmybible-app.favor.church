@@ -148,11 +148,13 @@ export function AppShell(props: AppShellProps) {
   const testModeGetJoinCode = useMemo(() => {
     return async (): Promise<JoinCodeResult> => {
       if (simulatedGroupId === null) {
-        return { ok: false, error: "No group code yet." };
+        return { ok: false, error: "No group code yet.", reason: "no-code-yet" };
       }
       const result = await getJoinCodeForGroup(simulatedGroupId);
       if (!result.ok) return { ok: false, error: result.error };
-      if (result.code === null) return { ok: false, error: "No group code yet." };
+      if (result.code === null) {
+        return { ok: false, error: "No group code yet.", reason: "no-code-yet" };
+      }
       return { ok: true, code: result.code };
     };
   }, [simulatedGroupId]);
@@ -649,7 +651,12 @@ export function AppShell(props: AppShellProps) {
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
           sectionSlot={props.sectionSlot}
-          hasGroupView={!!props.activeGroup}
+          // Must follow the SAME group readerGroupId does. Leaving this on the
+          // real group meant an admin with no Connect Group of their own could
+          // pick a group in the panel and still hit LeaderScreen's no-group early
+          // return -- no code tile at all, and the fetch never fired. That is
+          // exactly the population the test-mode entry point is gated to.
+          hasGroupView={testMode.active ? simulatedGroupId !== null : !!props.activeGroup}
         />
       )}
       <BottomNav tab={activeTab} onSelect={selectTab} showLeaderTab={canSeeLeaderTab} />

@@ -7,7 +7,15 @@ import { joinCodes } from "@/db/schema";
 import { randomJoinCode } from "@/lib/join-code";
 import { getSessionContext } from "@/lib/session";
 
-export type JoinCodeResult = { ok: true; code: string } | { ok: false; error: string };
+/**
+ * `reason: "no-code-yet"` marks the one failure that is not a failure: the
+ * group simply has no code yet. The Leader tab renders that as an empty
+ * state rather than an error, so it must be distinguishable by type rather
+ * than by matching the copy.
+ */
+export type JoinCodeResult =
+  | { ok: true; code: string }
+  | { ok: false; error: string; reason?: "no-code-yet" };
 
 const MAX_ATTEMPTS = 8;
 

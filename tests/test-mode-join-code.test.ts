@@ -170,6 +170,31 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     expect(getOrCreateJoinCode).not.toHaveBeenCalled();
   });
 
+  // Review finding: `readerGroupId` was made simulated while its sibling
+  // `hasGroupView` was left on the real group. An admin with no Connect Group
+  // of their own -- exactly the population the test-mode entry point is gated
+  // to -- then hit LeaderScreen's no-group early return, so the tile never
+  // rendered and the fetch never fired.
+  it("renders the code tile for a groupless admin who picks a group in the panel", async () => {
+    getJoinCodeForGroup.mockResolvedValue({ ok: true, code: "PICKEDCODE", groupId: OTHER_GROUP });
+
+    const props: AppShellProps = { ...baseProps(), activeGroup: null, isAdminScope: true };
+    render(React.createElement(AppShell, props));
+
+    expandPanel();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
+    const viewerControl = screen.getByRole("group", { name: /viewer/i });
+    fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
+    const navLeader = screen
+      .getAllByRole("button", { name: /^leader$/i })
+      .find((el) => !viewerControl.contains(el));
+    fireEvent.click(navLeader!);
+
+    await waitFor(() => expect(screen.getByText("PICKEDCODE")).toBeTruthy());
+    expect(getJoinCodeForGroup).toHaveBeenCalledWith(OTHER_GROUP);
+    expect(getOrCreateJoinCode).not.toHaveBeenCalled();
+  });
+
   it("outside test mode, the original guarded path still runs getOrCreateJoinCode", async () => {
     searchParams.value = new URLSearchParams("");
     getOrCreateJoinCode.mockResolvedValueOnce({ ok: true, code: "REALWRITE" });
