@@ -608,7 +608,6 @@ export function AppShell(props: AppShellProps) {
       {activeTab === "leader" && (
         <LeaderScreen
           groupName={groupName}
-          campusBoard={props.campusBoard}
           roster={roster}
           today={today}
           profile={profile}

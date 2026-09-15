@@ -6,7 +6,7 @@ import { resolveScopeRole } from "@/lib/admin/access";
 import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { loadAdminStats } from "@/lib/admin/stats";
 import { HierarchyChart } from "@/components/sections/HierarchyChart";
-import { SectionTree } from "@/components/sections/SectionTree";
+import { HierarchyView } from "@/components/sections/hierarchy-view";
 import "@/components/sections/admin.css";
 
 /** Oxford-comma-joined list: "A", "A and B", "A, B, and C". */
@@ -106,13 +106,7 @@ export default async function SectionDashboard({
         </a>
       </div>
 
-      <div className="admin-section-block">
-        {statsSections.length === 0 ? (
-          <p>No sections found for your scope.</p>
-        ) : (
-          statsSections.map((section) => <SectionTree key={section.id} section={section} />)
-        )}
-      </div>
+      <HierarchyView sections={statsSections} />
     </>
   );
 }

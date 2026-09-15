@@ -1,8 +1,11 @@
 /**
  * Collapsible hierarchy table: section title -> child sections -> Connect
- * Groups, columns Group / Campus / Members / Read today / Progress / Home.
- * Server component -- <details>/<summary> gives the collapse behavior for
- * free, no client JS needed here (see intent/COPY.md "Admin" columns).
+ * Groups, columns Group / Campus / Members / Read today / Progress / Home,
+ * with a stage-count chart and a podium above each section's table.
+ * <details>/<summary> still gives the collapse behavior for free -- this
+ * component holds no state of its own. `forceOpen` exists so the quick
+ * filter in `hierarchy-view.tsx` can reveal a match buried three levels
+ * down without the leader clicking through to it.
  *
  * Below tablet width the same groups render as stacked cards instead of a
  * horizontally scrolling table; both presentations read through
@@ -10,6 +13,11 @@
  */
 import type { SectionWithStats } from "@/lib/admin/stats";
 import { CAMPUS_NAMES } from "@/lib/admin/campuses";
+import {
+  collectGroups,
+  LeadingConnects,
+  StageCountChart,
+} from "@/components/sections/hierarchy-overview";
 
 function campusLabel(campusId: number | null): string {
   if (campusId === null) return "Unknown";
@@ -101,12 +109,27 @@ function GroupCards({ groups }: { groups: SectionWithStats["groups"] }) {
   );
 }
 
-export function SectionTree({ section, depth = 0 }: { section: SectionWithStats; depth?: number }) {
+export function SectionTree({
+  section,
+  depth = 0,
+  forceOpen = false,
+  showPodium = true,
+}: {
+  section: SectionWithStats;
+  depth?: number;
+  forceOpen?: boolean;
+  /** False on a lone root, whose podium would just repeat the one above it. */
+  showPodium?: boolean;
+}) {
   const hasChildren = section.children.length > 0;
   const hasGroups = section.groups.length > 0;
+  // Rollup, not own-groups: the upper rows of the tree carry no groups of
+  // their own, so charting only `section.groups` would leave exactly the rows
+  // a cluster head cares about blank.
+  const rollup = collectGroups(section);
 
   return (
-    <details open={depth < 1} className="admin-section-details">
+    <details open={forceOpen || depth < 1} className="admin-section-details">
       <summary className="admin-section-summary">
         {section.name}
         <small>
@@ -114,6 +137,15 @@ export function SectionTree({ section, depth = 0 }: { section: SectionWithStats;
           {hasChildren ? `, ${section.children.length} sub-section${section.children.length === 1 ? "" : "s"}` : ""}
         </small>
       </summary>
+
+      <StageCountChart groups={rollup} label={`${section.name} — homes reached`} />
+      {showPodium && (
+        <LeadingConnects
+          groups={rollup}
+          heading="LEADING HERE"
+          label={`Leading Connect Groups in ${section.name}`}
+        />
+      )}
 
       {hasGroups && (
         <>
@@ -142,7 +174,7 @@ export function SectionTree({ section, depth = 0 }: { section: SectionWithStats;
         <ul className="admin-nested">
           {section.children.map((child) => (
             <li key={child.id}>
-              <SectionTree section={child} depth={depth + 1} />
+              <SectionTree section={child} depth={depth + 1} forceOpen={forceOpen} />
             </li>
           ))}
         </ul>
