@@ -267,8 +267,14 @@ export function AppShell(props: AppShellProps) {
   const isLeader = testMode.active
     ? testMode.state.viewer === "leader" || testMode.state.viewer === "admin"
     : props.isLeader;
+  // While test mode is active, the simulated viewer is the SOLE authority for
+  // admin scope -- the real signed-in user's own `props.isAdminScope` must not
+  // leak through, or a real admin simulating "member"/"non-member"/"leader"
+  // would still see admin-only surfaces (the Leader tab, the test-mode entry
+  // point, the profile editor's admin section) no matter which viewer they
+  // picked. Issue #121.
   const isAdminScope = testMode.active
-    ? testMode.state.viewer === "admin" || (props.isAdminScope ?? false)
+    ? testMode.state.viewer === "admin"
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
   const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
