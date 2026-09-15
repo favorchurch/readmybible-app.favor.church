@@ -86,6 +86,7 @@ function baseProps(): AppShellProps {
     campusBoard: [],
     appBaseUrl: "https://example.test",
     devMockToday: null,
+    sectionSlot: null,
     campusGroups: [{ groupId: SANDBOX, groupName: "TEST // Connect Group" }],
     testWritableGroupId: SANDBOX,
   };
