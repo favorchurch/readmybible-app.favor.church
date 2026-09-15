@@ -68,23 +68,29 @@ function collectText(nodes: readonly ApiBibleNode[]): string {
 function extractVerseMap(content: readonly ApiBibleNode[]): Record<string, string> {
   const verses: Record<string, string> = {};
 
-  function visit(nodes: readonly ApiBibleNode[]): void {
+  function visit(nodes: readonly ApiBibleNode[], activeVerse: string | null): string | null {
+    let currentVerse = activeVerse;
     for (const node of nodes) {
       if (node.name === "verse-span") {
         const verseId = node.attrs?.verseId;
         const match = typeof verseId === "string" ? /^[A-Z0-9]+\.\d+\.(\d+)$/.exec(verseId) : null;
         if (match) {
-          const verse = match[1];
+          currentVerse = match[1];
           const text = normalize(collectText(node.items ?? []));
-          if (text) verses[verse] = normalize(`${verses[verse] ?? ""} ${text}`);
+          if (text) verses[currentVerse] = normalize(`${verses[currentVerse] ?? ""} ${text}`);
         }
         continue;
       }
-      visit(node.items ?? []);
+      if (node.type === "text" && currentVerse && node.text) {
+        verses[currentVerse] = normalize(`${verses[currentVerse] ?? ""} ${node.text}`);
+        continue;
+      }
+      currentVerse = visit(node.items ?? [], currentVerse);
     }
+    return currentVerse;
   }
 
-  visit(content);
+  visit(content, null);
   return verses;
 }
 
