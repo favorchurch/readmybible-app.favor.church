@@ -43,3 +43,4 @@ tsconfig.tsbuildinfo
 /.office/
 /graphify-out/
 /.worktrees/
+/graft/
