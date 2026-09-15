@@ -60,6 +60,7 @@
   font: 700 19px var(--font-display);
   letter-spacing: -0.6px;
   text-transform: lowercase;
+  color: var(--coral);
 }
 
 .welcome-eyebrow {
