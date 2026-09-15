@@ -1,0 +1,360 @@
+/*
+ * Friendly splash screen and streaming skeleton fallback.
+ * Driven purely by CSS animation-delay tokens without JavaScript timers.
+ * Phase A (0 -> ~600ms): brand wordmark fade+rise on --cream.
+ * Phase B (from ~600ms): skeleton of home screen layout.
+ */
+
+.splash {
+  min-height: 100dvh;
+  background: var(--cream);
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Phase A: Brand wordmark */
+.splash-phase-a {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 10;
+  pointer-events: none;
+  animation: splashBrand calc(var(--dur-slow) * 2) var(--ease-out) forwards;
+}
+
+.splash-phase-a .brand {
+  font-family: Impact, "Arial Narrow", sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-stretch: condensed;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: .84;
+  font-size: 32px;
+  white-space: nowrap;
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--navy);
+  text-transform: lowercase;
+}
+
+.splash-phase-a .brand span {
+  display: block;
+  color: var(--coral);
+}
+
+@keyframes splashBrand {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(0px - var(--space-1)));
+    visibility: hidden;
+  }
+}
+
+/* Brand-only splash (AppBrandSplash for unauthenticated routes) */
+.splash.splash-brand-only .splash-phase-a {
+  animation: splashBrandIn var(--dur-slow) var(--ease-out) forwards;
+}
+
+@keyframes splashBrandIn {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Phase B: Home screen skeleton */
+.splash-phase-b {
+  min-height: 100dvh;
+  padding: 22px 18px calc(116px + env(safe-area-inset-bottom, 0px));
+  max-width: 1040px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  opacity: 0;
+  animation: splashSkeletonFadeIn var(--dur-slow) var(--ease-out) calc(var(--dur-slow) * 2) forwards;
+}
+
+/* Standalone skeleton (AppSkeleton used inside page Suspense) */
+.splash.splash-skeleton-standalone .splash-phase-b {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes splashSkeletonFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skeleton elements */
+.splash-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.splash-brand-block {
+  width: 120px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-avatar-block {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+
+/* Hero copy skeleton */
+.splash-hero-copy {
+  max-width: 720px;
+  margin: 44px auto 22px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.splash-hero-line {
+  height: clamp(38px, 9vw, 64px);
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-hero-line-1 {
+  width: 85%;
+}
+
+.splash-hero-line-2 {
+  width: 60%;
+}
+
+.splash-hero-sub-wrap {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.splash-hero-sub {
+  height: 15px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-hero-sub-1 {
+  width: 95%;
+}
+
+.splash-hero-sub-2 {
+  width: 70%;
+}
+
+/* Card 1: Readiness skeleton */
+.splash-card-readiness {
+  max-width: 720px;
+  margin: 0 auto var(--space-6);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--coral);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.splash-card-eyebrow {
+  height: 12px;
+  width: 72px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-bottom: var(--space-2);
+}
+
+.splash-card-title {
+  height: 22px;
+  width: 210px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-bottom: var(--space-3);
+}
+
+.splash-card-row {
+  min-height: 44px;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.splash-card-label {
+  height: 14px;
+  width: 100px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-val {
+  height: 14px;
+  width: 60px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+/* Card 2: Preview skeleton */
+.splash-card-preview {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.splash-card-topline {
+  height: 12px;
+  width: 100px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-sublabel {
+  height: 12px;
+  width: 70px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-top: var(--space-1);
+}
+
+.splash-card-heading-large {
+  height: 36px;
+  width: 160px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-date {
+  height: 12px;
+  width: 120px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-inset {
+  height: 52px;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+  margin-top: var(--space-2);
+}
+
+
+/* Skeleton Bottom Nav */
+.splash-nav {
+  position: fixed;
+  z-index: 30;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 1120px);
+  height: calc(74px + env(safe-area-inset-bottom, 0px));
+  padding: 8px max(12px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(255, 250, 240, .96);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+}
+
+.splash-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.splash-nav-icon {
+  width: 24px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-nav-label {
+  width: 34px;
+  height: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+@media (min-width: 760px) {
+  .splash-nav {
+    width: min(620px, 94%);
+    left: 50%;
+    bottom: 18px;
+    height: 70px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 6px 12px;
+  }
+}
+
+/* Degrade cleanly under prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .splash-phase-a {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+
+  .splash:not(.splash-skeleton-standalone) .splash-phase-b {
+    display: none !important;
+    animation: none !important;
+  }
+
+  .splash.splash-skeleton-standalone .splash-phase-b {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
