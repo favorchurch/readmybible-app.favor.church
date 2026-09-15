@@ -152,12 +152,27 @@ function openReadingDialog() {
   fireEvent.click(screen.getByRole("button", { name: /read matthew|read\. nice one/i }));
 }
 
+/** The loading companion checks this on mount; jsdom has no real implementation. */
+function mockMatchMedia(reduceMotion: boolean) {
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: query.includes("prefers-reduced-motion") ? reduceMotion : false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 beforeEach(() => {
   search.value = "";
   observers.length = 0;
   openState.intersecting = false;
   checkIn.mockClear();
   checkIn.mockImplementation(async (input: CheckInInput) => ({ ok: true, group: null, input }));
+  mockMatchMedia(true);
   vi.stubGlobal("IntersectionObserver", ReplayableIntersectionObserver);
   vi.stubGlobal(
     "fetch",
@@ -533,6 +548,90 @@ describe("issue #123: the heading shows the chapter's full verse range", () => {
       expect(document.querySelector('[data-section="passage-degraded"]')).toBeTruthy();
     });
     expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 12:1-50");
+  });
+});
+
+describe("issue #125: verse loading shows the companion glyph, not bare text", () => {
+  it("renders the splash companion glyph while the passage fetches", async () => {
+    let resolveFetch!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          }),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    expect(document.querySelector(".passage-loading .splash-companion")).toBeTruthy();
+
+    resolveFetch(
+      new Response(
+        JSON.stringify({
+          ref: "Matthew 12",
+          translation: "NIV",
+          text: "Then one said unto him.",
+          verses: { "1": "Then one said unto him." },
+          bibleComUrl: "",
+          attribution: "NIV attribution",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+  });
+
+  it("announces the loading status to a screen reader via role=status", async () => {
+    let resolveFetch!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          }),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    // Queried by role + content, not by accessible name: `status` is not a
+    // name-from-content role, and a live region is announced from its text
+    // anyway -- so the text is the thing worth asserting.
+    const status = document.querySelector(".passage-loading[role='status']") as HTMLElement | null;
+    expect(status).toBeTruthy();
+    // The glyph itself stays decorative -- the container is what carries the
+    // accessible name, matching how AppBrandSplash separates the two.
+    expect(status!.querySelector(".splash-companion")?.getAttribute("aria-hidden")).toBe("true");
+    // A live region announces its TEXT, and the glyph is aria-hidden. Asserting
+    // the attributes alone cannot tell a region that speaks from one that is
+    // silent, so assert the text node a screen reader actually reads.
+    expect(status!.textContent).toMatch(/loading matthew 12:1-50/i);
+
+    resolveFetch(
+      new Response(
+        JSON.stringify({
+          ref: "Matthew 12",
+          translation: "NIV",
+          text: "Then one said unto him.",
+          verses: { "1": "Then one said unto him." },
+          bibleComUrl: "",
+          attribution: "NIV attribution",
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+  });
+
+  it("leaves the error-state copy unchanged", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 500 })));
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    expect(await screen.findByText("This chapter is available at Bible.com.")).toBeTruthy();
+    expect(document.querySelector(".passage-loading")).toBeNull();
   });
 });
 

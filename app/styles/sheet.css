@@ -78,6 +78,12 @@
   color: var(--ink-muted);
 }
 
+.passage-loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
 .reading-prompt {
   width: 100%;
   border: 1px solid var(--line);

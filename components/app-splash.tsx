@@ -48,7 +48,14 @@ export function SplashCompanion({ size = DEFAULT_COMPANION_SIZE }: { size?: numb
   const [scene, setScene] = useState<CompanionScene>(INITIAL_SCENE);
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Not every environment that renders this implements matchMedia -- jsdom
+    // does not, and since #125 this component mounts inside the reading sheet
+    // too, so any test rendering that sheet would otherwise throw. Treat an
+    // absent matchMedia as "no stated preference" and keep rotating, which is
+    // what a browser without the media feature reports anyway.
+    const reduceMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
     const id = setInterval(() => setScene(randomScene()), COMPANION_INTERVAL_MS);
     return () => clearInterval(id);
