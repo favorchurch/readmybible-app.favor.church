@@ -520,7 +520,6 @@ export function AppShell(props: AppShellProps) {
           onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
-          isAdminScope={isAdminScope}
           sectionSlot={props.sectionSlot}
           hasGroupView={!!props.activeGroup}
         />

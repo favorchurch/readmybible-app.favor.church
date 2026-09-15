@@ -87,9 +87,14 @@ export async function HomeData({
   let simulatedScope: "global" | "cluster" | "region" | undefined;
 
   // Dev-only simulation of global/cluster/region scopes, re-homed verbatim
-  // from the original app/admin/page.tsx (see ef393bd).
+  // from the original app/admin/page.tsx (see ef393bd). In production, the
+  // simulate bar is also available to a viewer with a real server-resolved
+  // admin scope when `?test=1` is present -- matches the old app/admin/page.tsx
+  // behavior of `params.test === "1" && session.status === "ok"`, narrowed to
+  // require a genuine admin scope rather than any logged-in session.
   const isDev = process.env.NODE_ENV !== "production";
-  const isTest = isDev && (searchParams.test === "1" || searchParams.scope !== undefined);
+  const isProdAdminTest = !isDev && scope !== null && searchParams.test === "1";
+  const isTest = (isDev && (searchParams.test === "1" || searchParams.scope !== undefined)) || isProdAdminTest;
   if (isTest || (!scope && isDev)) {
     const requestedScope = searchParams.scope ?? (scope?.kind === "sections" ? "sections" : "global");
     if (requestedScope === "cluster") {

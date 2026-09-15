@@ -6,6 +6,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { joinCodes } from "@/db/schema";
 import { resolveAdminScope } from "@/lib/admin/access";
+import { flattenGroupNodes } from "@/lib/admin/stats";
+import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { getSessionContext } from "@/lib/session";
 
 const inputSchema = z.object({
@@ -32,10 +34,21 @@ export async function getJoinCodeForGroup(groupId: number): Promise<JoinCodeForG
     return { ok: false, error: "You need to be logged in." };
   }
 
-  const hasAdminScope = resolveAdminScope(session) !== null;
+  const scope = resolveAdminScope(session);
   const leadsGroup = session.memberships.some((m) => m.groupId === parsed.data.groupId && m.isLeader);
 
-  if (!hasAdminScope && !leadsGroup) {
+  let authorized = leadsGroup;
+  if (!authorized && scope !== null) {
+    if (scope.kind === "global") {
+      authorized = true;
+    } else {
+      const subtree = await loadSectionSubtree(scope.rootIds);
+      const groupsInScope = flattenGroupNodes(subtree);
+      authorized = groupsInScope.some((g) => g.id === parsed.data.groupId);
+    }
+  }
+
+  if (!authorized) {
     return { ok: false, error: "You don't have access to this group's join code." };
   }
 

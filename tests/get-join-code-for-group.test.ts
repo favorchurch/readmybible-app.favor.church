@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getSessionContext: vi.fn(),
   resolveAdminScope: vi.fn(),
+  loadSectionSubtree: vi.fn(),
   select: vi.fn(),
   from: vi.fn(),
   where: vi.fn(),
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/session", () => ({ getSessionContext: mocks.getSessionContext }));
 vi.mock("@/lib/admin/access", () => ({ resolveAdminScope: mocks.resolveAdminScope }));
+vi.mock("@/lib/rock/hierarchy", () => ({ loadSectionSubtree: mocks.loadSectionSubtree }));
 vi.mock("@/db/schema", () => ({ joinCodes: { groupId: "groupId", code: "code" } }));
 vi.mock("@/db", () => ({ db: { select: mocks.select } }));
 
@@ -61,6 +63,42 @@ describe("getJoinCodeForGroup", () => {
     mocks.resolveAdminScope.mockReturnValue({ kind: "global", rootIds: [1] });
     mocks.limit.mockResolvedValue([{ groupId: 101, code: "ABCD" }]);
     await expect(getJoinCodeForGroup(101)).resolves.toEqual({ ok: true, code: "ABCD" });
+  });
+
+  it("refuses a section-scoped viewer a groupId outside their subtree", async () => {
+    mocks.getSessionContext.mockResolvedValue(nonLeaderSession);
+    mocks.resolveAdminScope.mockReturnValue({ kind: "sections", rootIds: [23869] });
+    mocks.loadSectionSubtree.mockResolvedValue([
+      {
+        id: 23869,
+        name: "Cluster // Cielo Pabalan & Peejay Pabalan",
+        campusId: null,
+        children: [],
+        groups: [{ id: 9001, name: "In-scope group", campusId: 1, memberCount: 0, leaders: [] }],
+      },
+    ]);
+    await expect(getJoinCodeForGroup(24077)).resolves.toEqual({
+      ok: false,
+      error: "You don't have access to this group's join code.",
+    });
+    expect(mocks.loadSectionSubtree).toHaveBeenCalledWith([23869]);
+    expect(mocks.select).not.toHaveBeenCalled();
+  });
+
+  it("allows a section-scoped viewer a groupId inside their subtree", async () => {
+    mocks.getSessionContext.mockResolvedValue(nonLeaderSession);
+    mocks.resolveAdminScope.mockReturnValue({ kind: "sections", rootIds: [23869] });
+    mocks.loadSectionSubtree.mockResolvedValue([
+      {
+        id: 23869,
+        name: "Cluster // Cielo Pabalan & Peejay Pabalan",
+        campusId: null,
+        children: [],
+        groups: [{ id: 9001, name: "In-scope group", campusId: 1, memberCount: 0, leaders: [] }],
+      },
+    ]);
+    mocks.limit.mockResolvedValue([{ groupId: 9001, code: "OKAY" }]);
+    await expect(getJoinCodeForGroup(9001)).resolves.toEqual({ ok: true, code: "OKAY" });
   });
 
   it("allows a leader of the group with no admin scope", async () => {

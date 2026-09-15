@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AppSplash } from "@/components/app-splash";
 import type { AdminScope } from "@/lib/admin/access";
 import { resolveScopeRole } from "@/lib/admin/access";
@@ -39,24 +41,24 @@ export default async function SectionDashboard({
           <span className="admin-test-badge">Test mode</span>
           <span className="admin-test-label">Simulate view:</span>
           <div className="admin-test-links">
-            <a
-              href="/admin?test=1&scope=global"
+            <Link
+              href="/?tab=leader&test=1&scope=global"
               className={`admin-test-btn ${scopeRole === "Global Admin" ? "active" : ""}`}
             >
               Global Admin
-            </a>
-            <a
-              href="/admin?test=1&scope=cluster"
+            </Link>
+            <Link
+              href="/?tab=leader&test=1&scope=cluster"
               className={`admin-test-btn ${scopeRole === "Cluster Head" ? "active" : ""}`}
             >
               Cluster Head
-            </a>
-            <a
-              href="/admin?test=1&scope=region"
+            </Link>
+            <Link
+              href="/?tab=leader&test=1&scope=region"
               className={`admin-test-btn ${scopeRole === "Regional Leader" ? "active" : ""}`}
             >
               Regional Leader
-            </a>
+            </Link>
           </div>
         </div>
       )}

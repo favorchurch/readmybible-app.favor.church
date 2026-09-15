@@ -37,7 +37,6 @@ type LeaderScreenProps = {
   onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   onEditProfile: () => void;
   connectSwitcher?: ConnectSwitcherContext;
-  isAdminScope?: boolean;
   sectionSlot?: React.ReactNode;
   hasGroupView: boolean;
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { PLAN } from "@/lib/plan";
@@ -141,9 +142,9 @@ export function TestModePanel({
             </div>
             {state.viewer === "admin" && (
               <div className="test-mode-admin-banner">
-                <a href="/admin?test=1" className="test-mode-admin-link">
+                <Link href="/?tab=leader&test=1" className="test-mode-admin-link">
                   Open Admin Dashboard →
-                </a>
+                </Link>
               </div>
             )}
           </div>
