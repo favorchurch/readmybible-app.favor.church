@@ -105,7 +105,7 @@
 .tent-person-check { position: absolute; right: -4px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; background: var(--sage); color: #fff; font-size: 9px; border: 1.5px solid var(--paper); } /* decorative */
 .tent-person-name { font-size: 12px; font-weight: 700; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
 
-.home-info { padding: 14px 16px 17px; }.stage-row { display: flex; justify-content: space-between; margin-bottom: 9px; font-family: Georgia, serif; font-size: 15px; }.stage-name-row { display: inline-flex; align-items: center; gap: 6px; }.home-info-mini { flex-shrink: 0; }.home-info-next-row { justify-content: flex-end; }.stage-row .home-info-next:before { content: "Next · "; font-family: Arial, sans-serif; color: var(--ink-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }.stage-row.detail { font-family: Arial, sans-serif; font-size: 12px; color: var(--ink-muted); margin: 7px 0 0; }.stage-row.detail strong { color: var(--navy); }
+.home-info { padding: 14px 16px 17px; }.stage-row { display: flex; justify-content: space-between; margin-bottom: 9px; font-family: Georgia, serif; font-size: 15px; }.stage-name-row { display: inline-flex; align-items: center; gap: 6px; }.home-info-mini { flex-shrink: 0; }.home-info-next-row { justify-content: flex-end; }.stage-row .home-info-next:before { content: "Next · "; font-family: Arial, sans-serif; color: var(--ink-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }.stage-row.detail { font-family: Arial, sans-serif; font-size: 12px; color: var(--ink-muted); margin: 7px 0 0; }.stage-row.detail strong { color: var(--navy); }.home-info .open-home-button { margin-top: 14px; align-self: flex-start; }
 
 .people-today { max-width: 720px; margin: 17px auto 0; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--line); padding-bottom: 24px; }.avatar-stack { display: flex; min-width: 98px; }.avatar-stack .avatar { margin-right: -14px; border: 2px solid var(--cream); }.people-today strong, .people-today span { display: block; }.people-today strong { font-size: 12px; }.people-today span { color: var(--ink-muted); font-size: 12px; margin-top: 3px; }.daily-note { text-align: center; color: var(--coral); font-family: Georgia, serif; font-style: italic; margin: 22px 0 0; font-size: 13px; }
 
@@ -338,7 +338,8 @@
 
 .home-preview-card { text-align: center; }
 .home-preview-card p { margin: var(--space-2) 0 0; font-size: 13px; color: var(--ink-muted); }
-.home-preview-card .home-growth-trigger { margin-top: var(--space-2); }
+.home-preview-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; margin-top: var(--space-3); }
+.home-preview-actions > * { margin: 0; }
 .prelaunch-screen .hero-copy { margin-top: 26px; margin-bottom: 20px; }
 .prelaunch-screen .hero-copy h1 { font-size: clamp(40px, 10vw, 64px); }
 .prelaunch-screen .readiness-card { margin-top: 0; }

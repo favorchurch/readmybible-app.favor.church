@@ -59,6 +59,10 @@ summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
 .primary-button { width: 100%; min-height: 55px; border: 0; padding: 0 17px; display: flex; justify-content: space-between; align-items: center; background: var(--navy); color: #fff; border-radius: 3px; cursor: pointer; font-weight: 800; font-size: 14px; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }.primary-button:active { transform: scale(.98); }.primary-button:disabled { opacity: .55; cursor: not-allowed; }.primary-button span { font-size: 20px; }
 
+/* "Open Home" appears in a narrow rail and beside a text link, so it stays a
+   compact inline control instead of inheriting the full-width primary size. */
+.open-home-button { width: fit-content; min-height: 40px; padding: 0 16px; justify-content: center; gap: 8px; font-size: 13px; white-space: nowrap; }.open-home-button span { font-size: 15px; }
+
 /* Interaction baseline (Task 3): hover only for fine-pointer devices that can
    actually hover; every control also gets :focus-visible (the generic
    button:focus-visible rule above covers plain <button>s; non-button
