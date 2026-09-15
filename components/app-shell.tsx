@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { checkIn } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
-import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
+import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
+import { getOrCreateJoinCode, type JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
 import { joinByCode } from "@/app/actions/joinByCode";
 import { saveProfile } from "@/app/actions/saveProfile";
@@ -131,6 +132,30 @@ export function AppShell(props: AppShellProps) {
     () => guardWrite(testMode.active, getOrCreateJoinCode),
     [testMode.active],
   );
+  // The simulated group the panel has selected, falling back to the reader's
+  // real active group when nothing is picked -- same resolution TestModePanel
+  // already uses for its own "Join code: ..." preview (`simulatedGroupId`
+  // there), so the two stay showing the same group's code.
+  const simulatedGroupId = testMode.active
+    ? (testMode.state.groupId ?? props.activeGroup?.groupId ?? null)
+    : null;
+  // Read-only substitute for `getOrCreateJoinCode` while test mode is active:
+  // it can never INSERT a `joinCodes` row (#122), so the Leader tab's group
+  // code tile no longer depends on the write that test mode blocks. A group
+  // with no code yet is a real, expected state -- not an error -- so it maps
+  // to an honest `{ ok: false }` rather than a spinner that never resolves or
+  // a fabricated code.
+  const testModeGetJoinCode = useMemo(() => {
+    return async (): Promise<JoinCodeResult> => {
+      if (simulatedGroupId === null) {
+        return { ok: false, error: "No group code yet." };
+      }
+      const result = await getJoinCodeForGroup(simulatedGroupId);
+      if (!result.ok) return { ok: false, error: result.error };
+      if (result.code === null) return { ok: false, error: "No group code yet." };
+      return { ok: true, code: result.code };
+    };
+  }, [simulatedGroupId]);
 
   const [snapshot, setSnapshot] = useState<{
     groupId: number;
@@ -619,8 +644,8 @@ export function AppShell(props: AppShellProps) {
           today={today}
           profile={profile}
           appBaseUrl={props.appBaseUrl}
-          readerGroupId={props.activeGroup?.groupId ?? null}
-          onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
+          readerGroupId={testMode.active ? simulatedGroupId : (props.activeGroup?.groupId ?? null)}
+          onGetOrCreateJoinCode={testMode.active ? testModeGetJoinCode : guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
           sectionSlot={props.sectionSlot}
