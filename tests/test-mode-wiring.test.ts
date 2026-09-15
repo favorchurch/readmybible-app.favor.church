@@ -277,7 +277,10 @@ describe("AppShell wiring: the Leader tab follows the simulated viewer, not the 
   }
 
   function pickViewer(label: "Member" | "Leader" | "Admin" | "Non-member") {
-    fireEvent.click(screen.getByRole("button", { name: /show/i }));
+    // The panel is expanded by default (#127); click Show only if some
+    // future default leaves it collapsed. Asserts nothing either way.
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
     const viewerGroup = screen.getByRole("group", { name: "Viewer" });
     fireEvent.click(within(viewerGroup).getByRole("button", { name: label }));
   }
