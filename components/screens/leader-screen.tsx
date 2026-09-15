@@ -65,6 +65,9 @@ function LeaderScreenContent({
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  // Tracked separately from codeError so an expected "not created yet" is not
+  // painted with the same red treatment as a real failure.
+  const [isMissingCode, setIsMissingCode] = useState(false);
   const [showNames, setShowNames] = useState(false);
   const [expandedLocalities, setExpandedLocalities] = useState<ReadonlySet<string>>(() => new Set());
   const [cheeredMember, setCheeredMember] = useState<string | null>(null);
@@ -90,8 +93,14 @@ function LeaderScreenContent({
     let cancelled = false;
     onGetOrCreateJoinCode().then((result) => {
       if (cancelled) return;
-      if (result.ok) setJoinCode(result.code);
-      else setCodeError(result.error);
+      if (result.ok) {
+        setJoinCode(result.code);
+        setCodeError(null);
+        setIsMissingCode(false);
+      } else {
+        setCodeError(result.error);
+        setIsMissingCode(result.reason === "no-code-yet");
+      }
     });
     return () => {
       cancelled = true;
@@ -206,7 +215,15 @@ function LeaderScreenContent({
             <img src={qrDataUrl} alt={`QR code to join ${groupName}`} width={96} height={96} />
           )}
         </div>
-        {codeError && <p className="error-note">{codeError}</p>}
+        {/* A group that simply has no code yet is an expected state, not a
+            failure -- rendering it through .error-note gave it the same red
+            treatment as an authorization denial. */}
+        {codeError &&
+          (isMissingCode ? (
+            <p className="code-empty-note">{codeError}</p>
+          ) : (
+            <p className="error-note">{codeError}</p>
+          ))}
       </section>
 
       {/* Still reading — active phase, non-empty only */}
