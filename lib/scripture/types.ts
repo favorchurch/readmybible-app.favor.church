@@ -111,6 +111,15 @@ export type ScriptureResult = {
   translation: Translation;
   /** null when the bundled data has no entry for this reference (e.g. a range outside the 28 curated key passages on a non-full-text version). */
   text: string | null;
+  /**
+   * The same passage keyed by verse number, in the order the reference asked
+   * for: `{"1": "Then Jesus was led up...", "2": "After he had fasted..."}`.
+   * `text` is this map joined by spaces and stays on the response because the
+   * tick sentinel and the tests read it; `verses` is what the reading dialog
+   * renders, so it can put a numbered superscript before each verse. null
+   * exactly when `text` is null.
+   */
+  verses: Record<string, string> | null;
   bibleComUrl: string;
   /** Publisher attribution line (TRANSLATION_META[translation].attribution); required on every rendered passage. */
   attribution: string;

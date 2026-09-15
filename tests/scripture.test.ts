@@ -208,6 +208,31 @@ describe("getPassage", () => {
     expect(hit.attribution).toBe(TRANSLATION_META.NASB.attribution);
     expect(miss.attribution).toBe(TRANSLATION_META.CSB.attribution);
   });
+
+  it("returns the passage keyed by verse number alongside the joined text", async () => {
+    const result = await getPassage("Matthew 5:3-5", "NET");
+    expect(Object.keys(result.verses ?? {})).toEqual(["3", "4", "5"]);
+    // The numbered map is what the dialog renders; `text` must stay the same
+    // passage so the two can never drift into showing different words.
+    expect(result.text).toBe(Object.values(result.verses ?? {}).join(" "));
+  });
+
+  it("keys a bare-chapter reference by every verse in the chapter, in numeric order", async () => {
+    const result = await getPassage("Matthew 4", "NET");
+    const numbers = Object.keys(result.verses ?? {}).map(Number);
+    expect(numbers[0]).toBe(1);
+    expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+    expect(numbers.length).toBeGreaterThan(20);
+  });
+
+  it("nulls `verses` exactly when `text` is null", async () => {
+    const miss = await getPassage("Matthew 29:1", "CSB");
+    const unparseable = await getPassage("not a reference", "NET");
+    expect(miss.text).toBeNull();
+    expect(miss.verses).toBeNull();
+    expect(unparseable.text).toBeNull();
+    expect(unparseable.verses).toBeNull();
+  });
 });
 
 describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
