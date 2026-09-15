@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { AppSkeleton } from "@/components/app-splash";
+import { AppBrandSplash } from "@/components/app-splash";
 import { HomeData } from "@/components/home-data";
 import { getSessionContext } from "@/lib/session";
 import { WelcomeLanding } from "@/components/welcome";
@@ -21,7 +21,7 @@ export default async function Page(props?: {
   const searchParams = props?.searchParams ? await props.searchParams : {};
 
   return (
-    <Suspense fallback={<AppSkeleton />}>
+    <Suspense fallback={<AppBrandSplash />}>
       <HomeData session={session} searchParams={searchParams} />
     </Suspense>
   );
