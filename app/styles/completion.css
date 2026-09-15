@@ -166,8 +166,6 @@
    D1-D10 of docs/reading-dialog-tick.md. Every animation here is one-shot --
    tests/css-rules.test.ts rejects an infinite animation, and the global
    reduced-motion rule in motion.css neutralizes all of them. */
-.reading-dialog-sheet .passage-text { margin: 0 0 var(--space-5); }
-
 /* The chapter body carries the treatment the old key-verse pull-quote had --
    gold left bar on a warm card -- now that the whole chapter is what's on
    screen. The extra top margin separates it from the title and version pill,
@@ -218,8 +216,8 @@
 
 .passage-chapter[data-body-style="plain"] .passage-verse {
   /* serif-exception */
-  /* The same serif .passage-text used: this variant exists for reading a
-     28-verse chapter end to end, which is what that face was chosen for. */
+  /* This variant exists for reading a 28-verse chapter end to end, which is
+     what this face was chosen for when scripture first got a serif. */
   font-family: Georgia, serif;
   font-style: normal;
   font-weight: 400;

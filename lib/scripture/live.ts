@@ -77,7 +77,11 @@ export async function fetchLiveChapter(version: Translation, bookCode: string, c
   if (chapterCache.has(cacheKey)) return chapterCache.get(cacheKey) ?? null;
 
   const result = await fetchFromBolls(version, bookNumber, chapter);
-  chapterCache.set(cacheKey, result);
+  // Only a real chapter is cached. Caching the failure too meant one timeout
+  // pinned that version/chapter to "unavailable" for the life of the warm
+  // instance, so a reader who retried kept getting the cached outage instead
+  // of a fresh attempt.
+  if (result) chapterCache.set(cacheKey, result);
   return result;
 }
 

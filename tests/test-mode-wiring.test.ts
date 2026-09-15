@@ -145,7 +145,14 @@ function stubScriptureFetch() {
     "fetch",
     vi.fn(async () =>
       new Response(
-        JSON.stringify({ ref: "Matthew 1", translation: "NIV", text: "In the beginning.", bibleComUrl: "", attribution: "" }),
+        JSON.stringify({
+          ref: "Matthew 1",
+          translation: "NIV",
+          text: "In the beginning.",
+          verses: { "1": "In the beginning." },
+          bibleComUrl: "",
+          attribution: "",
+        }),
         { status: 200, headers: { "content-type": "application/json" } },
       ),
     ),

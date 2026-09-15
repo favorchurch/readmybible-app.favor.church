@@ -123,7 +123,16 @@ export function ReadingDialog({
   // an API error as resolved, and the error body is a single "available at
   // Bible.com" line -- entirely within view on open, so the reader would be
   // checked in for a chapter the app never showed them. No text, no tick.
-  const armed = mode !== "preview" && resolved && passage !== "error" && Boolean(passage.text);
+  //
+  // Keyed off `verses` because that is what the body below actually renders.
+  // Keying it off `text` instead let the two disagree: the API sets
+  // Cache-Control: public, max-age=86400, so for a day after this shipped a
+  // returning reader on a bundled version would be served a pre-deploy body
+  // that has `text` and no `verses` -- the dialog would render the "available
+  // at Bible.com" line, arm anyway, and tick them in for a chapter it never
+  // showed. Derive arming from the rendered content, not from a sibling field
+  // the client has to trust the server to keep in sync.
+  const armed = mode !== "preview" && resolved && passage !== "error" && Boolean(passage.verses);
 
   // Held in a ref so the observer effect does not depend on the callback's
   // identity. It is a new closure on every render, and re-running the effect
@@ -250,9 +259,10 @@ export function ReadingDialog({
                 className="passage-verse"
                 data-key-verse={keyVerseNumbers.has(n) ? "true" : undefined}
               >
-                <sup className="passage-verse-number" aria-hidden="true">
-                  {n}
-                </sup>
+                {/* Not aria-hidden: the number tells a reader which verse this
+                    is, which is content, not ornament. It is sized as content
+                    for the same reason. */}
+                <sup className="passage-verse-number">{n}</sup>{" "}
                 {passage.verses?.[String(n)]}
               </p>
             ))}

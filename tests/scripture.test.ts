@@ -257,6 +257,32 @@ describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
     expect(result.bibleComUrl).toContain("bible.com");
   });
 
+  it("serves a whole chapter live for a key-passage version", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([{ verse: 1, text: "one" }, { verse: 2, text: "two" }]), { status: 200 }),
+    );
+
+    const result = await getPassage("Matthew 4", "ESV");
+
+    expect(Object.keys(result.verses ?? {})).toEqual(["1", "2"]);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://bolls.life/get-text/ESV/40/4/");
+  });
+
+  it("falls back to the bundled key passage when the chapter cannot be fetched", async () => {
+    // Asking for a whole chapter made these six versions depend on a third
+    // party for any scripture at all. When it is down they must still get the
+    // curated passage that has always been on disk -- otherwise the reader
+    // sees nothing and, because arming is keyed to rendered verses, cannot
+    // check in either.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 503 }));
+
+    const result = await getPassage("Matthew 4", "ESV");
+
+    expect(result.verses).not.toBeNull();
+    expect(result.source).toBe("bundled");
+    expect(result.text).toBeTruthy();
+  });
+
   it("caches a live-fetched chapter so a second verse in the same chapter doesn't re-fetch", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(

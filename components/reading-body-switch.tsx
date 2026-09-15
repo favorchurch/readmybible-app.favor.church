@@ -76,6 +76,11 @@ export function ReadingBodySwitch() {
       ) {
         return;
       }
+      // Shift is required so plain ArrowUp/ArrowDown still scroll the sheet.
+      // Swallowing them outright made it impossible to keyboard-scroll down to
+      // the sentinel -- disabling, in dev only, the exact interaction the
+      // reading dialog exists to measure.
+      if (!event.shiftKey) return;
       if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
       event.preventDefault();
       applyBodyStyle(BODY_STYLES[(currentIndex + 1) % BODY_STYLES.length].key);
@@ -93,7 +98,7 @@ export function ReadingBodySwitch() {
         type="button"
         onClick={() => applyBodyStyle(BODY_STYLES[(currentIndex + 1) % BODY_STYLES.length].key)}
       >
-        <b>Body</b> {BODY_STYLES[currentIndex].name} · ↑↓
+        <b>Body</b> {BODY_STYLES[currentIndex].name} · ⇧↑↓
       </button>
     </aside>
   );

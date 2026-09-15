@@ -11,6 +11,7 @@
  * app/api/scripture/route.ts, a Route Handler, which Next.js already
  * refuses to bundle into client code.
  */
+import { planEntryForChapter } from "@/lib/plan";
 import { fetchApiBibleChapter, isApiBibleTranslation } from "@/lib/scripture/api-bible";
 import { bibleComUrl, parseReference } from "@/lib/scripture/reference";
 import { fetchLiveChapter } from "@/lib/scripture/live";
@@ -38,7 +39,10 @@ function joinVerses(verses: Record<string, string>): string {
  * "a passage that happens to be empty".
  */
 function extractVerseRange(chapter: Record<string, string>, parsed: ParsedReference): Record<string, string> | null {
-  if (parsed.verseEnd === null) return Object.keys(chapter).length ? chapter : null;
+  // Copied, not returned by reference: lib/scripture/live.ts holds this exact
+  // object in its module-level chapterCache, so handing it out would let one
+  // careless caller mutate every later read of that chapter.
+  if (parsed.verseEnd === null) return Object.keys(chapter).length ? { ...chapter } : null;
   const verses: Record<string, string> = {};
   for (let v = parsed.verseStart; v <= parsed.verseEnd; v++) {
     const text = chapter[String(v)];
@@ -72,7 +76,23 @@ async function extractPassage(translation: Translation, parsed: ParsedReference,
     const verses = extractVerseRange(liveChapter, parsed);
     if (verses) return { verses, source: "bolls" };
   }
+
+  // Last resort for the six versions that resolve a chapter over the network:
+  // asking for a whole chapter means a bolls.life outage would otherwise leave
+  // them with no scripture at all, where before this change they always had
+  // the bundled key passage on disk. Serving those few verses keeps the day
+  // readable -- and checkable-in -- without a third party being up.
+  const keyPassage = keyPassageForChapter(translation, parsed);
+  if (keyPassage) return { verses: keyPassage, source: "bundled" };
+
   return { verses: null, source: "unavailable" };
+}
+
+/** The curated key passage for a bare-chapter reference, when one is bundled for this version. */
+function keyPassageForChapter(translation: Translation, parsed: ParsedReference): Record<string, string> | null {
+  if (parsed.verseEnd !== null) return null;
+  const ref = planEntryForChapter(parsed.chapter)?.keyPassage;
+  return ref ? loadKeyPassage(translation, ref) : null;
 }
 
 export async function getPassage(ref: string, translation: Translation): Promise<ScriptureResult> {
