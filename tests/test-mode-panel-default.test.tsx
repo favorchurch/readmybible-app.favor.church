@@ -46,4 +46,11 @@ describe("TestModePanel default collapsed state (#127)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
     expect(screen.queryByRole("group", { name: "Viewer" })).not.toBeNull();
   });
+
+  it("does not render a deprecated Admin dashboard link for an admin viewer", () => {
+    render(<TestModePanel state={{ ...state, viewer: "admin" }} onChange={() => {}} />);
+
+    expect(screen.queryByRole("link", { name: /Admin Dashboard/i })).toBeNull();
+    expect(screen.queryByText("Open Admin Dashboard →")).toBeNull();
+  });
 });

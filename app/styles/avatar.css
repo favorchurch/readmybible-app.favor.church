@@ -51,7 +51,6 @@
 .profile-save { margin-top: 5px; }
 .profile-account-actions { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .profile-account-actions a { display: inline-flex; align-items: center; min-height: 44px; color: var(--coral-deep); font-size: 13px; font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
-.profile-account-actions a.profile-admin-link { color: var(--navy); }
 .profile-account-actions a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
 @media (min-width: 760px) {
