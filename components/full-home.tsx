@@ -6,21 +6,26 @@ import type { RosterMemberView } from "@/components/app-shell";
 import { RotatableHome, homeStages } from "@/components/rotatable-home";
 import { Sheet } from "@/components/sheet";
 import { ProgressBar } from "@/components/progress-bar";
+import type { TodayState } from "@/components/use-today";
 
 const TIMES = ['Day', 'Sunset', 'Night'] as const;
 
-export function FullHome({ onClose, groupName, coins, stage, progress, chapter, roster, profile }: {
+export function FullHome({ onClose, groupName, coins, stage, progress, milestone, overallPct, today, roster, profile, selectedMemberId, onSelectMember, onViewReading, onViewPlan }: {
   onClose: () => void; groupName: string; coins: number; stage: number;
-  progress: { pct: number; stage: string } | null; chapter: number | null;
-  roster: RosterMemberView[]; profile: UserProfile;
+  progress: { pct: number; stage: string } | null; milestone: { stage: string; pct: number } | null;
+  overallPct: number; today: TodayState; roster: RosterMemberView[]; profile: UserProfile;
+  selectedMemberId: number | null; onSelectMember: (member: RosterMemberView) => void;
+  onViewReading?: () => void; onViewPlan?: () => void;
 }) {
   const [people, setPeople] = useState(true);
-  const [names, setNames] = useState(false);
+  const [names, setNames] = useState(true);
   const [time, setTime] = useState<typeof TIMES[number]>('Day');
   const [options, setOptions] = useState(false);
   const [reset, setReset] = useState(0);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
+  const [coinInfo, setCoinInfo] = useState(false);
   const ownsFullscreen = useRef(false);
+  const currentMember = roster.find(member => member.isSelf);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setFullscreenAvailable(document.fullscreenEnabled));
@@ -42,11 +47,11 @@ export function FullHome({ onClose, groupName, coins, stage, progress, chapter, 
       <div className="full-home-header">
         <button className="home-float-button" onClick={onClose} aria-label="Close Home">×</button>
         <div className="full-home-identity"><h2 id="full-home-title">{groupName}</h2><span>{roster.length} members · {homeStages[stage].name}</span></div>
-        <span className="coin-chip" aria-label={`${coins} coins`}>◉ {coins}</span>
+        <button type="button" className="coin-chip" aria-expanded={coinInfo} aria-label={`${coins} chapter coins. Select to learn more`} onClick={() => setCoinInfo(value => !value)}>◉ {coins}</button>
         {fullscreenAvailable && <button className="home-float-button home-expand" aria-label="Toggle device fullscreen" onClick={expand}>↗</button>}
       </div>
       <RotatableHome key={reset} stage={stage} completed={false} immersive>
-        {people && <div className="home-gathering" aria-hidden="true">
+        {people && <div className={`home-gathering ${names ? "show-names" : ""}`}>
           {roster.map((member, index) => {
             const angle = (index / Math.max(roster.length, 1)) * Math.PI * 2;
             const ring = 1 + Math.floor(index / 14) * .22;
@@ -54,24 +59,32 @@ export function FullHome({ onClose, groupName, coins, stage, progress, chapter, 
             // sheet: --px/--pz are scene coordinates, so people stay standing
             // and correctly in front of or behind the home at every angle.
             const radius = 168 * ring;
-            return <div className="home-person" key={member.personId} style={{ "--px": `${Math.cos(angle) * radius}px`, "--pz": `${Math.sin(angle) * radius}px` } as React.CSSProperties}>
-              {names && <span className="home-person-label">{member.name}</span>}
+            return <button type="button" className={`home-person ${selectedMemberId === member.personId ? "selected" : ""}`} key={member.personId} style={{ "--px": `${Math.cos(angle) * radius}px`, "--pz": `${Math.sin(angle) * radius}px` } as React.CSSProperties} onClick={() => onSelectMember(member)} aria-label={`View ${member.name}'s profile`} title={member.name}>
+              <span className="home-person-label">{member.name}{member.isSelf ? " · You" : ""}</span>
               <Avatar color="coral" {...(member.isSelf ? profile : member.avatar)} />
-            </div>;
+              {member.isSelf && <small className="home-person-you">You</small>}
+            </button>;
           })}
         </div>}
       </RotatableHome>
-      {people && <p className="sr-only">Together at home: {roster.map(m => m.name).join(', ')}.</p>}
+      {coinInfo && <p className="full-home-coin-info" role="status">Coins celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
       <div className="full-home-footer">
         <div className="full-home-progress">
-          <strong>{chapter ? `Chapter ${chapter}` : 'Starts October 1'}</strong>
-          <span>{progress ? `${progress.pct}% to ${progress.stage}` : 'Every stage reached'}</span>
+          <strong>{today.displayPhase === "pre-launch" ? "Preview progress" : `${overallPct}% of Matthew complete`}</strong>
+          <span>{progress ? `${progress.pct}% through this stage · ${progress.stage} unlocks at ${milestone?.pct ?? 100}% overall` : 'Every stage reached'}</span>
+          <p>Your group&apos;s reading grows this home.</p>
           <ProgressBar value={progress?.pct ?? 100} max={100} />
+          {today.displayPhase === "pre-launch" && <><small>Reading begins October 1.</small><button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button></>}
+          {today.displayPhase === "active" && (currentMember?.readToday
+            ? <button type="button" className="primary-button home-reading-cta" disabled>You&apos;re done for today <span aria-hidden="true">✓</span></button>
+            : <button type="button" className="primary-button home-reading-cta" onClick={onViewReading}>{today.entry ? `Read Matthew ${today.entry.chapter}` : "Continue reading"} <span aria-hidden="true">→</span></button>)}
+          {today.displayPhase === "grace" && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
+          {today.displayPhase === "closed" && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
         </div>
         <div className="home-floating-actions">
-          <button onClick={() => setOptions(true)} aria-haspopup="dialog"><span aria-hidden="true">♧</span>People</button>
+          <button onClick={() => setOptions(true)} aria-haspopup="dialog"><span aria-hidden="true">♧</span>View</button>
           <button onClick={() => setTime(TIMES[(TIMES.indexOf(time) + 1) % TIMES.length])} aria-label={`Time of day: ${time}. Change time of day`}><span aria-hidden="true">{time === 'Night' ? '☾' : '☀'}</span>{time}</button>
-          <button onClick={() => setReset(value => value + 1)}><span aria-hidden="true">↺</span>Reset</button>
+          <button onClick={() => setReset(value => value + 1)}><span aria-hidden="true">↺</span>Reset view</button>
         </div>
       </div>
     </Sheet>
@@ -81,6 +94,13 @@ export function FullHome({ onClose, groupName, coins, stage, progress, chapter, 
       <label className="home-option" htmlFor="home-people" aria-label="Show all members"><span><strong>Show all members</strong><small>See everyone in the scene</small></span><input id="home-people" type="checkbox" role="switch" checked={people} onChange={e => setPeople(e.target.checked)} /></label>
       <label className="home-option" htmlFor="home-names" aria-label="Show name labels"><span><strong>Show name labels</strong><small>Display names above avatars</small></span><input id="home-names" type="checkbox" role="switch" checked={names} disabled={!people} onChange={e => setNames(e.target.checked)} /></label>
       <fieldset className="home-time-options"><legend>Time of day</legend>{TIMES.map(value => <button key={value} aria-pressed={time === value} onClick={() => setTime(value)}>{value}</button>)}</fieldset>
+      <section className="home-options-members" aria-labelledby="home-options-members-title">
+        <h3 id="home-options-members-title">Connect members</h3>
+        <p>Select anyone to view their profile.</p>
+        <div className="home-options-member-list">
+          {roster.map(member => <button type="button" key={member.personId} className={selectedMemberId === member.personId ? "selected" : ""} onClick={() => { setOptions(false); onSelectMember(member); }}>{member.name}{member.isSelf ? " (You)" : ""}</button>)}
+        </div>
+      </section>
       <button className="home-option-reset" onClick={() => setReset(value => value + 1)}>↺ Reset view</button>
       <button className="primary-button" onClick={() => setOptions(false)}>Done <span aria-hidden="true">✓</span></button>
     </Sheet>

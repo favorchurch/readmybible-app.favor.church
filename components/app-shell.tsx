@@ -466,6 +466,8 @@ export function AppShell(props: AppShellProps) {
           onEditProfile={() => setProfileOpen(true)}
           today={today}
           connectSwitcher={connectSwitcher}
+          onViewReading={() => selectTab("today")}
+          onViewPlan={() => selectTab("progress")}
         />
       )}
       {activeTab === "rewards" && (

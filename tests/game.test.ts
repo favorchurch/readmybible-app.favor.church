@@ -6,6 +6,7 @@ import {
   groupRatio,
   medals,
   nextMedal,
+  nextStageMilestone,
   nextStageProgress,
   rankGroups,
   stageFor,
@@ -133,6 +134,17 @@ describe("nextStageProgress", () => {
 
   it("returns null at Mansion", () => {
     expect(nextStageProgress(0.9)).toBeNull();
+  });
+});
+
+describe("nextStageMilestone", () => {
+  it("returns the authoritative overall completion threshold for the next home", () => {
+    expect(nextStageMilestone(0)).toEqual({ stage: "Trailer", pct: 10 });
+    expect(nextStageMilestone(0.26)).toEqual({ stage: "Apartment", pct: 45 });
+  });
+
+  it("returns null after the final home is unlocked", () => {
+    expect(nextStageMilestone(0.85)).toBeNull();
   });
 });
 

@@ -15,7 +15,7 @@ import { StageMini } from "@/components/stage-mini";
 import { MemberStreakDots } from "@/components/member-streak-dots";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
-import { coinsFor, nextStageProgress, stageFor } from "@/lib/game";
+import { coinsFor, nextStageMilestone, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 
 export function ConnectScreen({
@@ -27,6 +27,8 @@ export function ConnectScreen({
   onEditProfile,
   today,
   connectSwitcher,
+  onViewReading,
+  onViewPlan,
 }: {
   groupName: string | null;
   campusName: string | null;
@@ -36,6 +38,8 @@ export function ConnectScreen({
   onEditProfile: () => void;
   today: TodayState;
   connectSwitcher?: ConnectSwitcherContext;
+  onViewReading?: () => void;
+  onViewPlan?: () => void;
 }) {
   const phase = today.displayPhase;
 
@@ -212,7 +216,22 @@ export function ConnectScreen({
         onClose={() => setGrowthSheetOpen(false)}
         currentStage={stage}
       />
-      {homeOpen && <FullHome onClose={() => setHomeOpen(false)} groupName={groupName ?? "Your Connect Group"} coins={groupCoins} stage={selectedStage} progress={nextStage} chapter={today.entry?.chapter ?? null} roster={roster} profile={profile} />}
+      {homeOpen && <FullHome
+        onClose={() => setHomeOpen(false)}
+        groupName={groupName ?? "Your Connect Group"}
+        coins={groupCoins}
+        stage={selectedStage}
+        progress={nextStage}
+        milestone={nextStageMilestone(ratio)}
+        overallPct={Math.round(ratio * 100)}
+        today={today}
+        roster={roster}
+        profile={profile}
+        selectedMemberId={selectedMember?.personId ?? null}
+        onSelectMember={member => { setSelectedMember(member); setProfileSheetOpen(true); }}
+        onViewReading={onViewReading}
+        onViewPlan={onViewPlan}
+      />}
       <ReadingVisibilityNote
         open={visibilityOpen}
         onClose={() => setVisibilityOpen(false)}

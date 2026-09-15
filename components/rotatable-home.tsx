@@ -43,6 +43,7 @@ export function RotatableHome({
   }, []);
   const drag = useRef<{ x: number; y: number; rotation: number; pan: number } | null>(null);
   const selected = homeStages[stage];
+  const clampRotation = (value: number) => Math.max(-118, Math.min(62, value));
 
   function pointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (!event.isPrimary || event.button !== 0) return;
@@ -52,26 +53,26 @@ export function RotatableHome({
 
   function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (!drag.current) return;
-    setRotation(drag.current.rotation + (event.clientX - drag.current.x) * 0.55);
+    setRotation(clampRotation(drag.current.rotation + (event.clientX - drag.current.x) * 0.55));
     if (immersive) setPan(Math.max(-80, Math.min(80, drag.current.pan + (event.clientY - drag.current.y) * .4)));
     setCoachmark(false);
     try { sessionStorage.setItem('home-looked-around', '1'); } catch { /* Storage is optional. */ }
   }
 
   function keyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowLeft") setRotation((value) => value - 18);
-    if (event.key === "ArrowRight") setRotation((value) => value + 18);
+    if (event.key === "ArrowLeft") setRotation((value) => clampRotation(value - 18));
+    if (event.key === "ArrowRight") setRotation((value) => clampRotation(value + 18));
+    if (event.key === "Home") setRotation(-28);
   }
 
   return (
-    <div className={`home3d-wrap ${compact ? "compact" : ""} ${immersive ? "home3d-immersive" : ""}`}>
+    <div className={`home3d-wrap stage-${selected.className} ${compact ? "compact" : ""} ${immersive ? "home3d-immersive" : ""}`}>
       <div className="home3d-sky">
         <i />
         <i />
         <span />
       </div>
-      {/* drag/keyboard-rotatable 3D preview, not a semantic control */}
-      {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
+      {/* drag/keyboard-rotatable 3D preview */}
       <div
         className="home3d-viewport"
         onPointerDown={pointerDown}
@@ -83,11 +84,10 @@ export function RotatableHome({
           drag.current = null;
         }}
         onKeyDown={keyDown}
-        role="img"
+        role={immersive ? "group" : "img"}
         tabIndex={0}
         aria-label={`Interactive 3D ${selected.name}. Drag, swipe, or use arrow keys to rotate.`}
       >
-        {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
         {/* --home-rotation lets scene children counter-rotate to face the
             camera (billboarding) without prop-drilling the drag state. */}
         <div

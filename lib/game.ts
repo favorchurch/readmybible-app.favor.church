@@ -115,6 +115,14 @@ export function stageFor(ratio: number): Stage {
 }
 
 /** Ratio still needed to reach the next stage above the given ratio, or null if already at Mansion. */
+export function nextStageMilestone(ratio: number): { stage: Stage; pct: number } | null {
+  const current = stageFor(ratio);
+  const currentIndex = STAGE_THRESHOLDS.findIndex(({ stage }) => stage === current);
+  const next = STAGE_THRESHOLDS[currentIndex - 1];
+  return next ? { stage: next.stage, pct: Math.round(next.ratio * 100) } : null;
+}
+
+/** Progress within the current stage's interval, rather than overall Matthew completion. */
 export function nextStageProgress(ratio: number): { stage: Stage; pct: number } | null {
   const clamped = Math.min(1, Math.max(0, ratio));
   const ascending = [...STAGE_THRESHOLDS].reverse();
