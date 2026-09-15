@@ -120,7 +120,7 @@ October" pair with four dedicated compositions; see `components/screens/today-sc
 
 ## Solo mode
 
-- Title: **You're reading solo for now.**
+- Title: **Join a Connect to Start!**
 - Body: Ask a Connect Group leader for their group code and join in. Your coins come with you.
 - Note: You can join a Connect Group anytime this October. Chapters you've already read stay
   counted.

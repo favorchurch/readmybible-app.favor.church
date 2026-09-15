@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Brand } from "@/components/brand";
+import Link from "next/link";
 
 export function SoloScreen({
   error,
@@ -21,7 +22,7 @@ export function SoloScreen({
     <main className="screen solo-screen frame--focused">
       <Brand />
       <section className="hero-copy">
-        <h1>You&apos;re reading solo for now.</h1>
+        <h1>Join a connect to start!</h1>
         <p>Ask a Connect Group leader for their group code and join in. Your coins come with you.</p>
       </section>
       <p className="onboarding-note">
@@ -57,6 +58,11 @@ export function SoloScreen({
           </button>
         </form>
       )}
+      <p className="onboarding-note">
+        Looking for a connect group? Sign up at <Link href="https://favor.church/connect" target="_blank">
+          favor.church/connect
+        </Link>
+      </p>
       <a className="secondary-link" href="/auth/logout">
         Log out
       </a>
