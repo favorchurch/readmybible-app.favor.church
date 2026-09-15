@@ -151,9 +151,15 @@ describe("Page() session branching", () => {
         ]),
       );
 
+      // Page() now returns a Suspense boundary, so the campus list is built one
+      // level down, in HomeData. Render that child to reach the AppShell props.
+      // The guarantee under test is unchanged: in production the list is still
+      // every Connect Group across every campus.
       const result = await Page();
+      const child = (result as { props: { children: { props: unknown } } }).props.children;
+      const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
 
-      expect((result as { props: unknown }).props).toEqual(
+      expect((rendered as { props: unknown }).props).toEqual(
         expect.objectContaining({
           campusGroups: [
             { groupId: 202, groupName: "Group Brisbane — Brisbane" },
