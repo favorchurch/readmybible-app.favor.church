@@ -5,12 +5,25 @@ import { useRouter } from "next/navigation";
 
 import { joinByCode } from "@/app/actions/joinByCode";
 import { guardWrite, useTestMode } from "@/components/test-mode";
+import { ToastProvider, useToastAction } from "@/components/toast";
 import { useEscapeToClose } from "@/components/use-escape-to-close";
 
-export function JoinConfirm({ code, groupName }: { code: string; groupName: string }) {
+export function JoinConfirm(props: { code: string; groupName: string }) {
+  // This page (/join/[code]) is a standalone route, not rendered inside
+  // AppShell -- it needs its own ToastProvider rather than assuming one
+  // already wraps it.
+  return (
+    <ToastProvider hasBottomNav={false}>
+      <JoinConfirmInner {...props} />
+    </ToastProvider>
+  );
+}
+
+function JoinConfirmInner({ code, groupName }: { code: string; groupName: string }) {
   const router = useRouter();
   const testMode = useTestMode();
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
+  const runToastAction = useToastAction();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -20,7 +33,7 @@ export function JoinConfirm({ code, groupName }: { code: string; groupName: stri
   async function handleJoin() {
     setPending(true);
     setError(null);
-    const result = await guardedJoinByCode({ code });
+    const result = await runToastAction("Joining group…", "You're in.", () => guardedJoinByCode({ code }));
     setPending(false);
     if (result.ok) {
       setSuccess(true);
