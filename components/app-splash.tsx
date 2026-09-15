@@ -62,6 +62,21 @@ function SplashCompanion() {
   );
 }
 
+function SplashBrandOverlay() {
+  return (
+    <div className="splash-phase-a" aria-hidden="true">
+      <div className="splash-brand-scene">
+        <SplashCompanion />
+        <div className="brand" aria-hidden="true">
+          <span>READ</span>
+          <span>MY</span>
+          <span>BIBLE</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HomeSkeleton() {
   return (
     <div className="splash-phase-b" aria-hidden="true">
@@ -134,16 +149,7 @@ export function AppSplash() {
       aria-busy="true"
       aria-label="Loading Read My Bible"
     >
-      <div className="splash-phase-a">
-        <div className="splash-brand-scene">
-          <SplashCompanion />
-          <div className="brand" aria-hidden="true">
-            <span>READ</span>
-            <span>MY</span>
-            <span>BIBLE</span>
-          </div>
-        </div>
-      </div>
+      <SplashBrandOverlay />
       <HomeSkeleton />
     </div>
   );
@@ -157,6 +163,7 @@ export function AppSkeleton() {
       aria-busy="true"
       aria-label="Loading Read My Bible"
     >
+      <SplashBrandOverlay />
       <HomeSkeleton />
     </div>
   );
@@ -170,16 +177,7 @@ export function AppBrandSplash() {
       aria-busy="true"
       aria-label="Loading Read My Bible"
     >
-      <div className="splash-phase-a">
-        <div className="splash-brand-scene">
-          <SplashCompanion />
-          <div className="brand" aria-hidden="true">
-            <span>READ</span>
-            <span>MY</span>
-            <span>BIBLE</span>
-          </div>
-        </div>
-      </div>
+      <SplashBrandOverlay />
     </div>
   );
 }
