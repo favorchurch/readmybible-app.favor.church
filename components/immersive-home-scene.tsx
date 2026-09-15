@@ -117,6 +117,11 @@ function addLogSeat(scene: THREE.Scene, x: number, z: number, rotation: number) 
 }
 
 function defaultPersonPosition(index: number, count: number, mode: SceneMode) {
+  if (count > 14) {
+    const columns = 6;
+    const x = [-5.4, -3.55, -1.7, 1.7, 3.55, 5.4][index % columns];
+    return new THREE.Vector3(x, 0, .95 + Math.floor(index / columns) * 1.04);
+  }
   const safeCount = Math.max(count, 1);
   const layer = Math.floor(index / 14);
   const angle = index / Math.min(safeCount, 14) * Math.PI * 2 + (layer ? .2 : 0);
@@ -136,6 +141,7 @@ function validGroundPosition(point: THREE.Vector3, mode: SceneMode, stage: numbe
 
 function disposeScene(scene: THREE.Scene) {
   scene.traverse(object => {
+    if (object instanceof THREE.DirectionalLight || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.shadow.dispose();
     if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
       object.geometry.dispose();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -271,7 +277,22 @@ export function ImmersiveHomeScene({
       roster.forEach((member, index) => {
         const person = createPerson(member, profile);
         const saved = positions?.get(member.personId);
-        const position = validGroundPosition(saved ?? defaultPersonPosition(index, roster.length, mode), mode, stage);
+        let position = validGroundPosition(saved ?? defaultPersonPosition(index, roster.length, mode), mode, stage);
+        if (!saved) {
+          const spacing = roster.length > 20 ? 1 : 1.2;
+          const clear = (p: THREE.Vector3) => Array.from(personGroups.values()).every(other => other.position.distanceTo(p) >= spacing);
+          if (!clear(position)) {
+            const candidates: THREE.Vector3[] = [];
+            for (let x = model.memberArea.minX; x <= model.memberArea.maxX; x += .5) {
+              for (let z = model.memberArea.minZ; z <= model.memberArea.maxZ; z += .5) {
+                const candidate = validGroundPosition(new THREE.Vector3(x, 0, z), mode, stage);
+                if (clear(candidate)) candidates.push(candidate);
+              }
+            }
+            candidates.sort((a,b) => a.distanceToSquared(position) - b.distanceToSquared(position));
+            position = candidates[0] ?? position;
+          }
+        }
         person.position.copy(position);
         person.rotation.y = Math.atan2((isCampfire ? 0 : 1.25) - position.x, (isCampfire ? .5 : 1.15) - position.z);
         person.scale.setScalar(roster.length > 20 ? .77 : roster.length > 14 ? .86 : .94);
@@ -319,6 +340,8 @@ export function ImmersiveHomeScene({
     };
     const render = () => renderer.render(scene, camera);
     const projectLabels = () => {
+      const placed: Array<{ x: number; y: number; width: number }> = [];
+      const labels: Array<{ button: HTMLButtonElement; x: number; y: number; width: number }> = [];
       for (const [memberId, person] of personGroups) {
         const button = labelRefs.current.get(memberId);
         if (!button) continue;
@@ -327,11 +350,20 @@ export function ImmersiveHomeScene({
         projected.project(camera);
         const visible = projected.z < 1;
         button.style.display = visible ? "grid" : "none";
-        button.style.left = `${(projected.x * .5 + .5) * root.clientWidth}px`;
-        button.style.top = `${(-projected.y * .5 + .5) * root.clientHeight}px`;
+        const width = Math.max(34, (button.textContent?.length ?? 0) * (roster.length > 20 ? 5.5 : 6.5) + 8);
+        labels.push({ button, x: clamp((projected.x * .5 + .5) * root.clientWidth, width / 2, root.clientWidth - width / 2), y: (-projected.y * .5 + .5) * root.clientHeight, width });
         button.dataset.personId = String(memberId);
         button.dataset.groundX = person.position.x.toFixed(3);
         button.dataset.groundZ = person.position.z.toFixed(3);
+      }
+      // Keep labels above their people while separating colliding text rows.
+      labels.sort((a,b) => b.y - a.y);
+      for (const label of labels) {
+        let y = label.y;
+        while (y > label.y - 16 && placed.some(other => Math.abs(other.y - y) < 13 && Math.abs(other.x - label.x) < (other.width + label.width) / 2)) y -= 14;
+        label.button.style.left = `${label.x}px`;
+        label.button.style.top = `${y}px`;
+        placed.push({ x: label.x, y, width: label.width });
       }
     };
     const animate = (timestamp: number) => {
@@ -472,6 +504,7 @@ export function ImmersiveHomeScene({
       ref={rootRef}
       className={styles.scene}
       data-scene-mode={mode}
+      data-large-roster={roster.length > 20}
       data-home-stage={model?.name}
       data-camera-pitch="locked"
       aria-label={`${mode === "campfire" ? "Campfire" : "Home"} scene with ${model?.name} home`}
@@ -482,9 +515,9 @@ export function ImmersiveHomeScene({
         tabIndex={0}
         aria-label={`Interactive 3D ${model?.name}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering.`}
       />
-      {webGlFailed && <div className={styles.fallback} role="img">Your group is gathered around a warm campfire.</div>}
+      {webGlFailed && <div className={styles.fallback} role="status">3D is unavailable on this device. Choose Classic to explore your home, or People to view your group.</div>}
       {showHint && !webGlFailed && <p className={styles.hint}>Drag to look around · drag a person to move them</p>}
-      {people && (
+      {people && !webGlFailed && (
         <div className={styles.labels} aria-label="Group members">
           {roster.map(member => (
             <button

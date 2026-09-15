@@ -122,6 +122,13 @@
 
 /* The landscape owns the screen; controls sit along its edges. */
 .scene-home { background: #172943; color: var(--paper); }
+.scene-access-note { max-width: 430px; padding: 12px 16px; border-radius: 16px; background: #172943e8; color: var(--paper); pointer-events: auto; font-size: 13px; line-height: 1.4; }
+.scene-access-note p { margin: 0; }
+.scene-access-note button { margin-top: 6px; border: 0; background: transparent; padding: 6px 0; color: var(--gold-soft); font: inherit; font-weight: 700; }
+@media (min-width: 700px) and (orientation: landscape) {
+  .scene-access-note { grid-column: 1 / -1; padding: 8px 12px; max-width: 520px; }
+  .scene-access-note button { margin-top: 0; padding: 2px 0; }
+}
 .scene-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--paper); background: #173a37; }
 .scene-home .sheet-scroll { overflow: hidden; }
 .scene-home .full-home-header { background: linear-gradient(#172943b8, transparent); color: var(--paper); pointer-events: none; }

@@ -8,6 +8,7 @@ import { Sheet } from "@/components/sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import type { TodayState } from "@/components/use-today";
 import { modelFor } from "./scene-home-registry";
+import { sceneEligibility } from "@/lib/scene-eligibility";
 
 const TIMES = ['Day', 'Sunset', 'Night'] as const;
 const ImmersiveHomeScene = lazy(() => import('@/components/immersive-home-scene').then(module => ({ default: module.ImmersiveHomeScene })));
@@ -22,8 +23,9 @@ function SceneControlIcon({ icon }: { icon: 'people' | 'moon' | 'sun' | 'reset' 
   </svg>;
 }
 
-export function FullHome({ onClose, groupName, coins, stage, progress, milestone, overallPct, today, roster, profile, selectedMemberId, onSelectMember, onViewReading, onViewPlan }: {
+export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, progress, milestone, overallPct, today, roster, profile, selectedMemberId, onSelectMember, onViewReading, onViewPlan }: {
   onClose: () => void; groupName: string; coins: number; stage: number;
+  groupCheckinCount: number | null;
   progress: { pct: number; stage: string } | null; milestone: { stage: string; pct: number } | null;
   overallPct: number; today: TodayState; roster: RosterMemberView[]; profile: UserProfile;
   selectedMemberId: number | null; onSelectMember: (member: RosterMemberView) => void;
@@ -35,6 +37,8 @@ export function FullHome({ onClose, groupName, coins, stage, progress, milestone
   const [mode, setMode] = useState<'classic' | 'tent' | 'campfire'>('classic');
   const supportsScene = modelFor(stage)?.supported ?? false;
   const isCampsite = supportsScene && mode !== 'classic';
+  const eligibility = sceneEligibility(groupCheckinCount);
+  const gatheringOpen = eligibility.kind === "unlocked";
   const [options, setOptions] = useState(false);
   const [reset, setReset] = useState(0);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
@@ -66,7 +70,7 @@ export function FullHome({ onClose, groupName, coins, stage, progress, milestone
         {fullscreenAvailable && <button className="home-float-button home-expand" aria-label="Toggle device fullscreen" onClick={expand}><SceneControlIcon icon="expand" /></button>}
       </div>
       {isCampsite && <Suspense fallback={<div className="scene-loading" role="status">Preparing your gathering…</div>}>
-        <ImmersiveHomeScene stage={stage} mode={mode === 'campfire' ? 'campfire' : 'tent'} time={time} roster={roster} profile={profile} people={people} names={names} selectedMemberId={selectedMemberId} onSelectMember={onSelectMember} resetKey={reset} />
+        <ImmersiveHomeScene stage={stage} mode={mode === 'campfire' ? 'campfire' : 'tent'} time={time} roster={roster} profile={profile} people={people && gatheringOpen} names={names} selectedMemberId={selectedMemberId} onSelectMember={onSelectMember} resetKey={reset} />
       </Suspense>}
       {!isCampsite && <RotatableHome key={reset} stage={stage} completed={false} immersive>
         {people && <div className={`home-gathering ${names ? 'show-names' : ''}`}>
@@ -82,12 +86,18 @@ export function FullHome({ onClose, groupName, coins, stage, progress, milestone
       </RotatableHome>}
       {coinInfo && <p className="full-home-coin-info" role="status">Coins celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
       <div className="full-home-footer">
+        {isCampsite && !gatheringOpen && <div className="scene-access-note" role="status" data-scene-access={eligibility.kind}>
+          <p>{eligibility.message}</p>
+          {!gatheringOpen && eligibility.kind === "locked" && <button type="button" onClick={today.displayPhase === "active" ? onViewReading : onViewPlan}>
+            {today.displayPhase === "active" ? "Read a chapter →" : "View reading plan →"}
+          </button>}
+        </div>}
         <details className="full-home-progress scene-progress">
           <summary><span>{today.entry ? `Chapter ${today.entry.chapter}` : 'Our shared home'} · {progress ? `${progress.pct}% to ${progress.stage}` : 'All homes unlocked'}</span><span aria-hidden="true">⌂</span></summary>
           <div className="scene-progress-details">
           <strong>{today.displayPhase === "pre-launch" ? "Preview progress" : `${overallPct}% of Matthew complete`}</strong>
           <span>{progress ? `${progress.pct}% through this stage · ${progress.stage} unlocks at ${milestone?.pct ?? 100}% overall` : 'Every stage reached'}</span>
-          <p>Your group&apos;s reading grows this home.</p>
+          <p>{isCampsite && gatheringOpen ? eligibility.message : "Your group's reading grows this home."}</p>
           <ProgressBar value={progress?.pct ?? 100} max={100} />
           {today.displayPhase === "pre-launch" && <><small>Reading begins October 1.</small><button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button></>}
           {today.displayPhase === "active" && (currentMember?.readToday

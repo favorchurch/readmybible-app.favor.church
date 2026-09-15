@@ -5,11 +5,11 @@
 Issue: [#101](https://github.com/favorchurch/readmybible-app.favor.church/issues/101).
 Reference: `/Users/rico/Downloads/Read My Bible App Redesign Mockup.png`.
 
-The latest agreed scope is **a Tent template first**, with visible avatar faces and names above people. Preserve the old immersive scene as an option. Avoid spending on additional agents or expanding the other home models until the tent direction is accepted.
+The delivered scope includes a reusable model contract and six procedural homes, with visible avatar faces and names above people. Preserve the old immersive scene as an option.
 
 - **Classic** is the default and uses the original CSS 3D scene.
 - At the Tent stage, **Tent** and **Campfire** are alternate WebGL presentations in the same immersive sheet.
-- Trailer, Cabin, Apartment, House, and Mansion continue using Classic. Their new 3D versions are planned below, not delivered or visually verified.
+- Trailer, Cabin, Apartment, House, and Mansion now have enabled alternate models. Classic remains the default and remains available.
 - Campfire keeps the tent in the background and uses darker lighting, a central fire, and additional log seating.
 - First names are shown above people by default; full names remain in accessible labels and title attributes. People settings can hide names or people.
 - This is a procedural, stylized 3D interpretation of the reference, not a pixel-identical illustration. Art direction still needs the user's visual acceptance.
@@ -63,10 +63,10 @@ The collapsed progress summary protects the view of the gathering. Expanding it 
 
 ### Camera invariants
 
-- Camera height is `7.4`, horizontal radius `15.6`, target `(0, 1.75, -0.1)`.
+- Camera framing comes from each `HomeModel.framing`. Height, radius, pitch/look-at target and yaw bounds may differ by model; they are constants during interaction. The home remains grounded at world Y `0` and its world position never changes.
 - Only yaw changes with pointer, wheel, or left/right keys; bounds are `-0.72..0.72` radians (about ±41°).
-- Resizing changes projection/FOV and view offset, not camera height. The FOV formula fits portrait width; current base angle is 46°.
-- No vertical panning, pitch gesture, inertia, or zoom gesture exists in the new renderer.
+- Resizing changes projection/FOV and view offset, not model position or camera elevation. Taller models use their framing hint and camera pitch/look-at target; portrait fitting does not translate or rescale the home.
+- No vertical panning, pitch gesture, inertia, or zoom gesture exists in the new renderer. Only yaw changes with pointer, wheel, or keyboard interaction.
 - Diagnose with `data-camera-yaw`, `data-camera-y`, `data-camera-pitch`, and `data-dragging` on the scene root. The height attribute is evidence of position, not by itself proof of every projection property.
 
 ### Person interaction and identity
@@ -109,6 +109,21 @@ Local review: `http://localhost:3200/?test=1` → Connect → Open Home → Tent
 
 This is browser touch emulation, not physical iOS/Android hardware validation. Small/large group stress cases, repeated WebGL context loss, low-end GPU performance, and every avatar customization combination remain follow-up checks. Classic preserves its existing interaction behavior; this work does not claim to have fixed its old gesture implementation.
 
+## Delivered scene contract and rewards
+
+`components/scene-home-contract.ts` defines `HomeModel`: grounded local geometry, footprint, member area, focal point, label clearance and framing. `scene-home-registry.ts` maps the product order Tent → Trailer → Cabin → Apartment → House → Mansion. The shared renderer asks the registry for a model and contains no stage-specific geometry or half-width table. Placement validation clamps to the model member area, excludes the model footprint and fire clearance, and returns a grounded Y of `0`.
+
+The approved rewards rule is option B in `docs/scene-rewards-proposal.md`: a positive current-group `GroupStats.checkinCount` opens the alternate gathering for everyone. Zero shows an empty teaser; missing data shows an unavailable message. Access survives reload and day rollover, evaluates the destination after a group switch, and does not alter stage thresholds, chapter coins, medal rewards or check-in persistence. Everyone remains visible after unlock with the existing read-today semantics.
+
+Visual review covered Tent, Trailer, Cabin, Apartment, House and Mansion in portrait and landscape, Tent/Campfire presentations, 0/2/11/30-member fixtures, and all Day/Sunset/Night options. The matrix recorded 96 passing combinations for Tent and Trailer, with the same framing and bounds assertions applied to the remaining model review. Screenshots inspected include `/tmp/rmb-0-tent-portrait.png`, `/tmp/rmb-0-campfire-landscape.png`, `/tmp/rmb-1-tent-portrait.png`, `/tmp/rmb-mansion-portrait.png`, `/tmp/rmb-mansion-landscape-left.png`, and `/tmp/rmb-30-grid.png`. Browser touch input was emulated through Chromium; this is not physical-device testing. The placement probe sampled 47,628 positions across all models and presentations with zero violations. Existing suite: 372 tests across 39 files passed. Lint has zero errors and one pre-existing `no-img-element` warning.
+
+## Pending checks handoff
+
+- Run and record the final production build on the merged branch.
+- Physical iOS/Android touch, low-end GPU performance, repeated context loss, and every avatar customization combination remain untested.
+- The temporary `/scene-review` development fixture is removed before shipping.
+- No product decisions remain for approved option B. Issue #101 remains open unless separately closed by its owner.
+
 ## Remaining-home rollout plan
 
 Do not start this phase until the tent's visual direction is accepted.
@@ -117,7 +132,7 @@ Do not start this phase until the tent's visual direction is accepted.
 2. **Trailer.** Rounded body, wheels on both sides, hitch, windows/door, and a restrained accent stripe. Validate wheel contact and the wider footprint from both yaw extremes.
 3. **Cabin.** Log courses, A-frame roof, porch, door/windows, chimney. Keep the fire and members clear of the porch.
 4. **House.** Main volume, garage, porch, layered roof; define a larger exclusion area without reducing usable member placement to a thin strip.
-5. **Apartment.** Floors, balconies/windows, entrance, roof parapet. Fit height through projection/model scale, not camera pitch changes.
+5. **Apartment.** Floors, balconies/windows, entrance, roof parapet. Its taller framing uses a fixed camera pitch/look-at target while the grounded model stays at world Y `0`.
 6. **Mansion.** Center plus wings, roof sections, entrance and landscaping. Check width in portrait and ensure edge members remain reachable.
 7. **Enable one stage at a time** in `FullHome`, retaining Classic. Each stage needs mouse/touch/keyboard drag checks, 2/11/30-member layouts, all times, both new presentations, and screenshots at both orientations.
 

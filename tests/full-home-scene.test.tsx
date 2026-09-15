@@ -48,6 +48,7 @@ function renderHome(overrides: Partial<React.ComponentProps<typeof FullHome>> = 
       onClose={onClose}
       groupName="Adults // Erwin & Jeric"
       coins={30}
+      groupCheckinCount={3}
       stage={0}
       progress={{ pct: 40, stage: "Apartment" }}
       milestone={{ pct: 45, stage: "Apartment" }}

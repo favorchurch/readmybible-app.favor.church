@@ -333,6 +333,7 @@ export function TodayScreen({
             onClose={() => setHomeOpen(false)}
             groupName={groupName}
             coins={groupCoins}
+            groupCheckinCount={groupStats?.checkinCount ?? null}
             stage={stageIndex("Tent")}
             progress={nextStage}
             milestone={nextStageMilestone(ratio)}
@@ -632,6 +633,7 @@ export function TodayScreen({
           onClose={() => setHomeOpen(false)}
           groupName={groupName}
           coins={groupCoins}
+          groupCheckinCount={groupStats?.checkinCount ?? null}
           stage={stageIndex(stage)}
           progress={nextStage}
           milestone={nextStageMilestone(ratio)}
@@ -648,7 +650,7 @@ export function TodayScreen({
           onViewPlan={onViewProgress}
         />
       )}
-      <PrototypeSwitcher />
+      {!homeOpen && <PrototypeSwitcher />}
     </main>
   );
 }

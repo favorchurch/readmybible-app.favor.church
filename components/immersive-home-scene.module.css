@@ -60,6 +60,7 @@
 }
 
 .selected { color: #ffe182; }
+.scene[data-large-roster="true"] .memberLabel { font-size: 10px; }
 
 .hint {
   position: absolute;
