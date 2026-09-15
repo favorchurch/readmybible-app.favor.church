@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -44,6 +45,7 @@ vi.mock("@/components/app-shell", () => ({ AppShell: mocks.AppShellMarker }));
 vi.mock("@/components/welcome", () => ({ WelcomeLanding: mocks.WelcomeLandingMarker }));
 
 import Page from "@/app/page";
+import { HomeData } from "@/components/home-data";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -73,7 +75,7 @@ describe("Page() session branching", () => {
     expect(mocks.redirect).toHaveBeenCalledWith("/not-found-in-rock");
   });
 
-  it("renders AppShell, not WelcomeLanding, for an authenticated session", async () => {
+  it("renders Suspense with HomeData, not WelcomeLanding, for an authenticated session", async () => {
     mocks.getSessionContext.mockResolvedValue({
       status: "ok",
       rockPersonId: 13358,
@@ -92,7 +94,11 @@ describe("Page() session branching", () => {
     const result = await Page();
 
     expect(mocks.redirect).not.toHaveBeenCalled();
-    expect((result as { type: unknown }).type).toBe(mocks.AppShellMarker);
+    expect((result as { type: unknown }).type).toBe(Suspense);
+
+    const child = (result as { props: { children: { type: unknown } } }).props.children;
+    expect(child.type).toBe(HomeData);
+    expect(child.type).not.toBe(mocks.WelcomeLandingMarker);
   });
 
   it("passes all connect groups across all campuses to AppShell even in production", async () => {

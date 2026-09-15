@@ -24,6 +24,12 @@ const eslintConfig = defineConfig([
   jsxA11y.flatConfigs.recommended,
   next.configs["core-web-vitals"],
   {
+    files: ["tests/**"],
+    rules: {
+      "react/no-children-prop": "off",
+    },
+  },
+  {
     languageOptions: {
       globals: {
         ...globals.browser,
