@@ -104,8 +104,47 @@ function selectSandbox() {
   fireEvent.click(screen.getByRole("button", { name: /show/i }));
 }
 
-afterEach(() => cleanup());
+/**
+ * The reading dialog ticks when a sentinel below the passage scrolls into
+ * view. jsdom has no IntersectionObserver and no layout, so stub it to report
+ * the sentinel as visible the moment it is observed -- that IS "the reader
+ * reached the bottom" for the purposes of this wiring test.
+ */
+class ImmediateIntersectionObserver {
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(target: Element) {
+    this.callback(
+      [{ isIntersecting: true, target } as unknown as IntersectionObserverEntry],
+      this as unknown as IntersectionObserver,
+    );
+  }
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+/** The dialog fetches its passage before arming the sentinel. */
+function stubScriptureFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      new Response(
+        JSON.stringify({ ref: "Matthew 1", translation: "NIV", text: "In the beginning.", bibleComUrl: "", attribution: "" }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    ),
+  );
+}
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", ImmediateIntersectionObserver);
+  stubScriptureFetch();
   [checkIn, joinByCode, chooseGroup, saveProfile, getOrCreateJoinCode, getTestGroupSnapshot].forEach((m) =>
     m.mockClear(),
   );
@@ -135,11 +174,9 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
     render(React.createElement(AppShell, baseProps()));
     selectSandbox();
 
-    // Today screen -> opens the reading sheet; the sheet's own confirm button
-    // carries the same label, so take the last one once both are mounted.
-    fireEvent.click(screen.getByRole("button", { name: /i read today/i }));
-    const confirms = await screen.findAllByRole("button", { name: /i read today/i });
-    fireEvent.click(confirms[confirms.length - 1]);
+    // Today screen -> opens the reading dialog. Reaching the bottom of the
+    // passage is the check-in now; there is no confirm button to press.
+    fireEvent.click(screen.getByRole("button", { name: /read matthew/i }));
 
     await waitFor(() => {
       expect(checkIn).toHaveBeenCalled();

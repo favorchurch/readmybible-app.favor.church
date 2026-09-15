@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
-import { ScripturePopup } from "@/components/scripture-popup";
+import { ReadingDialog } from "@/components/reading-dialog";
 import { Sheet } from "@/components/sheet";
 import { checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
 import { TRANSLATION_META } from "@/lib/scripture/types";
@@ -23,15 +23,17 @@ export function DayPreviewSheet({
   onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
-  const [quickVerseOpen, setQuickVerseOpen] = useState(false);
-  const [chapterOpen, setChapterOpen] = useState(false);
-  const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
-  const chapterTriggerRef = useRef<HTMLButtonElement>(null);
+  const [readingOpen, setReadingOpen] = useState(false);
+  const readingTriggerRef = useRef<HTMLButtonElement>(null);
 
   if (!open || !entry) return null;
 
   const isGraceDay = entry.day >= 29;
-  const canReadChapter = TRANSLATION_META[translation].fullText;
+  // D11/D12: the same reading dialog as everywhere else, in preview mode --
+  // this sheet shows plan days that may not be readable yet, so nothing here
+  // ever ticks. Only the two full-text versions can show a whole chapter, so
+  // the rest preview their key passage (R1).
+  const hasFullText = TRANSLATION_META[translation].fullText && !isGraceDay;
 
   return (
     <Sheet open={open} onClose={onClose} labelledBy="day-preview-title" className="day-preview-sheet">
@@ -49,8 +51,8 @@ export function DayPreviewSheet({
             <button
               type="button"
               className="quick-verse-button day-preview-verse-btn"
-              ref={quickVerseTriggerRef}
-              onClick={() => setQuickVerseOpen(true)}
+              ref={readingTriggerRef}
+              onClick={() => setReadingOpen(true)}
             >
               <span className="eyebrow">KEY PASSAGE</span>
               <span className="day-preview-verse-row">
@@ -59,17 +61,6 @@ export function DayPreviewSheet({
               </span>
             </button>
           </div>
-        ) : null}
-
-        {!isGraceDay && canReadChapter ? (
-          <button
-            type="button"
-            className="secondary-link day-preview-chapter-btn"
-            ref={chapterTriggerRef}
-            onClick={() => setChapterOpen(true)}
-          >
-            Preview Matthew {entry.chapter} <span aria-hidden="true">→</span>
-          </button>
         ) : null}
 
         {isRead ? (
@@ -84,25 +75,26 @@ export function DayPreviewSheet({
         )}
       </div>
 
-      {quickVerseOpen && entry.keyPassage && (
-        <ScripturePopup
-          passageRef={entry.keyPassage}
+      {readingOpen && entry.keyPassage && (
+        <ReadingDialog
+          chapter={entry.chapter}
+          passageRef={hasFullText ? `Matthew ${entry.chapter}` : entry.keyPassage}
+          keyPassageRef={entry.keyPassage}
+          hasFullText={hasFullText}
           translation={translation}
+          mode="preview"
+          isCatchUp={false}
+          chaptersRead={0}
+          groupName={null}
+          group={null}
+          tick={{ kind: "idle" }}
+          onReachBottom={() => {}}
+          onReplay={() => {}}
+          onRetry={() => {}}
           onTranslationChange={onTranslationChange}
           onClose={() => {
-            setQuickVerseOpen(false);
-            quickVerseTriggerRef.current?.focus();
-          }}
-        />
-      )}
-      {chapterOpen && !isGraceDay && (
-        <ScripturePopup
-          passageRef={`Matthew ${entry.chapter}`}
-          translation={translation}
-          onTranslationChange={onTranslationChange}
-          onClose={() => {
-            setChapterOpen(false);
-            chapterTriggerRef.current?.focus();
+            setReadingOpen(false);
+            readingTriggerRef.current?.focus();
           }}
         />
       )}

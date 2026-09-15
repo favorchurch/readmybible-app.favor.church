@@ -2,12 +2,11 @@
 
 import { useRef, useState } from "react";
 
-import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
+import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
 import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
-import { ScripturePopup } from "@/components/scripture-popup";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -24,7 +23,6 @@ import {
   syncViewedChapter,
 } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
-import { TRANSLATION_META } from "@/lib/scripture/types";
 
 export function TodayScreen({
   today,
@@ -38,11 +36,9 @@ export function TodayScreen({
   profile,
   avatarCustomized,
   onStart,
-  onReplayCelebration,
   onEditProfile,
   onViewConnect,
   onViewProgress,
-  onTranslationChange,
   connectSwitcher,
 }: {
   today: ReturnType<typeof useToday>;
@@ -56,17 +52,13 @@ export function TodayScreen({
   profile: UserProfile;
   avatarCustomized: boolean;
   onStart: (chapter: number) => void;
-  onReplayCelebration: (chapter: number) => void;
   onEditProfile: () => void;
   onViewConnect: () => void;
   onViewProgress: () => void;
-  onTranslationChange: (translation: Translation) => void;
   connectSwitcher?: ConnectSwitcherContext;
 }) {
   const entry = today.entry;
-  const [quickVerseOpen, setQuickVerseOpen] = useState(false);
   const [growthSheetOpen, setGrowthSheetOpen] = useState(false);
-  const [chapterOpen, setChapterOpen] = useState(false);
   const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
@@ -74,7 +66,6 @@ export function TodayScreen({
   const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
-  const chapterTriggerRef = useRef<HTMLButtonElement>(null);
 
   const syncedView = syncViewedChapter(entry?.chapter ?? null, syncedChapter, viewed);
   if (entry && syncedView.syncedChapter !== syncedChapter) {
@@ -97,20 +88,6 @@ export function TodayScreen({
   const memberCount = groupStats?.memberCount ?? roster.length;
 
   const dayOneEntry = planEntryForChapter(1);
-  const quickVerseEntry = today.displayPhase === "pre-launch" ? dayOneEntry : viewedEntry;
-  const canReadChapter = TRANSLATION_META[profile.translation].fullText;
-
-  const quickVersePopup = quickVerseOpen && quickVerseEntry && (
-    <ScripturePopup
-      passageRef={quickVerseEntry.keyPassage}
-      translation={profile.translation}
-      onTranslationChange={onTranslationChange}
-      onClose={() => {
-        setQuickVerseOpen(false);
-        quickVerseTriggerRef.current?.focus();
-      }}
-    />
-  );
 
   if (today.displayPhase === "pre-launch" && dayOneEntry) {
     return (
@@ -168,9 +145,9 @@ export function TodayScreen({
                 type="button"
                 className="quick-verse-button"
                 ref={quickVerseTriggerRef}
-                onClick={() => setQuickVerseOpen(true)}
+                onClick={() => onStart(1)}
               >
-                <span className="eyebrow">QUICK VERSE</span>
+                <span className="eyebrow">PREVIEW DAY 1</span>
                 <strong>{dayOneEntry.keyPassage}</strong>
               </button>
             </section>
@@ -215,7 +192,6 @@ export function TodayScreen({
             </section>
           </div>
         </div>
-        {quickVersePopup}
         <HomeGrowthSheet
           open={growthSheetOpen}
           onClose={() => setGrowthSheetOpen(false)}
@@ -274,7 +250,6 @@ export function TodayScreen({
             </div>
           )}
         </section>
-        {quickVersePopup}
       </main>
     );
   }
@@ -372,31 +347,14 @@ export function TodayScreen({
                       </div>
                       <div className="chapter-mark">{String(viewedChapter).padStart(2, "0")}</div>
                     </div>
-                    <button
-                      type="button"
-                      className="quick-verse-button"
-                      ref={quickVerseTriggerRef}
-                      onClick={() => setQuickVerseOpen(true)}
-                    >
-                      <span className="eyebrow">QUICK VERSE</span>
-                      <strong>{viewedEntry.keyPassage}</strong>
-                    </button>
-                    {canReadChapter && (
-                      <button
-                        type="button"
-                        className="quick-verse-button"
-                        ref={chapterTriggerRef}
-                        onClick={() => setChapterOpen(true)}
-                      >
-                        <span className="eyebrow">READ FULL CHAPTER</span>
-                        <strong>Matthew {viewedChapter}</strong>
-                      </button>
-                    )}
+                    {/* D1: one entrypoint. Reading is what records the day, so
+                        there is nothing else here to tap. */}
                     <button
                       className="primary-button today-reading-button"
-                      onClick={() => (alreadyRead ? onReplayCelebration(viewedChapter) : onStart(viewedChapter))}
+                      ref={quickVerseTriggerRef}
+                      onClick={() => onStart(viewedChapter)}
                     >
-                      <strong>{alreadyRead ? "Read. Nice one." : "I read today"}</strong>
+                      <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${viewedChapter}`}</strong>
                       <span className="button-arrow" aria-hidden="true">→</span>
                     </button>
                   </section>
@@ -511,18 +469,6 @@ export function TodayScreen({
         )}
       </div>
       <p className="daily-note">Read anywhere. Grow together.</p>
-      {quickVersePopup}
-      {chapterOpen && entry && (
-        <ScripturePopup
-          passageRef={`Matthew ${viewedChapter}`}
-          translation={profile.translation}
-          onTranslationChange={onTranslationChange}
-          onClose={() => {
-            setChapterOpen(false);
-            chapterTriggerRef.current?.focus();
-          }}
-        />
-      )}
       <MemberProfileSheet
         open={profileSheetOpen}
         onClose={() => setProfileSheetOpen(false)}

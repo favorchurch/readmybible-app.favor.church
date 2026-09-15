@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { checkIn, type CheckInGroupState } from "@/app/actions/checkIn";
+import { checkIn } from "@/app/actions/checkIn";
 import { chooseGroup } from "@/app/actions/chooseGroup";
 import { getOrCreateJoinCode } from "@/app/actions/getOrCreateJoinCode";
 import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
@@ -15,10 +15,9 @@ import {
   type Translation,
   type UserProfile,
 } from "@/components/avatar";
-import { CompletionFlow } from "@/components/completion-flow";
 import type { ChooseGroupHandler, ConnectSwitcherContext } from "@/components/connect-switcher";
+import { ReadingDialog, type ReadingDialogMode } from "@/components/reading-dialog";
 import { ProfileEditor } from "@/components/profile-editor";
-import { ScripturePopup } from "@/components/scripture-popup";
 import {
   TestModePanel,
   guardWrite,
@@ -40,6 +39,9 @@ import { SoloScreen } from "@/components/screens/solo-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
 import { LeaderScreen } from "@/components/screens/leader-screen";
 import { coinsFor, streak as computeStreak, TOTAL_CHAPTERS } from "@/lib/game";
+import { planEntryForChapter } from "@/lib/plan";
+import { checkInWithRetry, shouldWrite, simulatedCheckInGroup, type TickState } from "@/lib/reading-tick";
+import { TRANSLATION_META } from "@/lib/scripture/types";
 import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
@@ -201,15 +203,18 @@ export function AppShell(props: AppShellProps) {
   }, []);
   const [profileOpen, setProfileOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [flowChapter, setFlowChapter] = useState<number | null>(null);
-  const [flowStep, setFlowStep] = useState(0);
-  const [flowScriptureOpen, setFlowScriptureOpen] = useState(false);
+  const [readingChapter, setReadingChapter] = useState<number | null>(null);
+  const [tick, setTick] = useState<TickState>({ kind: "idle" });
   const [pending, setPending] = useState(false);
   const [chooseGroupError, setChooseGroupError] = useState<string | null>(null);
   const choosingGroup = useRef(false);
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [checkInError, setCheckInError] = useState<string | null>(null);
-  const [flowGroupResult, setFlowGroupResult] = useState<CheckInGroupState | null>(null);
+  /**
+   * Chapters whose sentinel already fired in this session (D5/D6). A ref, not
+   * state: the sentinel re-enters the viewport on every scroll back down, and
+   * this must be up to date within the same tick rather than after a render.
+   */
+  const firedChapters = useRef<Set<number>>(new Set());
 
   const chapters = useMemo(() => {
     if (testMode.active) return simulatedChapters(testMode.state.completionPct);
@@ -284,31 +289,104 @@ export function AppShell(props: AppShellProps) {
     return null;
   }, [chapters, today]);
 
-  function startReading(chapter: number) {
-    setCheckInError(null);
-    setFlowChapter(chapter);
-    setFlowStep(1);
+  /**
+   * What the dialog asks the scripture API for. Only NET and KRV bundle the
+   * whole book, so for the other eight versions the chapter reference would
+   * resolve to nothing -- they get their key passage as the body instead, plus
+   * the Bible.com link for the rest (R1 of docs/reading-dialog-tick.md).
+   */
+  const readingPassage = useMemo(() => {
+    const hasFullText = TRANSLATION_META[profile.translation].fullText;
+    const keyPassageRef = readingChapter === null ? null : (planEntryForChapter(readingChapter)?.keyPassage ?? null);
+    return {
+      hasFullText,
+      keyPassageRef,
+      passageRef: hasFullText ? `Matthew ${readingChapter ?? 1}` : (keyPassageRef ?? `Matthew ${readingChapter ?? 1}`),
+    };
+  }, [profile.translation, readingChapter]);
+
+  const readingMode: ReadingDialogMode =
+    today.displayPhase === "pre-launch" ? "preview" : tick.kind === "ticked" || tick.kind === "retrying" ? "read" : "unread";
+
+  /**
+   * The one way into reading, and so the one way to a check-in (D1/D11).
+   * An already-read chapter opens in its ticked state rather than a separate
+   * replay sheet (D8).
+   */
+  function openReading(chapter: number) {
+    setReadingChapter(chapter);
+    setTick(chapters.includes(chapter) ? { kind: "ticked", group: null, simulated: blocked } : { kind: "idle" });
   }
 
-  function replayCelebration(chapter: number) {
-    setFlowChapter(chapter);
-    setFlowGroupResult(null);
-    setFlowStep(2);
-  }
+  /**
+   * D5: the write starts here and is deliberately not awaited by anything tied
+   * to the dialog's lifetime. Closing the sheet, switching tabs, or navigating
+   * away after the tick does not cancel it -- the promise owns itself, and the
+   * server's unique constraint makes a duplicate a no-op.
+   */
+  function recordReading(chapter: number) {
+    const simulate = !shouldWrite({
+      alreadyRead: chapters.includes(chapter),
+      alreadyFired: firedChapters.current.has(chapter),
+      writesBlocked: blocked,
+      preview: today.displayPhase === "pre-launch",
+    });
 
-  async function finishReading() {
-    if (flowChapter === null) return;
-    setPending(true);
-    setCheckInError(null);
-    const result = await guardedCheckIn({ chapter: flowChapter, timezone: today.timezone });
-    setPending(false);
-    if (result.ok) {
-      setFlowGroupResult(result.group);
-      setFlowStep(2);
-      router.refresh();
-    } else {
-      setCheckInError(result.error || "Something went wrong on our side. Try again in a bit.");
+    if (simulate) {
+      // D10/D8: animate and celebrate, write nothing. In test mode the numbers
+      // come from the panel's simulated ratio so the celebration is real to look
+      // at; for an already-read chapter there is nothing new to report.
+      //
+      // Preserve an existing ticked state rather than rebuilding it: the
+      // sentinel re-enters on every scroll back down (D6), and replacing the
+      // state here would throw away the group result the real write returned.
+      setTick((current) =>
+        current.kind === "ticked"
+          ? current
+          : {
+              kind: "ticked",
+              group: blocked
+                ? simulatedCheckInGroup({
+                    ratio: simulatedGroupRatio(testMode.state.groupPct),
+                    memberCount: groupStats?.memberCount ?? roster.length,
+                  })
+                : null,
+              simulated: blocked,
+            },
+      );
+      return;
     }
+
+    firedChapters.current.add(chapter);
+    setTick({ kind: "ticked", group: null, simulated: false });
+    void checkInWithRetry(
+      () => guardedCheckIn({ chapter, timezone: today.timezone }),
+      () => setTick({ kind: "retrying" }),
+    ).then((result) => {
+      if (result.ok) {
+        setTick({ kind: "ticked", group: result.group, simulated: false });
+        router.refresh();
+      } else {
+        // D9: let them retry rather than leaving the card silently disagreeing
+        // with the celebration they just watched.
+        //
+        // The chapter stays in `firedChapters` on purpose. Releasing it here
+        // re-arms the sentinel, which is still sitting in the viewport, so a
+        // failing check-in would loop and hammer the server. Only the explicit
+        // retry below is allowed to write again.
+        setTick({ kind: "failed", error: result.error || "We couldn't save that just now." });
+      }
+    });
+  }
+
+  /**
+   * D9: the reader asked for this one. It bypasses the fired-chapter guard --
+   * which exists to stop the sentinel repeating itself, not to stop a person
+   * -- but still defers to `writesBlocked` and the already-read check.
+   */
+  function retryReading(chapter: number) {
+    firedChapters.current.delete(chapter);
+    recordReading(chapter);
   }
 
   function handleTranslationChange(translation: Translation) {
@@ -453,13 +531,11 @@ export function AppShell(props: AppShellProps) {
           groupStats={groupStats}
           roster={roster}
           profile={profile}
-          onStart={startReading}
-          onReplayCelebration={replayCelebration}
+          onStart={openReading}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
-          onTranslationChange={handleTranslationChange}
         />
       )}
       {activeTab === "connect" && (
@@ -495,7 +571,7 @@ export function AppShell(props: AppShellProps) {
           groupName={groupName}
           campusBoard={props.campusBoard}
           profile={profile}
-          onCatchUp={startReading}
+          onCatchUp={openReading}
           onEditProfile={() => setProfileOpen(true)}
           onTranslationChange={handleTranslationChange}
           connectSwitcher={connectSwitcher}
@@ -517,33 +593,27 @@ export function AppShell(props: AppShellProps) {
         />
       )}
       <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
-      {flowChapter !== null && (
-        <CompletionFlow
-          step={flowStep}
-          chapter={flowChapter}
-          isCatchUp={flowChapter !== today.entry?.chapter}
+      {readingChapter !== null && (
+        <ReadingDialog
+          chapter={readingChapter}
+          passageRef={readingPassage.passageRef}
+          keyPassageRef={readingPassage.keyPassageRef}
+          hasFullText={readingPassage.hasFullText}
+          translation={profile.translation}
+          mode={readingMode}
+          isCatchUp={readingChapter !== today.entry?.chapter}
           chaptersRead={chaptersRead}
           groupName={groupName}
-          group={flowGroupResult}
-          error={checkInError}
-          pending={pending}
-          onClose={() => {
-            setFlowStep(0);
-            setFlowChapter(null);
-            setCheckInError(null);
-            setFlowGroupResult(null);
-            setFlowScriptureOpen(false);
-          }}
-          onComplete={finishReading}
-          onOpenScripture={() => setFlowScriptureOpen(true)}
-        />
-      )}
-      {flowScriptureOpen && flowChapter !== null && (
-        <ScripturePopup
-          passageRef={`Matthew ${flowChapter}`}
-          translation={profile.translation}
+          group={tick.kind === "ticked" ? tick.group : null}
+          tick={tick}
+          onReachBottom={() => recordReading(readingChapter)}
+          onReplay={() => recordReading(readingChapter)}
+          onRetry={() => retryReading(readingChapter)}
           onTranslationChange={handleTranslationChange}
-          onClose={() => setFlowScriptureOpen(false)}
+          onClose={() => {
+            setReadingChapter(null);
+            setTick({ kind: "idle" });
+          }}
         />
       )}
       {profileOpen && (
