@@ -182,7 +182,7 @@ export function ReadingDialog({
   const eyebrow = mode === "preview" ? "DAY 1 PREVIEW" : isCatchUp ? "CATCH-UP READING" : "TODAY'S READING";
 
   return (
-    <Sheet open onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet">
+    <Sheet open onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet scripture-sheet">
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
@@ -65,7 +65,6 @@ export function TodayScreen({
   const [homeOpen, setHomeOpen] = useState(false);
   const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
-  const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
 
   const syncedView = syncViewedChapter(entry?.chapter ?? null, syncedChapter, viewed);
   if (entry && syncedView.syncedChapter !== syncedChapter) {
@@ -144,7 +143,6 @@ export function TodayScreen({
               <button
                 type="button"
                 className="quick-verse-button"
-                ref={quickVerseTriggerRef}
                 onClick={() => onStart(1)}
               >
                 <span className="eyebrow">PREVIEW DAY 1</span>
@@ -351,8 +349,7 @@ export function TodayScreen({
                         there is nothing else here to tap. */}
                     <button
                       className="primary-button today-reading-button"
-                      ref={quickVerseTriggerRef}
-                      onClick={() => onStart(viewedChapter)}
+                            onClick={() => onStart(viewedChapter)}
                     >
                       <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${viewedChapter}`}</strong>
                       <span className="button-arrow" aria-hidden="true">→</span>
