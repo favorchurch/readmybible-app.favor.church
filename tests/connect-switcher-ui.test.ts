@@ -27,6 +27,7 @@ const getTestGroupSnapshot = vi.hoisted(() => vi.fn(async () => ({ ok: false as 
 const getJoinCodeForGroup = vi.hoisted(() => vi.fn(async () => ({ ok: true as const, code: null })));
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
   useRouter: () => ({ refresh: navigation.refresh, push: vi.fn() }),
   useSearchParams: () => searchParams.value,
 }));

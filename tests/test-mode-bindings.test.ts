@@ -47,6 +47,7 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   useSearchParams: () => new URLSearchParams("test=1"),
 }));

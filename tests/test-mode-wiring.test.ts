@@ -48,6 +48,7 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   // Test mode active. `groupId` is client state, not a URL param, so the
   // sandbox selection is made through the panel below.
