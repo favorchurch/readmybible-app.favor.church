@@ -1,4 +1,5 @@
 export { TestModePanel, type CampusGroupOption } from "./TestModePanel";
+export { TestModeEntry } from "./TestModeEntry";
 export { useTestMode, type TestMode } from "./use-test-mode";
 export {
   dateForSimulatedDay,

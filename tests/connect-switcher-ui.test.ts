@@ -24,6 +24,7 @@ const joinByCode = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
 const saveProfile = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
 const getOrCreateJoinCode = vi.hoisted(() => vi.fn(async () => ({ ok: true as const, code: "TEST12" })));
 const getTestGroupSnapshot = vi.hoisted(() => vi.fn(async () => ({ ok: false as const, error: "not used" })));
+const getJoinCodeForGroup = vi.hoisted(() => vi.fn(async () => ({ ok: true as const, code: null })));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: navigation.refresh, push: vi.fn() }),
@@ -35,6 +36,7 @@ vi.mock("@/app/actions/joinByCode", () => ({ joinByCode }));
 vi.mock("@/app/actions/saveProfile", () => ({ saveProfile }));
 vi.mock("@/app/actions/getOrCreateJoinCode", () => ({ getOrCreateJoinCode }));
 vi.mock("@/app/actions/getTestGroupSnapshot", () => ({ getTestGroupSnapshot }));
+vi.mock("@/app/actions/getJoinCodeForGroup", () => ({ getJoinCodeForGroup }));
 
 import { AppShell, type AppShellProps } from "@/components/app-shell";
 import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";

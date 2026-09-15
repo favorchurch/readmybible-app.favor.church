@@ -12,6 +12,9 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("?test=1"),
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
+  getJoinCodeForGroup: async () => ({ ok: true, code: null }),
+}));
 
 import { AppShell } from "@/components/app-shell";
 import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
