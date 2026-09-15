@@ -66,7 +66,7 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
       <div className="full-home-header">
         <button className="home-float-button" onClick={onClose} aria-label="Close Home">×</button>
         <div className="full-home-identity"><h2 id="full-home-title">{groupName}</h2><span>{roster.length} members · {homeStages[stage].name}</span></div>
-        <button type="button" className="coin-chip" aria-expanded={coinInfo} aria-label={`${coins} chapter coins. Select to learn more`} onClick={() => setCoinInfo(value => !value)}>◉ {coins}</button>
+        <button type="button" className="coin-chip" aria-expanded={coinInfo} aria-label={`${coins} chapter points. Select to learn more`} onClick={() => setCoinInfo(value => !value)}>◉ {coins}</button>
         {fullscreenAvailable && <button className="home-float-button home-expand" aria-label="Toggle device fullscreen" onClick={expand}><SceneControlIcon icon="expand" /></button>}
       </div>
       {isCampsite && <Suspense fallback={<div className="scene-loading" role="status">Preparing your gathering…</div>}>
@@ -84,7 +84,7 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           })}
         </div>}
       </RotatableHome>}
-      {coinInfo && <p className="full-home-coin-info" role="status">Coins celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
+      {coinInfo && <p className="full-home-coin-info" role="status">Points celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
       <div className="full-home-footer">
         {isCampsite && !gatheringOpen && <div className="scene-access-note" role="status" data-scene-access={eligibility.kind}>
           <p>{eligibility.message}</p>

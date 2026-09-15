@@ -218,7 +218,21 @@ describe("the scroll tick records a reading exactly once", () => {
     openReadingDialog();
     await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText(/COINS ADDED/i)).toBeTruthy();
+    expect(await screen.findByText(/POINTS ADDED/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /I read today/i })).toBeNull();
+  });
+
+  it("hides the completion details when the whole Read today row is clicked", async () => {
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await reachBottom();
+    await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+    await screen.findByText(/POINTS ADDED/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /read today/i }));
+
+    expect(screen.queryByText(/POINTS ADDED/i)).toBeNull();
+    expect(checkIn).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -246,7 +260,7 @@ describe("a failed check-in is surfaced rather than silently lost (D9)", () => {
     fireEvent.click(retry);
 
     await waitFor(() => expect(checkIn).toHaveBeenCalled());
-    expect(await screen.findByText(/COINS ADDED/i)).toBeTruthy();
+    expect(await screen.findByText(/POINTS ADDED/i)).toBeTruthy();
   });
 });
 
@@ -267,7 +281,7 @@ describe("review regressions", () => {
 
     // The retry must survive, and no celebration may appear for a day that
     // was never recorded.
-    expect(screen.queryByText(/COINS ADDED/i)).toBeNull();
+    expect(screen.queryByText(/POINTS ADDED/i)).toBeNull();
     expect(screen.getByRole("button", { name: /tap to retry/i })).toBeTruthy();
   });
 

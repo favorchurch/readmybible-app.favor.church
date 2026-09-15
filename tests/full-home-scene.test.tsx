@@ -90,7 +90,7 @@ describe("FullHome scene integration", () => {
     }));
     expect(screen.getByRole("heading", { name: "Adults // Erwin & Jeric" })).toBeTruthy();
     expect(screen.getByText("2 members · Tent")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /30 chapter coins\. Select to learn more/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /30 chapter points\. Select to learn more/ })).toBeTruthy();
   });
 
   it("switches between Classic, Tent and Campfire without closing the scene", async () => {

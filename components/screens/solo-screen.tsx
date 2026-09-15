@@ -23,7 +23,7 @@ export function SoloScreen({
       <Brand />
       <section className="hero-copy">
         <h1>Join a connect to start!</h1>
-        <p>Ask a Connect Group leader for their group code and join in. Your coins come with you.</p>
+        <p>Ask a Connect Group leader for their group code and join in. Your points come with you.</p>
       </section>
       {!entering ? (
         <button className="primary-button" onClick={() => setEntering(true)}>

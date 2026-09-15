@@ -100,7 +100,7 @@ function ShippedReadingCard({ chapter, day, isToday, alreadyRead, streakDays, on
         <div>
           <span className="book-label">GOSPEL OF</span>
           <h2>Matthew {chapter}</h2>
-          <p>Earns 10 coins for your group&apos;s home.</p>
+          <p>Earns 10 points for your group&apos;s home.</p>
         </div>
         <div className="chapter-mark">{String(chapter).padStart(2, "0")}</div>
       </div>
@@ -125,7 +125,7 @@ function VariantA({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }
         <div>
           <span className="book-label">GOSPEL OF</span>
           <h2>Matthew {chapter}</h2>
-          <p>Day {day} of 28 · Earns 10 coins for your group&apos;s home.</p>
+          <p>Day {day} of 28 · Earns 10 points for your group&apos;s home.</p>
         </div>
         <div className="prototype-chapter-mark">{String(chapter).padStart(2, "0")}</div>
       </div>
@@ -147,7 +147,7 @@ function VariantB({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }
         <div>
           <span className="book-label">MATTHEW</span>
           <h2>Make space for Matthew {chapter}.</h2>
-          <p>One chapter today. Ten coins toward your group&apos;s home.</p>
+          <p>One chapter today. Ten points toward your group&apos;s home.</p>
         </div>
       </div>
       <div className="chapter-rail-footer">
@@ -654,7 +654,7 @@ export function TodayScreen({
                   </div>
                   <ProgressBar value={nextStage?.pct ?? 100} max={100} />
                   <div className="stage-row detail">
-                    <strong>{groupCoins} coins</strong>
+                    <strong>{groupCoins} points</strong>
                     {nextStage && <span>{nextStage.pct}% to {nextStage.stage}</span>}
                   </div>
                   <button
@@ -677,7 +677,7 @@ export function TodayScreen({
               </div>
               <div>
                 <strong>{readersToday} of {memberCount} have read today</strong>
-                <span>Your 10 coins go straight to your Connect.</span>
+                <span>Your 10 points go straight to your Connect.</span>
               </div>
             </section>
           </div>

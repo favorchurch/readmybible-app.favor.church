@@ -204,8 +204,8 @@ export function ProgressScreen({
               <article>
                 <span className="stat-icon gold">◉</span>
                 <div>
-                  <b>{coins} coins</b>
-                  <small>Coins</small>
+                  <b>{coins} points</b>
+                  <small>Points</small>
                 </div>
               </article>
             </section>
