@@ -479,30 +479,20 @@ describe("ProfileEditor reading data disclosure", () => {
     expect(html).not.toContain("Read My Bible is a Favor Church ministry.");
   });
 
-  it("shows Admin dashboard link only when isAdminScope is true", () => {
-    const withoutAdmin = renderPortalMarkup(
+  it("does not render the deprecated Admin dashboard link for an admin-scope viewer", () => {
+    const html = renderPortalMarkup(
       React.createElement(ProfileEditor, {
         profile: testProfile,
         saving: false,
         onClose: () => {},
         onSave: () => {},
-        isAdminScope: false,
       }),
     );
-    expect(withoutAdmin).not.toContain("/admin");
-    expect(withoutAdmin).not.toContain("Admin dashboard →");
-
-    const withAdmin = renderPortalMarkup(
-      React.createElement(ProfileEditor, {
-        profile: testProfile,
-        saving: false,
-        onClose: () => {},
-        onSave: () => {},
-        isAdminScope: true,
-      }),
-    );
-    expect(withAdmin).toContain('href="/admin"');
-    expect(withAdmin).toContain("Admin dashboard →");
+    // Positive anchor first: two bare not.toContain assertions would also pass
+    // if ProfileEditor rendered nothing at all, which would prove nothing.
+    expect(html).toContain('href="/auth/logout"');
+    expect(html).not.toContain('href="/admin"');
+    expect(html).not.toContain("Admin dashboard →");
   });
 });
 

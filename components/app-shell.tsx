@@ -657,7 +657,6 @@ export function AppShell(props: AppShellProps) {
           saving={savingProfile}
           onClose={() => setProfileOpen(false)}
           onSave={handleSaveProfile}
-          isAdminScope={isAdminScope}
         />
       )}
       {pending && <span className="sr-only" role="status">Saving…</span>}
