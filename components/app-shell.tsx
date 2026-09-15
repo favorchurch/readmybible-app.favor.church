@@ -215,6 +215,11 @@ export function AppShell(props: AppShellProps) {
    * this must be up to date within the same tick rather than after a render.
    */
   const firedChapters = useRef<Set<number>>(new Set());
+  /**
+   * Which chapter the dialog is showing right now. A ref because an in-flight
+   * check-in's `.then` closure would otherwise read a stale `readingChapter`.
+   */
+  const openChapter = useRef<number | null>(null);
 
   const chapters = useMemo(() => {
     if (testMode.active) return simulatedChapters(testMode.state.completionPct);
@@ -314,6 +319,7 @@ export function AppShell(props: AppShellProps) {
    * replay sheet (D8).
    */
   function openReading(chapter: number) {
+    openChapter.current = chapter;
     setReadingChapter(chapter);
     setTick(chapters.includes(chapter) ? { kind: "ticked", group: null, simulated: blocked } : { kind: "idle" });
   }
@@ -340,8 +346,13 @@ export function AppShell(props: AppShellProps) {
       // Preserve an existing ticked state rather than rebuilding it: the
       // sentinel re-enters on every scroll back down (D6), and replacing the
       // state here would throw away the group result the real write returned.
+      // Only `idle` is replaced. Preserving `ticked` keeps the group result a
+      // real write returned; preserving `failed` and `retrying` is what stops a
+      // later sentinel entry from painting a celebration over a check-in that
+      // never landed -- which would also unmount the one retry button that can
+      // still write. Review finding F1.
       setTick((current) =>
-        current.kind === "ticked"
+        current.kind !== "idle"
           ? current
           : {
               kind: "ticked",
@@ -361,12 +372,23 @@ export function AppShell(props: AppShellProps) {
     setTick({ kind: "ticked", group: null, simulated: false });
     void checkInWithRetry(
       () => guardedCheckIn({ chapter, timezone: today.timezone }),
-      () => setTick({ kind: "retrying" }),
+      // Same ownership check as the result below: the silent retry must not
+      // paint "retrying" onto whatever chapter the reader has since opened.
+      () => {
+        if (openChapter.current === chapter) setTick({ kind: "retrying" });
+      },
     ).then((result) => {
+      // The reader can close this chapter and open another while the request is
+      // in flight. `tick` is shared by whichever chapter the dialog is showing,
+      // so a late result must not drive a different chapter's dialog -- that
+      // would celebrate a chapter nobody read, and its retry button would then
+      // write one. Refresh regardless, so THIS chapter's card turns over.
+      // Review finding F2.
+      const stillOpen = openChapter.current === chapter;
       if (result.ok) {
-        setTick({ kind: "ticked", group: result.group, simulated: false });
         router.refresh();
-      } else {
+        if (stillOpen) setTick({ kind: "ticked", group: result.group, simulated: false });
+      } else if (stillOpen) {
         // D9: let them retry rather than leaving the card silently disagreeing
         // with the celebration they just watched.
         //
@@ -611,6 +633,7 @@ export function AppShell(props: AppShellProps) {
           onRetry={() => retryReading(readingChapter)}
           onTranslationChange={handleTranslationChange}
           onClose={() => {
+            openChapter.current = null;
             setReadingChapter(null);
             setTick({ kind: "idle" });
           }}

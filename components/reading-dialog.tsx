@@ -125,7 +125,11 @@ export function ReadingDialog({
   }, [hasFullText, keyPassageRef, translation]);
 
   const resolved = passage !== "loading";
-  const armed = mode !== "preview" && resolved;
+  // F3: arm only once scripture is actually on screen. `resolved` alone counts
+  // an API error as resolved, and the error body is a single "available at
+  // Bible.com" line -- entirely within view on open, so the reader would be
+  // checked in for a chapter the app never showed them. No text, no tick.
+  const armed = mode !== "preview" && resolved && passage !== "error" && Boolean(passage.text);
 
   // Held in a ref so the observer effect does not depend on the callback's
   // identity. It is a new closure on every render, and re-running the effect
@@ -137,13 +141,26 @@ export function ReadingDialog({
     reachedBottom.current = onReachBottom;
   });
 
+  const ticked = tick.kind === "ticked" || tick.kind === "retrying";
+
+  // F4: D6 says re-reaching the bottom replays the celebration. The parent
+  // returns the identical tick state for an already-fired chapter, so React
+  // bails out and nothing re-renders -- the replay has to be driven from here.
+  // A ref for the same reason as above: the observer effect must not re-run.
+  const tickedRef = useRef(ticked);
+  useEffect(() => {
+    tickedRef.current = ticked;
+  });
+
   useEffect(() => {
     const node = sentinelRef.current;
     if (!armed || !node) return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) reachedBottom.current();
+          if (!entry.isIntersecting) continue;
+          if (tickedRef.current) setReplayKey((n) => n + 1);
+          reachedBottom.current();
         }
       },
       { root: node.closest(".sheet-scroll"), threshold: 0.9 },
@@ -151,8 +168,6 @@ export function ReadingDialog({
     observer.observe(node);
     return () => observer.disconnect();
   }, [armed]);
-
-  const ticked = tick.kind === "ticked" || tick.kind === "retrying";
 
   // D6/D7: a replay re-mounts the celebration to re-run its entry animation,
   // and pulls it into view so the tap has a visible result.

@@ -33,9 +33,12 @@ vi.mock("@/app/actions/getTestGroupSnapshot", () => ({
   getTestGroupSnapshot: vi.fn(async () => ({ ok: false, error: "not used" })),
 }));
 
+/** Mutable so one test can turn test mode on; reset in beforeEach. */
+const search = { value: "" };
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => new URLSearchParams(search.value),
 }));
 
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
@@ -128,6 +131,7 @@ function openReadingDialog() {
 }
 
 beforeEach(() => {
+  search.value = "";
   observers.length = 0;
   checkIn.mockClear();
   checkIn.mockImplementation(async (input: CheckInInput) => ({ ok: true, group: null, input }));
@@ -213,5 +217,96 @@ describe("a failed check-in is surfaced rather than silently lost (D9)", () => {
 
     await waitFor(() => expect(checkIn).toHaveBeenCalled());
     expect(await screen.findByText(/COINS ADDED/i)).toBeTruthy();
+  });
+});
+
+describe("review regressions", () => {
+  it("F1: a later sentinel entry never paints a celebration over a failed check-in", async () => {
+    checkIn.mockImplementation(async () => ({ ok: false, error: "network down" }) as never);
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    const retry = await screen.findByRole("button", { name: /tap to retry/i });
+    expect(retry).toBeTruthy();
+
+    // The reader scrolls up and back down while the failure is on screen.
+    reachBottomAgain();
+    reachBottomAgain();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // The retry must survive, and no celebration may appear for a day that
+    // was never recorded.
+    expect(screen.queryByText(/COINS ADDED/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /tap to retry/i })).toBeTruthy();
+  });
+
+  it("F2: a late result never drives the chapter the reader has since opened", async () => {
+    // Keyed by chapter: chapter 11 starts its own in-flight write when it is
+    // opened, and a single shared resolver would release the wrong promise.
+    // One entry per attempt, not per chapter: checkInWithRetry makes a second
+    // attempt for the same chapter, and both must be released to reach the
+    // final failed state.
+    const pending = new Map<number, ((value: { ok: false; error: string }) => void)[]>();
+    checkIn.mockImplementation(
+      ((input: CheckInInput) =>
+        new Promise((resolve) => {
+          const list = pending.get(input.chapter) ?? [];
+          list.push(resolve as (value: { ok: false; error: string }) => void);
+          pending.set(input.chapter, list);
+        })) as never,
+    );
+    async function failAll(chapter: number) {
+      for (let i = 0; i < 4; i++) {
+        const list = pending.get(chapter) ?? [];
+        while (list.length) list.shift()?.({ ok: false, error: "network down" });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+
+    render(React.createElement(AppShell, baseProps()));
+
+    // Chapter 12 (today): sentinel fires, request hangs in flight.
+    openReadingDialog();
+    await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+    expect(checkIn.mock.calls[0][0].chapter).toBe(12);
+
+    const close = document.querySelector(".reading-dialog-sheet .close-button");
+    fireEvent.click(close as Element);
+
+    // Move back to chapter 11 and open it. Its own sentinel fires and is
+    // blocked only by its own state, not by chapter 12's.
+    fireEvent.click(screen.getByRole("button", { name: /previous chapter/i }));
+    openReadingDialog();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Chapter 12's request now fails, with chapter 11 on screen.
+    await failAll(12);
+
+    // Chapter 11 must not inherit chapter 12's failure: tapping a retry here
+    // would write a check-in for a chapter this reader never finished.
+    // Chapter 11 must not inherit chapter 12's failure in any form: neither a
+    // retry button (tapping it would write a chapter this reader never
+    // finished) nor the "retrying" tick that precedes it.
+    expect(screen.queryByRole("button", { name: /tap to retry/i })).toBeNull();
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toContain("11");
+    expect(document.querySelector(".reading-tick")?.getAttribute("data-state")).not.toBe("failed");
+  });
+
+  it("F3: a scripture fetch error never checks the reader in", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 500 })));
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(checkIn).not.toHaveBeenCalled();
+  });
+
+  it("F7: a blocked test-mode sentinel entry never reaches the server action", async () => {
+    // Test mode on with no sandbox configured, so writesBlocked is true. This
+    // is the wiring half of the rule tests/reading-tick.test.ts proves purely.
+    search.value = "test=1";
+    render(React.createElement(AppShell, baseProps({ testWritableGroupId: null })));
+    openReadingDialog();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(checkIn).not.toHaveBeenCalled();
   });
 });
