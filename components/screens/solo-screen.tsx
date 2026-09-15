@@ -57,6 +57,9 @@ export function SoloScreen({
           </button>
         </form>
       )}
+      <a className="secondary-link" href="/auth/logout">
+        Log out
+      </a>
     </main>
   );
 }
