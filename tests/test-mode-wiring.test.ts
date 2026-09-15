@@ -113,10 +113,18 @@ function selectSandbox() {
 class ImmediateIntersectionObserver {
   constructor(private readonly callback: IntersectionObserverCallback) {}
   observe(target: Element) {
-    this.callback(
-      [{ isIntersecting: true, target } as unknown as IntersectionObserverEntry],
-      this as unknown as IntersectionObserver,
-    );
+    // Two callbacks, because D13 distinguishes them: the first reports the
+    // state on open (not yet at the end -- a chapter that overflows the
+    // sheet), and the second is the reader scrolling down to it. Reporting
+    // the end as visible on the first callback would mean a no-scroll dwell,
+    // which is not what this test is about.
+    const fire = (isIntersecting: boolean) =>
+      this.callback(
+        [{ isIntersecting, target } as unknown as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      );
+    fire(false);
+    queueMicrotask(() => fire(true));
   }
   unobserve() {}
   disconnect() {}

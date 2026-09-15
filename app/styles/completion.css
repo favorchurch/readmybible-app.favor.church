@@ -177,6 +177,10 @@
 
 .reading-tick { margin: var(--space-5) 0 0; padding-top: var(--space-5); border-top: 1px solid var(--line); }
 .reading-tick-hint { margin: 0; text-align: center; color: var(--ink-muted); font-size: 14px; }
+/* D13: the no-scroll dwell. The bar's animation-duration is set inline from
+   NO_SCROLL_DWELL_MS so the fill and the timer cannot drift apart. */
+.reading-dwell-bar { display: block; width: 120px; height: 3px; margin: var(--space-3) auto 0; border-radius: 999px; background: var(--line); overflow: hidden; position: relative; }
+.reading-dwell-bar:after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--sage); transform-origin: left center; animation: dwellFill linear both; animation-duration: inherit; }
 .reading-tick-mark { display: flex; align-items: center; justify-content: center; gap: var(--space-3); min-height: 44px; animation: tickIn .42s cubic-bezier(.2, .9, .3, 1.4) both; }
 .reading-tick-mark strong { font-size: 18px; color: var(--navy); }
 .reading-tick-check { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--sage); color: var(--paper); font-size: 19px; font-weight: 900; animation: tickPop .5s cubic-bezier(.2, .9, .3, 1.5) both; }

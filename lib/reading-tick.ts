@@ -55,6 +55,48 @@ export function shouldWrite(args: {
 }
 
 /**
+ * D13: how long the end of the reading must stay on screen before it ticks,
+ * when it was already on screen the moment the dialog opened.
+ *
+ * Eight of the ten translations bundle only the key passage, so their dialog
+ * body is a few verses plus a link -- on a phone that is often entirely within
+ * view without scrolling, which would make "reading records the day" mean
+ * "opening the sheet records the day" for most readers, while NET/KRV readers
+ * scroll a real chapter to earn the same tick. The dwell restores a deliberate
+ * pause for the short body without asking the long one to wait twice.
+ *
+ * Deliberately short. This is honour-based by design (D4) and is not a
+ * reading-speed test -- it exists so the tick follows an intent to read rather
+ * than the act of opening a sheet.
+ */
+export const NO_SCROLL_DWELL_MS = 5000;
+
+/**
+ * What a sentinel intersection callback should do.
+ *
+ * The discriminator is the observer's *first* callback, not the translation or
+ * the body length: IntersectionObserver reports the current state immediately
+ * on observe(), so a first callback that is already intersecting means the end
+ * of the reading was in view before the reader scrolled at all. Anything later
+ * means they scrolled it into view, which is the gesture D4 wanted, and ticks
+ * instantly as before.
+ *
+ * Keying off `hasFullText` instead would be wrong in both directions: a NET
+ * chapter can fit on a desktop viewport, and a short body can still overflow a
+ * small phone.
+ */
+export type SentinelAction =
+  | { kind: "tick" }
+  | { kind: "dwell"; delayMs: number }
+  | { kind: "cancel" };
+
+export function sentinelAction(args: { isIntersecting: boolean; isFirstCallback: boolean }): SentinelAction {
+  if (!args.isIntersecting) return { kind: "cancel" };
+  if (args.isFirstCallback) return { kind: "dwell", delayMs: NO_SCROLL_DWELL_MS };
+  return { kind: "tick" };
+}
+
+/**
  * D9: one silent retry, then surface it. The animation has already played by
  * the time this runs, so a single transient failure must not be shown to the
  * user -- but a second one must, because the reading card will stay unread and

@@ -43,15 +43,24 @@ vi.mock("next/navigation", () => ({
 
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
 import { defaultAvatarConfig } from "@/components/avatar";
+import { NO_SCROLL_DWELL_MS } from "@/lib/reading-tick";
 
 const GROUP = 24077;
 
 /**
- * jsdom has no IntersectionObserver and no layout. This stub reports the
- * sentinel as visible when observed and exposes a way to fire it again, which
- * is how a reader scrolling back down to the bottom is modelled here.
+ * jsdom has no IntersectionObserver and no layout. This stub reports whatever
+ * `openState.intersecting` says on the first callback -- exactly what a real
+ * observer does, which is report the current state the instant observe() is
+ * called -- and exposes a way to fire it again, which is how a reader
+ * scrolling down to the bottom is modelled here.
+ *
+ * `openState.intersecting` is the whole of D13: `false` is a chapter long
+ * enough to overflow the sheet, so the reader has to scroll and the tick is
+ * instant. `true` is a short body already fully in view on open, which must
+ * dwell rather than record the day for merely opening the sheet.
  */
 const observers: { callback: IntersectionObserverCallback; target: Element | null }[] = [];
+const openState = { intersecting: false };
 
 class ReplayableIntersectionObserver {
   private readonly entry: { callback: IntersectionObserverCallback; target: Element | null };
@@ -61,23 +70,25 @@ class ReplayableIntersectionObserver {
   }
   observe(target: Element) {
     this.entry.target = target;
-    this.fire();
-  }
-  fire() {
-    if (!this.entry.target) return;
     this.entry.callback(
-      [{ isIntersecting: true, target: this.entry.target } as unknown as IntersectionObserverEntry],
+      [{ isIntersecting: openState.intersecting, target } as unknown as IntersectionObserverEntry],
       this as unknown as IntersectionObserver,
     );
   }
   unobserve() {}
-  disconnect() {}
+  disconnect() {
+    // Drop the entry so a closed dialog's observer cannot be fired again --
+    // otherwise reachBottomAgain() drives stale closures from unmounted
+    // dialogs and every multi-chapter assertion here measures the wrong one.
+    const at = observers.indexOf(this.entry);
+    if (at >= 0) observers.splice(at, 1);
+  }
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
 }
 
-/** Model the reader scrolling away and back down to the bottom again. */
+/** Model the reader scrolling down to the bottom (again). */
 function reachBottomAgain() {
   for (const o of observers) {
     if (!o.target) continue;
@@ -86,6 +97,12 @@ function reachBottomAgain() {
       null as unknown as IntersectionObserver,
     );
   }
+}
+
+/** Wait for the passage to resolve and arm the sentinel, then scroll to it. */
+async function reachBottom() {
+  await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+  reachBottomAgain();
 }
 
 const roster: RosterMemberView[] = [
@@ -133,6 +150,7 @@ function openReadingDialog() {
 beforeEach(() => {
   search.value = "";
   observers.length = 0;
+  openState.intersecting = false;
   checkIn.mockClear();
   checkIn.mockImplementation(async (input: CheckInInput) => ({ ok: true, group: null, input }));
   vi.stubGlobal("IntersectionObserver", ReplayableIntersectionObserver);
@@ -162,12 +180,14 @@ describe("the scroll tick records a reading exactly once", () => {
   it("checks in when the reader reaches the bottom", async () => {
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
   });
 
   it("does not check in again when the reader scrolls back down (D5/D6)", async () => {
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
 
     reachBottomAgain();
@@ -182,6 +202,7 @@ describe("the scroll tick records a reading exactly once", () => {
   it("never checks in for a chapter already marked read (D8)", async () => {
     render(React.createElement(AppShell, baseProps({ chapters: [12], readingDates: ["2026-10-12"] })));
     openReadingDialog();
+    await reachBottom();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(checkIn).not.toHaveBeenCalled();
   });
@@ -189,6 +210,7 @@ describe("the scroll tick records a reading exactly once", () => {
   it("shows the celebration in the same dialog, with no confirm button to press (D2)", async () => {
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
     expect(await screen.findByText(/COINS ADDED/i)).toBeTruthy();
   });
@@ -199,6 +221,7 @@ describe("a failed check-in is surfaced rather than silently lost (D9)", () => {
     checkIn.mockImplementation(async () => ({ ok: false, error: "network down" }) as never);
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
 
     // One silent retry, so two calls before anything is shown.
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(2));
@@ -209,6 +232,7 @@ describe("a failed check-in is surfaced rather than silently lost (D9)", () => {
     checkIn.mockImplementation(async () => ({ ok: false, error: "network down" }) as never);
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
 
     const retry = await screen.findByRole("button", { name: /tap to retry/i });
     checkIn.mockClear();
@@ -225,6 +249,7 @@ describe("review regressions", () => {
     checkIn.mockImplementation(async () => ({ ok: false, error: "network down" }) as never);
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
+    await reachBottom();
 
     const retry = await screen.findByRole("button", { name: /tap to retry/i });
     expect(retry).toBeTruthy();
@@ -267,6 +292,7 @@ describe("review regressions", () => {
 
     // Chapter 12 (today): sentinel fires, request hangs in flight.
     openReadingDialog();
+    await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
     expect(checkIn.mock.calls[0][0].chapter).toBe(12);
 
@@ -277,6 +303,7 @@ describe("review regressions", () => {
     // blocked only by its own state, not by chapter 12's.
     fireEvent.click(screen.getByRole("button", { name: /previous chapter/i }));
     openReadingDialog();
+    await reachBottom();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     // Chapter 12's request now fails, with chapter 11 on screen.
@@ -297,6 +324,10 @@ describe("review regressions", () => {
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
     await new Promise((resolve) => setTimeout(resolve, 40));
+    // The sentinel is never armed at all, so there is nothing to scroll to.
+    expect(observers).toHaveLength(0);
+    reachBottomAgain();
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(checkIn).not.toHaveBeenCalled();
   });
 
@@ -306,7 +337,47 @@ describe("review regressions", () => {
     search.value = "test=1";
     render(React.createElement(AppShell, baseProps({ testWritableGroupId: null })));
     openReadingDialog();
+    await reachBottom();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(checkIn).not.toHaveBeenCalled();
+  });
+});
+
+describe("D13: a body that needs no scrolling must not tick on open", () => {
+  it("does not record the day just because the dialog opened", async () => {
+    // Eight of the ten translations bundle only the key passage, so the end of
+    // the reading is already in view when the sheet opens. Without the dwell,
+    // opening the sheet IS the check-in for most of the audience.
+    openState.intersecting = true;
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    expect(checkIn).not.toHaveBeenCalled();
+    expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeTruthy();
+    expect(document.querySelector(".reading-tick")?.getAttribute("data-dwelling")).toBe("true");
+  });
+
+  it("records it once the dwell elapses", async () => {
+    openState.intersecting = true;
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(checkIn).not.toHaveBeenCalled();
+
+    await new Promise((resolve) => setTimeout(resolve, NO_SCROLL_DWELL_MS + 50));
+    expect(checkIn).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeNull();
+  }, 15_000);
+
+  it("still ticks instantly when the reader had to scroll (D4 is unchanged)", async () => {
+    openState.intersecting = false;
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await reachBottom();
+    await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+    expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeNull();
   });
 });

@@ -9,7 +9,13 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { checkInWithRetry, shouldWrite, simulatedCheckInGroup } from "@/lib/reading-tick";
+import {
+  NO_SCROLL_DWELL_MS,
+  checkInWithRetry,
+  sentinelAction,
+  shouldWrite,
+  simulatedCheckInGroup,
+} from "@/lib/reading-tick";
 
 const OPEN = { alreadyRead: false, alreadyFired: false, writesBlocked: false, preview: false };
 
@@ -113,5 +119,28 @@ describe("simulatedCheckInGroup", () => {
     const group = simulatedCheckInGroup({ ratio: 0, memberCount: 0 });
     expect(Number.isFinite(group.after.ratio)).toBe(true);
     expect(group.memberCount).toBe(1);
+  });
+});
+
+describe("sentinelAction decides instant vs dwell (D13)", () => {
+  it("dwells when the end of the reading was already in view on open", () => {
+    expect(sentinelAction({ isIntersecting: true, isFirstCallback: true })).toEqual({
+      kind: "dwell",
+      delayMs: NO_SCROLL_DWELL_MS,
+    });
+  });
+
+  it("ticks instantly when the reader scrolled the end into view", () => {
+    expect(sentinelAction({ isIntersecting: true, isFirstCallback: false })).toEqual({ kind: "tick" });
+  });
+
+  it("cancels a pending dwell when the end leaves view", () => {
+    expect(sentinelAction({ isIntersecting: false, isFirstCallback: false })).toEqual({ kind: "cancel" });
+    expect(sentinelAction({ isIntersecting: false, isFirstCallback: true })).toEqual({ kind: "cancel" });
+  });
+
+  it("keeps the dwell a pause rather than a reading-speed test", () => {
+    expect(NO_SCROLL_DWELL_MS).toBeGreaterThan(1000);
+    expect(NO_SCROLL_DWELL_MS).toBeLessThanOrEqual(10_000);
   });
 });

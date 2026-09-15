@@ -7,7 +7,7 @@ import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
-import type { TickState } from "@/lib/reading-tick";
+import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
 type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
@@ -152,21 +152,60 @@ export function ReadingDialog({
     tickedRef.current = ticked;
   });
 
+  // D13: true while a no-scroll dwell is counting down, so the hint can say so
+  // instead of telling a reader who is already at the end to reach the end.
+  const [dwelling, setDwelling] = useState(false);
+
   useEffect(() => {
     const node = sentinelRef.current;
     if (!armed || !node) return;
+
+    let firstCallback = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    function fire() {
+      if (tickedRef.current) setReplayKey((n) => n + 1);
+      reachedBottom.current();
+    }
+
+    function clearDwell() {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      setDwelling(false);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          if (tickedRef.current) setReplayKey((n) => n + 1);
-          reachedBottom.current();
+          const action = sentinelAction({ isIntersecting: entry.isIntersecting, isFirstCallback: firstCallback });
+          firstCallback = false;
+          if (action.kind === "cancel") {
+            clearDwell();
+            continue;
+          }
+          if (action.kind === "tick") {
+            clearDwell();
+            fire();
+            continue;
+          }
+          // Already at the end without scrolling: wait it out, but only once --
+          // a re-armed timer on every later callback would never resolve.
+          if (timer !== null) continue;
+          setDwelling(true);
+          timer = setTimeout(() => {
+            timer = null;
+            setDwelling(false);
+            fire();
+          }, action.delayMs);
         }
       },
       { root: node.closest(".sheet-scroll"), threshold: 0.9 },
     );
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      if (timer !== null) clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [armed]);
 
   // D6/D7: a replay re-mounts the celebration to re-run its entry animation,
@@ -258,9 +297,25 @@ export function ReadingDialog({
       {armed && <div ref={sentinelRef} className="reading-sentinel" aria-hidden="true" />}
 
       {mode !== "preview" && (
-        <div className="reading-tick" data-section="reading-tick" data-state={tick.kind} aria-live="polite">
-          {tick.kind === "idle" && (
+        <div
+          className="reading-tick"
+          data-section="reading-tick"
+          data-state={tick.kind}
+          data-dwelling={dwelling ? "true" : undefined}
+          aria-live="polite"
+        >
+          {tick.kind === "idle" && !dwelling && (
             <p className="reading-tick-hint">Reach the end and today is marked for you.</p>
+          )}
+          {tick.kind === "idle" && dwelling && (
+            <p className="reading-tick-hint" data-section="reading-tick-dwell">
+              Stay a moment and today is marked for you.
+              <span
+                className="reading-dwell-bar"
+                style={{ animationDuration: `${NO_SCROLL_DWELL_MS}ms` }}
+                aria-hidden="true"
+              />
+            </p>
           )}
           {ticked && (
             <div className="reading-tick-mark" key={replayKey}>

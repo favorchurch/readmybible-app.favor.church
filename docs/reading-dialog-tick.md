@@ -78,6 +78,23 @@ chips, and the progress-screen day preview all open `ReadingDialog` instead of t
 **D12 — Pre-launch.** `DAY 1 PREVIEW` opens the same dialog in preview mode: no sentinel,
 no tick row, one line saying it counts from October 1.
 
+**D13 — The no-scroll dwell.** D4 made the tick instant on reaching the end. For the eight
+translations that bundle only the key passage, the dialog body is a few verses plus a link,
+which on a phone is often entirely in view on open — so for most of the audience "reading
+records the day" would mean "opening the sheet records the day", while NET/KRV readers scroll
+a real chapter to earn the same tick.
+
+The rule is not "which translation". It is whether the reader had to scroll:
+IntersectionObserver reports the current state the instant `observe()` is called, so a first
+callback that already intersects means the end was in view before any scrolling. That case
+waits `NO_SCROLL_DWELL_MS` (5s) with a visible bar; any later intersection is a real scroll
+and ticks instantly, exactly as D4 said. Keying off `hasFullText` instead would be wrong both
+ways — a NET chapter can fit a desktop viewport, and a short body can still overflow a small
+phone.
+
+The dwell is a local gate only. Nothing about how long the sheet was open is recorded, sent,
+or shown, so the reading-time non-goal below still holds.
+
 ## Non-goals
 
 - Any change to what a check-in writes server-side. `app/actions/checkIn.ts` is untouched.
