@@ -48,9 +48,47 @@ const FIXTURE_DENSE_GROUPS: RockGroup[] = Array.from({ length: 163 }, (_, index)
   locality: "Ortigas Center",
 }));
 
+const FIXTURE_BRISBANE_GROUPS: RockGroup[] = [
+  {
+    Id: 25001,
+    Name: "Adults // Brisbane Central",
+    GroupTypeId: 25,
+    CampusId: 2,
+    ParentGroupId: null,
+    IsActive: true,
+    IsArchived: false,
+    locality: "Brisbane City",
+  },
+];
+
+const FIXTURE_SEOUL_GROUPS: RockGroup[] = [
+  {
+    Id: 26001,
+    Name: "Adults // Seoul Gangnam",
+    GroupTypeId: 25,
+    CampusId: 3,
+    ParentGroupId: null,
+    IsActive: true,
+    IsArchived: false,
+    locality: "Seoul",
+  },
+];
+
 export function fixtureCampusGroups(campusId: number): RockGroup[] {
-  if (campusId !== FIXTURE_GROUP.CampusId) return [];
-  return [FIXTURE_GROUP, ...FIXTURE_EXTRA_GROUPS, ...FIXTURE_DENSE_GROUPS];
+  if (campusId === 1) return [FIXTURE_GROUP, ...FIXTURE_EXTRA_GROUPS, ...FIXTURE_DENSE_GROUPS];
+  if (campusId === 2) return FIXTURE_BRISBANE_GROUPS;
+  if (campusId === 3) return FIXTURE_SEOUL_GROUPS;
+  return [];
+}
+
+export function fixtureAllConnectGroups(): RockGroup[] {
+  return [
+    FIXTURE_GROUP,
+    ...FIXTURE_EXTRA_GROUPS,
+    ...FIXTURE_DENSE_GROUPS,
+    ...FIXTURE_BRISBANE_GROUPS,
+    ...FIXTURE_SEOUL_GROUPS,
+  ];
 }
 
 // PersonId -> NickName, first names only. Frozen from Rock prod.
@@ -137,7 +175,9 @@ export function fixtureSectionMemberships(): RockGroupMember[] {
 }
 
 export function fixtureRoster(groupId: number): RockGroupMember[] {
-  if (groupId !== FIXTURE_GROUP.Id) return [];
+  const group = fixtureGroupBasic(groupId);
+  if (!group) return [];
+  const campusId = group.CampusId ?? FIXTURE_GROUP.CampusId;
   return Object.entries(FIXTURE_PEOPLE).map(([id, nickName]) => {
     const personId = Number(id);
     return {
@@ -151,26 +191,35 @@ export function fixtureRoster(groupId: number): RockGroupMember[] {
         NickName: nickName,
         FirstName: nickName,
         LastName: "",
-        PrimaryCampusId: FIXTURE_GROUP.CampusId,
+        PrimaryCampusId: campusId,
         Gender: FIXTURE_GENDERS[personId],
       },
     };
   });
 }
 
-
-
 export function fixtureSectionSubtree(sectionGroupId: number): RockGroup[] {
   if (sectionGroupId !== FIXTURE_GROUP.ParentGroupId) return [];
   return [FIXTURE_GROUP];
 }
 
+const FIXTURE_CAMPUS_NAMES: Record<number, string> = {
+  1: "Manila",
+  2: "Brisbane",
+  3: "Seoul",
+  5: "OPEN ACCESS",
+};
+
 export function fixtureCampusName(campusId: number): string | null {
-  return campusId === FIXTURE_GROUP.CampusId ? "Manila" : null;
+  return FIXTURE_CAMPUS_NAMES[campusId] ?? null;
+}
+
+export function fixtureAllCampusNames(): Map<number, string> {
+  return new Map(Object.entries(FIXTURE_CAMPUS_NAMES).map(([id, name]) => [Number(id), name]));
 }
 
 export function fixtureGroupBasic(groupId: number): RockGroup | null {
-  return groupId === FIXTURE_GROUP.Id ? FIXTURE_GROUP : null;
+  return fixtureAllConnectGroups().find((g) => g.Id === groupId) ?? null;
 }
 
 export function isFixtureMode(): boolean {

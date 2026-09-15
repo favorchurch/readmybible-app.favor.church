@@ -36,21 +36,39 @@ describe("getTestGroupSnapshot", () => {
     vi.clearAllMocks();
   });
 
-  it("refuses when NODE_ENV is production", async () => {
+  it("allows when NODE_ENV is production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
+      const { getSessionContext } = await import("@/lib/session");
+      const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
+
+      vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
+      vi.mocked(getGroupBasic).mockResolvedValueOnce({
+        Id: 87177,
+        Name: "Production Connect Group",
+        GroupTypeId: 25,
+        CampusId: 1,
+        ParentGroupId: null,
+        IsActive: true,
+        IsArchived: false,
+        locality: null,
+      });
+      vi.mocked(getRoster).mockResolvedValueOnce([]);
+
       const result = await getTestGroupSnapshot({ groupId: 87177 });
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.error).toMatch(/production/i);
+        expect(result.error).toMatch(/empty roster/i);
       }
     } finally {
       vi.unstubAllEnvs();
     }
   });
 
-  it("refuses when caller is not admin scope", async () => {
+  it("allows when caller is not admin scope", async () => {
     const { getSessionContext } = await import("@/lib/session");
+    const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
+
     vi.mocked(getSessionContext).mockResolvedValueOnce({
       status: "ok",
       rockPersonId: 123,
@@ -65,11 +83,33 @@ describe("getTestGroupSnapshot", () => {
       isAdminScope: false,
       defaultTranslation: "NET",
     });
+    vi.mocked(getGroupBasic).mockResolvedValueOnce({
+      Id: 87177,
+      Name: "Connect Group",
+      GroupTypeId: 25,
+      CampusId: 1,
+      ParentGroupId: null,
+      IsActive: true,
+      IsArchived: false,
+      locality: null,
+    });
+    vi.mocked(getRoster).mockResolvedValueOnce([]);
 
     const result = await getTestGroupSnapshot({ groupId: 87177 });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toMatch(/admin/i);
+      expect(result.error).toMatch(/empty roster/i);
+    }
+  });
+
+  it("refuses when caller is not logged in", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+    vi.mocked(getSessionContext).mockResolvedValueOnce({ status: "logged-out" });
+
+    const result = await getTestGroupSnapshot({ groupId: 87177 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/logged in/i);
     }
   });
 

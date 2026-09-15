@@ -30,7 +30,7 @@ export function Sheet({
   onClose: () => void;
   labelledBy: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
   initialFocusRef?: RefObject<HTMLElement | null>;
   immersive?: boolean;
 }) {

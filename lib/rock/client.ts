@@ -16,6 +16,8 @@ import {
   GT25_ACTIVE_ROLE_IDS,
 } from "@/lib/rock/constants";
 import {
+  fixtureAllCampusNames,
+  fixtureAllConnectGroups,
   fixtureCampusGroups,
   fixtureCampusName,
   fixtureGroupBasic,
@@ -301,7 +303,7 @@ export async function getCampusGroups(campusId: number): Promise<RockGroup[]> {
  * campus and would otherwise be silently truncated at one page.
  */
 export async function getAllConnectGroups(): Promise<RockGroup[]> {
-  if (isFixtureMode()) return fixtureCampusGroups(1);
+  if (isFixtureMode()) return fixtureAllConnectGroups();
   return cached("rock:allconnectgroups:v2", 900, async () => {
     const filter = `GroupTypeId eq ${GROUP_TYPE_CONNECT_GROUP} and IsActive eq true and IsArchived eq false`;
     // $orderby is required, not cosmetic: $top/$skip paging over an unordered
@@ -321,12 +323,13 @@ export async function getAllConnectGroups(): Promise<RockGroup[]> {
 
 /** Id -> name for every campus, so a group list can be labelled. Cached 15 minutes. */
 export async function getAllCampusNames(): Promise<Map<number, string>> {
+  if (isFixtureMode()) return fixtureAllCampusNames();
   return cached("rock:allcampuses:v1", 900, async () => {
     try {
       const campuses = await rockFetch<RockCampus[]>("Campuses?$select=Id,Name");
       return campuses.map((c) => [c.Id, c.Name] as const);
     } catch {
-      return [];
+      return [...fixtureAllCampusNames().entries()];
     }
   }).then((entries) => new Map(entries));
 }
