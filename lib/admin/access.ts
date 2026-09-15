@@ -42,3 +42,30 @@ export function resolveAdminScope(session: SessionContext): AdminScope | null {
 
   return null;
 }
+
+export type ScopeRole = "Global Admin" | "Cluster Head" | "Regional Leader" | "Section Leader";
+
+/**
+ * Derives a human-readable role title for the viewer's active admin scope:
+ * - "Global Admin" for global root access.
+ * - "Cluster Head" if any visible section has child sections (regions) or has "cluster" in its name.
+ * - "Regional Leader" if sections are direct parents of leaf Connect Groups or have "region" in their name.
+ * - "Section Leader" as fallback.
+ */
+export function resolveScopeRole(
+  scope: AdminScope,
+  sections: Array<{ name: string; children?: unknown[] }> = [],
+): ScopeRole {
+  if (scope.kind === "global") return "Global Admin";
+
+  const hasSubSections = sections.some((s) => Array.isArray(s.children) && s.children.length > 0);
+  const anyClusterName = sections.some((s) => s.name.toLowerCase().includes("cluster"));
+  if (hasSubSections || anyClusterName) return "Cluster Head";
+
+  const anyRegionName = sections.some((s) => s.name.toLowerCase().includes("region"));
+  if (anyRegionName || sections.every((s) => !s.children || (Array.isArray(s.children) && s.children.length === 0))) {
+    return "Regional Leader";
+  }
+
+  return "Section Leader";
+}

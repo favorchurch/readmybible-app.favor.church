@@ -23,6 +23,11 @@ describe("isTestModeRequested", () => {
     expect(isTestModeRequested(new URLSearchParams("day=5"))).toBe(true);
   });
 
+  it("is true for ?admin=1 or ?tab=admin", () => {
+    expect(isTestModeRequested(new URLSearchParams("admin=1"))).toBe(true);
+    expect(isTestModeRequested(new URLSearchParams("tab=admin"))).toBe(true);
+  });
+
   it("is false with neither param", () => {
     expect(isTestModeRequested(new URLSearchParams(""))).toBe(false);
   });
@@ -41,6 +46,12 @@ describe("initialTestModeState", () => {
     expect(initialTestModeState(new URLSearchParams("day=999")).day).toBe(1);
     expect(initialTestModeState(new URLSearchParams("day=0")).day).toBe(1);
     expect(initialTestModeState(new URLSearchParams("day=nope")).day).toBe(1);
+  });
+
+  it("seeds admin viewer from ?admin=1 or ?viewer=admin", () => {
+    expect(initialTestModeState(new URLSearchParams("admin=1")).viewer).toBe("admin");
+    expect(initialTestModeState(new URLSearchParams("viewer=admin")).viewer).toBe("admin");
+    expect(initialTestModeState(new URLSearchParams("tab=admin")).viewer).toBe("admin");
   });
 
   it("starts with nothing else simulated", () => {

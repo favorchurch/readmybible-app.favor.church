@@ -77,10 +77,10 @@ const campusBoard: GroupStanding[] = [
   { groupId: 4, name: "Unknown One", ratio: 0, readersToday: 0, locality: null },
 ];
 
-function renderLeader(today = activeToday) {
+function renderLeader(today: TodayState = activeToday, isAdminScope: boolean = false) {
   return render(
     React.createElement(LeaderScreen, {
-      groupName: "Alex's Connect",
+      groupName: "Ortigas Alpha",
       campusBoard,
       roster,
       today,
@@ -89,6 +89,7 @@ function renderLeader(today = activeToday) {
       readerGroupId: 1,
       onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
       onEditProfile: () => {},
+      isAdminScope,
     }),
   );
 }
@@ -161,6 +162,17 @@ describe("LeaderScreen", () => {
     expect(addMember.getAttribute("href")).toBe("https://connect.favor.church");
     expect(addMember.getAttribute("target")).toBe("_blank");
     expect(addMember.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  it("shows the Section Dashboard card only when isAdminScope is true", () => {
+    const { container: withoutAdmin } = renderLeader(activeToday, false);
+    expect(withoutAdmin.querySelector('[data-section="leader-admin-card"]')).toBeNull();
+
+    cleanup();
+    const { container: withAdmin } = renderLeader(activeToday, true);
+    expect(withAdmin.querySelector('[data-section="leader-admin-card"]')).not.toBeNull();
+    const adminLink = screen.getByRole("link", { name: "Open Admin →" });
+    expect(adminLink.getAttribute("href")).toBe("/admin");
   });
 });
 

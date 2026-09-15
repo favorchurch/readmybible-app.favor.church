@@ -482,6 +482,32 @@ describe("ProfileEditor reading data disclosure", () => {
     expect(html).not.toContain("verse bookmarks");
     expect(html).not.toContain("Read My Bible is a Favor Church ministry.");
   });
+
+  it("shows Admin dashboard link only when isAdminScope is true", () => {
+    const withoutAdmin = renderPortalMarkup(
+      React.createElement(ProfileEditor, {
+        profile: testProfile,
+        saving: false,
+        onClose: () => {},
+        onSave: () => {},
+        isAdminScope: false,
+      }),
+    );
+    expect(withoutAdmin).not.toContain("/admin");
+    expect(withoutAdmin).not.toContain("Admin dashboard →");
+
+    const withAdmin = renderPortalMarkup(
+      React.createElement(ProfileEditor, {
+        profile: testProfile,
+        saving: false,
+        onClose: () => {},
+        onSave: () => {},
+        isAdminScope: true,
+      }),
+    );
+    expect(withAdmin).toContain('href="/admin"');
+    expect(withAdmin).toContain("Admin dashboard →");
+  });
 });
 
 describe("ReadingVisibilityNote dialog", () => {

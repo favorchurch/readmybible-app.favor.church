@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveAdminScope } from "@/lib/admin/access";
+import { resolveAdminScope, resolveScopeRole } from "@/lib/admin/access";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import type { SessionContext } from "@/lib/session";
 
@@ -66,5 +66,43 @@ describe("resolveAdminScope", () => {
       }),
     );
     expect(scope).toEqual({ kind: "sections", rootIds: [100] });
+  });
+});
+
+describe("resolveScopeRole", () => {
+  it("identifies global scope as Global Admin", () => {
+    expect(resolveScopeRole({ kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] })).toBe("Global Admin");
+  });
+
+  it("identifies sections with child sub-sections as Cluster Head", () => {
+    const role = resolveScopeRole(
+      { kind: "sections", rootIds: [23869] },
+      [{ name: "MNL Adults", children: [{ name: "Region A" }] }],
+    );
+    expect(role).toBe("Cluster Head");
+  });
+
+  it("identifies sections with Cluster in name as Cluster Head even if empty children", () => {
+    const role = resolveScopeRole(
+      { kind: "sections", rootIds: [23869] },
+      [{ name: "Cluster // Cielo & Peejay", children: [] }],
+    );
+    expect(role).toBe("Cluster Head");
+  });
+
+  it("identifies leaf sections as Regional Leader", () => {
+    const role = resolveScopeRole(
+      { kind: "sections", rootIds: [23870] },
+      [{ name: "Region // Arnel & Belle", children: [] }],
+    );
+    expect(role).toBe("Regional Leader");
+  });
+
+  it("identifies sections with no child sections as Regional Leader", () => {
+    const role = resolveScopeRole(
+      { kind: "sections", rootIds: [555] },
+      [{ name: "Young Adults East", children: [] }],
+    );
+    expect(role).toBe("Regional Leader");
   });
 });

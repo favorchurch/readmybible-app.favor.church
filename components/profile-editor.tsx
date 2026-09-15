@@ -69,11 +69,13 @@ export function ProfileEditor({
   saving,
   onClose,
   onSave,
+  isAdminScope = false,
 }: {
   profile: UserProfile;
   saving: boolean;
   onClose: () => void;
   onSave: (profile: UserProfile) => void;
+  isAdminScope?: boolean;
 }) {
   const [draft, setDraft] = useState(profile);
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
@@ -324,8 +326,13 @@ export function ProfileEditor({
           </p>
         </details>
         <div className="profile-account-actions">
+          {isAdminScope && (
+            <a href="/admin" className="profile-admin-link">
+              Admin dashboard →
+            </a>
+          )}
           <a href="/auth/logout">Log out</a>
         </div>
-    </Sheet>
-  );
-}
+      </Sheet>
+    );
+  }

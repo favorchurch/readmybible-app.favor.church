@@ -37,6 +37,7 @@ type LeaderScreenProps = {
   onGetOrCreateJoinCode: () => Promise<JoinCodeResult>;
   onEditProfile: () => void;
   connectSwitcher?: ConnectSwitcherContext;
+  isAdminScope?: boolean;
 };
 
 export function LeaderScreen(props: LeaderScreenProps) {
@@ -54,6 +55,7 @@ function LeaderScreenContent({
   onGetOrCreateJoinCode,
   onEditProfile,
   connectSwitcher,
+  isAdminScope = false,
 }: LeaderScreenProps) {
   const phase = today.displayPhase;
   const stillReading = roster.filter((m) => !m.readToday);
@@ -168,6 +170,23 @@ function LeaderScreenContent({
           </div>
         )}
       </section>
+
+      {isAdminScope && (
+        <section className="leader-section leader-admin-card" data-section="leader-admin-card">
+          <div className="section-heading leader-admin-heading">
+            <div>
+              <p className="eyebrow">SECTION DASHBOARD</p>
+              <h2>Regional &amp; Cluster Progress</h2>
+            </div>
+            <a href="/admin" className="leader-admin-button">
+              Open Admin →
+            </a>
+          </div>
+          <p>
+            You have section leadership access in Favor&apos;s records. Track cumulative charts, compare groups, and export progress reports.
+          </p>
+        </section>
+      )}
 
       {/* Bring someone in */}
       <section className="leader-section" data-section="bring-someone-in">
