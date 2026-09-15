@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Avatar, type Translation, type UserProfile } from "@/components/avatar";
+import { FullHome } from "@/components/full-home";
 import { HomeIllustration, stageIndex } from "@/components/rotatable-home";
 import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
@@ -13,7 +14,7 @@ import type { RosterMemberView } from "@/components/app-shell";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
-import { coinsFor, medals, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
+import { coinsFor, medals, nextStageMilestone, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
 import {
   clampReadingChapter,
   GRACE_DATES,
@@ -69,6 +70,7 @@ export function TodayScreen({
   const [tentPeopleOpen, setTentPeopleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+  const [homeOpen, setHomeOpen] = useState(false);
   const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
   const quickVerseTriggerRef = useRef<HTMLButtonElement>(null);
@@ -482,6 +484,14 @@ export function TodayScreen({
                     <strong>{groupCoins} coins</strong>
                     {nextStage && <span>{nextStage.pct}% to {nextStage.stage}</span>}
                   </div>
+                  <button
+                    type="button"
+                    className="primary-button open-home-button"
+                    onClick={() => setHomeOpen(true)}
+                    aria-haspopup="dialog"
+                  >
+                    Open Home <span aria-hidden="true">↗</span>
+                  </button>
                 </div>
               </div>
             </section>
@@ -519,6 +529,27 @@ export function TodayScreen({
         member={selectedMember}
         todayLocal={today.todayLocal}
       />
+      {homeOpen && groupName && (
+        <FullHome
+          onClose={() => setHomeOpen(false)}
+          groupName={groupName}
+          coins={groupCoins}
+          stage={stageIndex(stage)}
+          progress={nextStage}
+          milestone={nextStageMilestone(ratio)}
+          overallPct={Math.round(ratio * 100)}
+          today={today}
+          roster={roster}
+          profile={profile}
+          selectedMemberId={selectedMember?.personId ?? null}
+          onSelectMember={(member) => {
+            setSelectedMember(member);
+            setProfileSheetOpen(true);
+          }}
+          onViewReading={() => setHomeOpen(false)}
+          onViewPlan={onViewProgress}
+        />
+      )}
     </main>
   );
 }
