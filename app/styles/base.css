@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
-html { background: #ded8cc; }
-body { margin: 0; background: #ded8cc; color: var(--navy); font-family: var(--font-sans); }
+html { background: var(--cream); }
+body { margin: 0; background: var(--cream); color: var(--navy); font-family: var(--font-sans); }
 button { color: inherit; font: inherit; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
