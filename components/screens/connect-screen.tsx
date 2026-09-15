@@ -220,6 +220,7 @@ export function ConnectScreen({
         onClose={() => setHomeOpen(false)}
         groupName={groupName ?? "Your Connect Group"}
         coins={groupCoins}
+        groupCheckinCount={groupStats?.checkinCount ?? null}
         stage={selectedStage}
         progress={nextStage}
         milestone={nextStageMilestone(ratio)}

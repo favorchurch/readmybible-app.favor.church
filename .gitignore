@@ -46,3 +46,4 @@ tsconfig.tsbuildinfo
 /graft/
 .office/
 /scratch/
+/.rtk/
