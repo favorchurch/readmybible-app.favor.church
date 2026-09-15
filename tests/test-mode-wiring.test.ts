@@ -31,6 +31,7 @@ const chooseGroup = vi.fn(async () => ({ ok: true }));
 const saveProfile = vi.fn(async () => ({ ok: true }));
 const getOrCreateJoinCode = vi.fn(async () => ({ ok: true, code: "TEST12" }));
 const getTestGroupSnapshot = vi.fn(async () => ({ ok: false, error: "not used" }));
+const getJoinCodeForGroup = vi.fn(async () => ({ ok: true, code: null }));
 
 vi.mock("@/app/actions/checkIn", () => ({ checkIn: (input: CheckInInput) => checkIn(input) }));
 vi.mock("@/app/actions/joinByCode", () => ({ joinByCode: (...a: unknown[]) => joinByCode(...(a as [])) }));
@@ -41,6 +42,9 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
 }));
 vi.mock("@/app/actions/getTestGroupSnapshot", () => ({
   getTestGroupSnapshot: (...a: unknown[]) => getTestGroupSnapshot(...(a as [])),
+}));
+vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
+  getJoinCodeForGroup: (...a: unknown[]) => getJoinCodeForGroup(...(a as [])),
 }));
 
 vi.mock("next/navigation", () => ({

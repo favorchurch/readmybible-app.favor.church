@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { PLAN } from "@/lib/plan";
 import { writesBlocked, type SimulatedPhase, type TestModeState, type TestModeViewer } from "./logic";
 
@@ -40,11 +41,32 @@ export function TestModePanel({
   error?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
+  const [joinCode, setJoinCode] = useState<string | null | undefined>(undefined);
+  const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
 
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
   const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
   const isA2Mismatch =
     writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
+  const simulatedGroupId = state.groupId ?? realActiveGroupId;
+
+  useEffect(() => {
+    if (simulatedGroupId === null) return;
+    let cancelled = false;
+    getJoinCodeForGroup(simulatedGroupId).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setJoinCode(result.code);
+        setJoinCodeError(null);
+      } else {
+        setJoinCode(null);
+        setJoinCodeError(result.error);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [simulatedGroupId]);
 
   return (
     <div className="test-mode-panel" data-section="test-mode-panel" role="region" aria-label="Test mode">
@@ -92,6 +114,16 @@ export function TestModePanel({
                 ))}
             </select>
           </label>
+
+          {simulatedGroupId !== null && (
+            <p className="test-mode-note test-mode-join-code" data-testid="test-mode-join-code">
+              {joinCode === undefined
+                ? "Loading join code…"
+                : joinCode !== null
+                  ? `Join code: ${joinCode}`
+                  : joinCodeError ?? "No join code yet"}
+            </p>
+          )}
 
           <div className="test-mode-field" role="group" aria-label="Viewer">
             <span>Viewer</span>
