@@ -9,7 +9,13 @@
 .full-home .home3d-viewport { touch-action: none; }
 /* Immersive scene: move the shared ground line and model scale, never the
    model's own `top` -- .home3d-model is base-anchored to --ground-top. */
-.full-home .home3d-immersive { --ground-top: 59%; --ground-size: 330px; --model-scale: 1.45; }
+.full-home .home3d-immersive { --ground-top: 56%; --ground-size: clamp(280px, 54vw, 420px); --model-scale: 1.45; }
+.full-home .home3d-immersive.stage-tent { --model-scale: 1.65; }
+.full-home .home3d-immersive.stage-trailer { --model-scale: 1.45; }
+.full-home .home3d-immersive.stage-cabin3d { --model-scale: 1.42; }
+.full-home .home3d-immersive.stage-apartment { --model-scale: 1.14; }
+.full-home .home3d-immersive.stage-house3d { --model-scale: 1.32; }
+.full-home .home3d-immersive.stage-mansion { --model-scale: 1.08; }
 .full-home .home3d-sky:before { top: 20%; right: 14%; }
 .full-home .home3d-sky i { top: 26%; }
 .full-home .home3d-sky > span { height: 40%; }
@@ -17,7 +23,7 @@
 .full-home-identity { flex: 1; min-width: 0; }
 .full-home-identity h2 { font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .full-home-identity > span { font-size: 12px; }
-.full-home .coin-chip { flex-shrink: 0; border-radius: var(--radius-pill); }
+.full-home .coin-chip { flex-shrink: 0; border-radius: var(--radius-pill); border: 0; cursor: pointer; }
 .home-float-button { border: 0; border-radius: 50%; background: var(--paper); width: 44px; height: 44px; flex: 0 0 44px; font-size: 26px; cursor: pointer; }
 .home-expand { position: absolute; top: calc(100% + 4px); right: max(16px, env(safe-area-inset-right)); }
 .full-home-footer { position: absolute; z-index: 2; inset: auto 0 0; padding: 20px max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); pointer-events: none; }
@@ -43,10 +49,24 @@
              rotateX(9deg)
              translate(-50%, -100%);
   text-align: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
 }
 .home-person .avatar { width: clamp(38px, 11vw, 58px); height: clamp(38px, 11vw, 58px); box-shadow: 0 5px 0 rgba(23,41,67,.15); }
-.home-person-label { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 108px; padding: 3px 6px; background: var(--paper); color: var(--ink); border-radius: 4px; font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; }
-.full-home .home-coachmark { bottom: 180px; }
+.home-person-label { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 108px; padding: 3px 6px; background: var(--paper); color: var(--ink); border-radius: 4px; font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; opacity: 0; pointer-events: none; }
+.home-person:focus-visible .home-person-label, .home-person.selected .home-person-label, .home-gathering.show-names .home-person-label { opacity: 1; }
+@media (hover: hover) { .home-person:hover .home-person-label { opacity: 1; } }
+.full-home .home-coachmark { top: 92px; bottom: auto; }
+.home-person:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; border-radius: 50%; }
+.home-person.selected .avatar { box-shadow: 0 0 0 3px var(--gold), 0 5px 0 rgba(23,41,67,.15); }
+.home-person-you { display: block; color: var(--navy); font-size: 12px; margin-top: 2px; }
+.full-home-coin-info { position: absolute; z-index: 4; top: 88px; right: 16px; max-width: 250px; margin: 0; padding: 8px 10px; border-radius: var(--radius-md); background: var(--paper); color: var(--ink); font-size: 12px; line-height: 1.35; box-shadow: 0 4px 14px rgba(23,41,67,.14); }
+.full-home-progress p { flex-basis: 100%; margin: -2px 0 0; color: var(--ink-muted); font-size: 12px; }
+.full-home-progress small { flex-basis: 100%; color: var(--ink-muted); }
+.home-reading-cta { flex-basis: 100%; min-height: 44px; margin-top: 2px; pointer-events: auto; }
 .time-sunset .home3d-sky { background: linear-gradient(#ce8f85 0%, #efbb86 59%, #6f866d 60%, #506b54 100%); }
 .time-night .home3d-sky { background: linear-gradient(#142740 0%, #344a64 59%, #334e48 60%, #273e37 100%); }
 .time-night .home3d-sky:before { background: #f3e8c7; box-shadow: 0 0 0 14px rgba(243,232,199,.07); }
@@ -72,8 +92,14 @@
 .home-time-options button[aria-pressed="true"] { background: var(--navy); color: var(--paper); }
 .home-option-reset { min-height: 48px; background: transparent; border: 0; margin: 8px 0; cursor: pointer; }
 .home-options h2 { font-size: 26px; }
+.home-options-members { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.home-options-members h3 { font-size: 16px; }
+.home-options-members p { margin: 3px 0 10px; color: var(--ink-muted); font-size: 12px; }
+.home-options-member-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.home-options-member-list button { min-height: 44px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--paper); color: var(--ink); cursor: pointer; }
+.home-options-member-list button.selected { border-color: var(--navy); box-shadow: 0 0 0 2px var(--gold); }
 @media (orientation: landscape) {
-  .full-home .home3d-immersive { --model-scale: 1.15; }
+  .full-home .home3d-immersive { --model-scale: 1.2; --ground-top: 55%; }
   .full-home-header { padding-top: max(10px, env(safe-area-inset-top)); }
   .full-home-identity { max-width: 460px; }
   .full-home .coin-chip { margin-left: auto; }
@@ -81,7 +107,15 @@
   .full-home-footer { display: flex; align-items: end; gap: 24px; padding-top: 0; }
   .full-home-progress { margin: 0; flex: 1; }
   .home-floating-actions { margin: 0 0 0 auto; gap: 10px; }
-  .full-home .home-coachmark { bottom: 85px; }
   .home-person .avatar { width: 42px; height: 42px; }
+}
+@media (min-width: 700px) {
+  .full-home .home3d-immersive { --ground-top: 51%; --ground-size: 500px; }
+  .full-home .home3d-immersive.stage-tent { --model-scale: 1.9; }
+  .full-home .home3d-immersive.stage-trailer { --model-scale: 1.7; }
+  .full-home .home3d-immersive.stage-cabin3d { --model-scale: 1.65; }
+  .full-home .home3d-immersive.stage-apartment { --model-scale: 1.3; }
+  .full-home .home3d-immersive.stage-house3d { --model-scale: 1.5; }
+  .full-home .home3d-immersive.stage-mansion { --model-scale: 1.2; }
 }
 @media (prefers-reduced-motion: reduce) { .home3d-turntable { transition: none; } }

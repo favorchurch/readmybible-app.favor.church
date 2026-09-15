@@ -22,6 +22,8 @@
 .home3d-sky i + i { width: 53px; left: auto; right: 26%; top: 92px; opacity: .7; }
 .home3d-sky > span { position: absolute; inset: auto -10% 0; height: 31%; border-radius: 50% 50% 0 0; background: #789471; }
 .home3d-viewport { position: absolute; inset: 0; perspective: 850px; cursor: grab; touch-action: pan-y; user-select: none; outline: none; }
+.home3d-wrap.stage-apartment,
+.home3d-wrap.stage-mansion { --model-scale: .9; }
 .home3d-viewport:active { cursor: grabbing; }
 .home3d-viewport:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
 /* Registered so it interpolates: the turntable transitions its transform, and
