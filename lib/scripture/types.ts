@@ -126,4 +126,12 @@ export type ScriptureResult = {
   source: ScriptureSource;
 };
 
-export type ScriptureSource = "bundled" | "api-bible" | "bolls" | "unavailable";
+/**
+ * `key-passage-fallback` is a degraded answer, not a normal one: the reader
+ * asked for a whole chapter, every path that could serve it failed, and what
+ * came back is the handful of curated verses bundled on disk. It is kept
+ * distinct from `bundled` so the route can refuse to cache it and the dialog
+ * can say so -- both of which are impossible if a partial answer is
+ * indistinguishable from a complete one.
+ */
+export type ScriptureSource = "bundled" | "api-bible" | "bolls" | "key-passage-fallback" | "unavailable";

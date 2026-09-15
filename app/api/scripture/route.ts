@@ -16,11 +16,14 @@ export async function GET(request: Request) {
 
   const result = await getPassage(ref, translation);
 
-  // A hit is immutable and worth caching for a day. A miss is not: it usually
-  // means a live chapter fetch failed, and caching that for 24 hours pins the
-  // reader to an empty chapter long after the upstream recovered. Cache the
-  // scripture, never the outage.
-  const cacheControl = result.verses ? "public, max-age=86400" : "no-store";
+  // A complete answer is immutable and worth caching for a day. A miss is not,
+  // and neither is the key-passage fallback: both mean a live chapter fetch
+  // just failed, and caching either for 24 hours pins the reader to a blank or
+  // three-verse day long after the upstream recovered. Cache the scripture,
+  // never the outage -- which is why the fallback carries its own source value
+  // rather than reporting itself as ordinary bundled text.
+  const degraded = result.verses === null || result.source === "key-passage-fallback";
+  const cacheControl = degraded ? "no-store" : "public, max-age=86400";
 
   return NextResponse.json(result, {
     headers: { "Cache-Control": cacheControl },

@@ -83,7 +83,7 @@ async function extractPassage(translation: Translation, parsed: ParsedReference,
   // the bundled key passage on disk. Serving those few verses keeps the day
   // readable -- and checkable-in -- without a third party being up.
   const keyPassage = keyPassageForChapter(translation, parsed);
-  if (keyPassage) return { verses: keyPassage, source: "bundled" };
+  if (keyPassage) return { verses: keyPassage, source: "key-passage-fallback" };
 
   return { verses: null, source: "unavailable" };
 }

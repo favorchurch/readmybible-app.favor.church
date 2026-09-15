@@ -80,8 +80,10 @@ export async function fetchLiveChapter(version: Translation, bookCode: string, c
   // Only a real chapter is cached. Caching the failure too meant one timeout
   // pinned that version/chapter to "unavailable" for the life of the warm
   // instance, so a reader who retried kept getting the cached outage instead
-  // of a fresh attempt.
-  if (result) chapterCache.set(cacheKey, result);
+  // of a fresh attempt. The length check matters because a 200 carrying an
+  // empty array yields `{}`, which is truthy -- an empty chapter would
+  // otherwise be cached exactly like a real one.
+  if (result && Object.keys(result).length > 0) chapterCache.set(cacheKey, result);
   return result;
 }
 

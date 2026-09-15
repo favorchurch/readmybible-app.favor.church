@@ -9,7 +9,7 @@ import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-bod
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
 import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
-import { TRANSLATIONS } from "@/lib/scripture/types";
+import { TRANSLATIONS, type ScriptureSource } from "@/lib/scripture/types";
 
 type PassageResponse = {
   ref: string;
@@ -18,11 +18,26 @@ type PassageResponse = {
   verses: Record<string, string> | null;
   bibleComUrl: string;
   attribution: string;
+  source: ScriptureSource;
 };
 type PassageState =
-  | { text: string | null; verses: Record<string, string> | null; bibleComUrl: string; attribution: string }
+  | {
+      text: string | null;
+      verses: Record<string, string> | null;
+      bibleComUrl: string;
+      attribution: string;
+      source: ScriptureSource;
+    }
   | "loading"
   | "error";
+
+/**
+ * Bumped whenever the response shape changes. The API sends
+ * Cache-Control: public, max-age=86400, so without this a reader's browser
+ * serves a body from before the deploy for a full day -- which is how a
+ * response with `text` and no `verses` reached the dialog at all.
+ */
+const PASSAGE_SHAPE_VERSION = "2";
 
 /**
  * `preview` is pre-launch (D12): the passage is readable, nothing ticks.
@@ -32,10 +47,18 @@ export type ReadingDialogMode = "preview" | "unread" | "read";
 
 async function fetchPassage(ref: string, translation: Translation): Promise<PassageState> {
   try {
-    const res = await fetch(`/api/scripture?ref=${encodeURIComponent(ref)}&t=${translation}`);
+    const res = await fetch(
+      `/api/scripture?ref=${encodeURIComponent(ref)}&t=${translation}&v=${PASSAGE_SHAPE_VERSION}`,
+    );
     if (!res.ok) return "error";
     const data = (await res.json()) as PassageResponse;
-    return { text: data.text, verses: data.verses, bibleComUrl: data.bibleComUrl, attribution: data.attribution };
+    return {
+      text: data.text,
+      verses: data.verses,
+      bibleComUrl: data.bibleComUrl,
+      attribution: data.attribution,
+      source: data.source,
+    };
   } catch {
     return "error";
   }
@@ -131,8 +154,11 @@ export function ReadingDialog({
   // that has `text` and no `verses` -- the dialog would render the "available
   // at Bible.com" line, arm anyway, and tick them in for a chapter it never
   // showed. Derive arming from the rendered content, not from a sibling field
-  // the client has to trust the server to keep in sync.
-  const armed = mode !== "preview" && resolved && passage !== "error" && Boolean(passage.verses);
+  // the client has to trust the server to keep in sync -- and count the keys
+  // rather than testing the object, because `{}` is truthy and would arm an
+  // empty card.
+  const armed =
+    mode !== "preview" && resolved && passage !== "error" && Object.keys(passage.verses ?? {}).length > 0;
 
   // Held in a ref so the observer effect does not depend on the callback's
   // identity. It is a new closure on every render, and re-running the effect
@@ -250,6 +276,15 @@ export function ReadingDialog({
       {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
       {resolved && passage !== "error" && passage.verses && (
         <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
+          {/* The heading says "Matthew 4" but a degraded body is only the key
+              passage. Saying so turns a silent substitution into an honest
+              one -- without it the reader has no way to tell they are looking
+              at three verses instead of the chapter. */}
+          {passage.source === "key-passage-fallback" && (
+            <p className="passage-degraded-note" data-section="passage-degraded">
+              Only the key passage is available right now. Read the full chapter on Bible.com below.
+            </p>
+          )}
           {Object.keys(passage.verses)
             .map(Number)
             .sort((a, b) => a - b)

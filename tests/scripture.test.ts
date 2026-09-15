@@ -279,8 +279,11 @@ describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
     const result = await getPassage("Matthew 4", "ESV");
 
     expect(result.verses).not.toBeNull();
-    expect(result.source).toBe("bundled");
     expect(result.text).toBeTruthy();
+    // Deliberately NOT "bundled": the route refuses to cache a degraded answer
+    // for a day, and the dialog says so to the reader. Both are impossible if
+    // a partial answer looks identical to a complete chapter.
+    expect(result.source).toBe("key-passage-fallback");
   });
 
   it("caches a live-fetched chapter so a second verse in the same chapter doesn't re-fetch", async () => {
