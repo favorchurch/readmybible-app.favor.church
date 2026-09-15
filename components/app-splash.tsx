@@ -80,3 +80,22 @@ export function AppSkeleton() {
     </div>
   );
 }
+
+export function AppBrandSplash() {
+  return (
+    <div
+      className="splash splash-brand-only app-shell"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading Read My Bible"
+    >
+      <div className="splash-phase-a">
+        <div className="brand" aria-hidden="true">
+          <span>READ</span>
+          <span>MY</span>
+          <span>BIBLE</span>
+        </div>
+      </div>
+    </div>
+  );
+}

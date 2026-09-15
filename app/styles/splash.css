@@ -66,6 +66,22 @@
   }
 }
 
+/* Brand-only splash (AppBrandSplash for unauthenticated routes) */
+.splash.splash-brand-only .splash-phase-a {
+  animation: splashBrandIn var(--dur-slow) var(--ease-out) forwards;
+}
+
+@keyframes splashBrandIn {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Phase B: Home screen skeleton */
 .splash-phase-b {
   min-height: 100dvh;
@@ -79,8 +95,9 @@
 
 /* Standalone skeleton (AppSkeleton used inside page Suspense) */
 .splash.splash-skeleton-standalone .splash-phase-b {
+  animation: none;
   opacity: 1;
-  animation: splashSkeletonFadeIn var(--dur-slow) var(--ease-out) forwards;
+  transform: none;
 }
 
 @keyframes splashSkeletonFadeIn {
