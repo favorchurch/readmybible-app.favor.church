@@ -6,24 +6,38 @@ function HomeSkeleton() {
         <div className="splash-avatar-block" />
       </header>
 
-      <section className="splash-stage-card">
-        <div className="splash-stage-scene" />
-        <div className="splash-stage-info">
-          <div className="splash-stage-row">
-            <div className="splash-pill" />
-          </div>
-          <div className="splash-progress-bar" />
-          <div className="splash-stage-detail">
-            <div className="splash-detail-left" />
-            <div className="splash-detail-right" />
-          </div>
+      <section className="splash-hero-copy">
+        <div className="splash-hero-line splash-hero-line-1" />
+        <div className="splash-hero-line splash-hero-line-2" />
+        <div className="splash-hero-sub-wrap">
+          <div className="splash-hero-sub splash-hero-sub-1" />
+          <div className="splash-hero-sub splash-hero-sub-2" />
         </div>
       </section>
 
-      <section className="splash-reading-card">
-        <div className="splash-card-line-sm" />
-        <div className="splash-card-heading" />
-        <div className="splash-card-button" />
+      <section className="splash-card-readiness">
+        <div className="splash-card-eyebrow" />
+        <div className="splash-card-title" />
+        <div className="splash-card-row">
+          <div className="splash-card-label" />
+          <div className="splash-card-val" />
+        </div>
+        <div className="splash-card-row">
+          <div className="splash-card-label" />
+          <div className="splash-card-val" />
+        </div>
+        <div className="splash-card-row">
+          <div className="splash-card-label" />
+          <div className="splash-card-val" />
+        </div>
+      </section>
+
+      <section className="splash-card-preview">
+        <div className="splash-card-topline" />
+        <div className="splash-card-sublabel" />
+        <div className="splash-card-heading-large" />
+        <div className="splash-card-date" />
+        <div className="splash-card-inset" />
       </section>
 
       <nav className="splash-nav" aria-hidden="true">

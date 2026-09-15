@@ -118,7 +118,7 @@
   align-items: center;
   width: 100%;
   max-width: 1040px;
-  margin: 0 auto var(--space-6);
+  margin: 0 auto;
 }
 
 .splash-brand-block {
@@ -135,102 +135,156 @@
   background: var(--surface-3);
 }
 
-.splash-stage-card {
+/* Hero copy skeleton */
+.splash-hero-copy {
   max-width: 720px;
-  margin: 0 auto var(--space-5);
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.splash-stage-scene {
-  height: 220px;
-  background: var(--surface-3);
-  margin: var(--space-3);
-  border-radius: var(--radius-sm);
-}
-
-.splash-stage-info {
-  padding: 14px 16px 17px;
+  margin: 44px auto 22px;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.splash-stage-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.splash-pill {
-  height: 14px;
-  width: 80px;
-  border-radius: var(--radius-pill);
+.splash-hero-line {
+  height: clamp(38px, 9vw, 64px);
+  border-radius: var(--radius-sm);
   background: var(--surface-3);
 }
 
-.splash-progress-bar {
-  width: 100%;
-  height: 8px;
-  border-radius: var(--radius-pill);
+.splash-hero-line-1 {
+  width: 85%;
+}
+
+.splash-hero-line-2 {
+  width: 60%;
+}
+
+.splash-hero-sub-wrap {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.splash-hero-sub {
+  height: 15px;
+  border-radius: var(--radius-sm);
   background: var(--surface-3);
 }
 
-.splash-stage-detail {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.splash-hero-sub-1 {
+  width: 95%;
 }
 
-.splash-detail-left {
+.splash-hero-sub-2 {
+  width: 70%;
+}
+
+/* Card 1: Readiness skeleton */
+.splash-card-readiness {
+  max-width: 720px;
+  margin: 0 auto var(--space-6);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--coral);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.splash-card-eyebrow {
   height: 12px;
+  width: 72px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-bottom: var(--space-2);
+}
+
+.splash-card-title {
+  height: 22px;
+  width: 210px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-bottom: var(--space-3);
+}
+
+.splash-card-row {
+  min-height: 44px;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.splash-card-label {
+  height: 14px;
+  width: 100px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-val {
+  height: 14px;
   width: 60px;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
 }
 
-.splash-detail-right {
-  height: 12px;
-  width: 90px;
-  border-radius: var(--radius-sm);
-  background: var(--surface-3);
-}
-
-.splash-reading-card {
+/* Card 2: Preview skeleton */
+.splash-card-preview {
   max-width: 720px;
   margin: 0 auto;
-  border: 1px solid var(--line);
   background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 18px;
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  min-height: 140px;
+  gap: var(--space-3);
 }
 
-.splash-card-line-sm {
+.splash-card-topline {
   height: 12px;
-  width: 110px;
+  width: 100px;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
 }
 
-.splash-card-heading {
-  height: 32px;
-  width: 180px;
+.splash-card-sublabel {
+  height: 12px;
+  width: 70px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  margin-top: var(--space-1);
+}
+
+.splash-card-heading-large {
+  height: 36px;
+  width: 160px;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
 }
 
-.splash-card-button {
-  height: 48px;
+.splash-card-date {
+  height: 12px;
+  width: 120px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+}
+
+.splash-card-inset {
+  height: 52px;
   width: 100%;
   border-radius: var(--radius-sm);
-  background: var(--surface-3);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+  margin-top: var(--space-2);
 }
+
 
 /* Skeleton Bottom Nav */
 .splash-nav {
