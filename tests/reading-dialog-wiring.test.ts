@@ -405,6 +405,44 @@ describe("review regressions", () => {
     });
   });
 
+  it("says so when only the key passage is available, instead of substituting silently", async () => {
+    // The heading still reads "Matthew 12" while the body is a few verses, so
+    // without this line the reader cannot tell a degraded day from a whole
+    // chapter. They can still tick -- the fallback is better than a blank day
+    // -- but they are told what they are looking at.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ref: "Matthew 12",
+            translation: "NIV",
+            text: "eleven twelve",
+            verses: { "11": "eleven", "12": "twelve" },
+            bibleComUrl: "",
+            attribution: "NIV attribution",
+            source: "key-passage-fallback",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => {
+      expect(document.querySelector('[data-section="passage-degraded"]')).toBeTruthy();
+    });
+  });
+
+  it("shows no degraded note for a complete chapter", async () => {
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => {
+      expect(document.querySelector('[data-section="passage-chapter"]')).toBeTruthy();
+    });
+    expect(document.querySelector('[data-section="passage-degraded"]')).toBeNull();
+  });
+
   it("F7: a blocked test-mode sentinel entry never reaches the server action", async () => {
     // Test mode on with no sandbox configured, so writesBlocked is true. This
     // is the wiring half of the rule tests/reading-tick.test.ts proves purely.
