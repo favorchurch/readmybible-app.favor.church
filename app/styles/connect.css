@@ -396,8 +396,8 @@
 .roster-header { gap: 4px 14px; align-items: center; }
 .roster-header .section-heading { margin-bottom: 0; }
 .home-growth-action { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
-.open-home-button { width: auto; flex: 1 1 130px; min-height: 48px; gap: 20px; }
-.home-growth-trigger { flex: 1 1 130px; justify-content: center; }
+.home-growth-action .open-home-button { flex: 1 1 130px; min-height: 48px; gap: 20px; }
+.home-growth-action .home-growth-trigger { flex: 1 1 130px; justify-content: center; }
 @media (max-width: 759px) {
   .big-home-card .home3d-wrap { height: 200px; }
   .big-home-card { padding-bottom: 14px; }

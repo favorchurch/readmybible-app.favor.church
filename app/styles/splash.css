@@ -1,8 +1,8 @@
 /*
  * Friendly splash screen and streaming skeleton fallback.
- * Driven purely by CSS animation-delay tokens without JavaScript timers.
- * Phase A (0 -> ~600ms): brand wordmark fade+rise on --cream.
- * Phase B (from ~600ms): skeleton of home screen layout.
+ * Phase A: brand wordmark + companion, fades in and stays as a fixed
+ * overlay in front of the skeleton for as long as loading continues.
+ * Phase B: skeleton of the home screen layout underneath.
  */
 
 .splash {
@@ -21,15 +21,52 @@
   place-items: center;
   z-index: 10;
   pointer-events: none;
-  animation: splashBrand calc(var(--dur-slow) * 2) var(--ease-out) forwards;
+  animation: splashBrandIn var(--dur-slow) var(--ease-out) forwards;
+}
+
+.splash-brand-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.splash-companion {
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-companion-figure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: splashCompanionIn 480ms var(--ease-out);
+}
+
+.splash-companion-figure .avatar {
+  width: 64px;
+  height: 64px;
+}
+
+@keyframes splashCompanionIn {
+  0% {
+    opacity: 0;
+    transform: scale(.82) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .splash-phase-a .brand {
-  font-family: Impact, "Arial Narrow", sans-serif;
+  font-family: var(--font-display);
   display: flex;
   align-items: center;
   gap: 5px;
-  font-stretch: condensed;
   font-weight: 900;
   letter-spacing: 0;
   line-height: .84;
@@ -44,31 +81,6 @@
 .splash-phase-a .brand span {
   display: block;
   color: var(--coral);
-}
-
-@keyframes splashBrand {
-  0% {
-    opacity: 0;
-    transform: translateY(var(--space-2));
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  75% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(calc(0px - var(--space-1)));
-    visibility: hidden;
-  }
-}
-
-/* Brand-only splash (AppBrandSplash for unauthenticated routes) */
-.splash.splash-brand-only .splash-phase-a {
-  animation: splashBrandIn var(--dur-slow) var(--ease-out) forwards;
 }
 
 @keyframes splashBrandIn {
@@ -90,7 +102,7 @@
   margin: 0 auto;
   box-sizing: border-box;
   opacity: 0;
-  animation: splashSkeletonFadeIn var(--dur-slow) var(--ease-out) calc(var(--dur-slow) * 2) forwards;
+  animation: splashSkeletonFadeIn var(--dur-slow) var(--ease-out) forwards;
 }
 
 /* Standalone skeleton (AppSkeleton used inside page Suspense) */
@@ -347,14 +359,13 @@
     visibility: visible !important;
   }
 
-  .splash:not(.splash-skeleton-standalone) .splash-phase-b {
-    display: none !important;
-    animation: none !important;
-  }
-
-  .splash.splash-skeleton-standalone .splash-phase-b {
+  .splash-phase-b {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .splash-companion-figure {
+    animation: none !important;
   }
 }

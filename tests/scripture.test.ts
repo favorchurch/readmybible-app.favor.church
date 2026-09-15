@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getPassage } from "@/lib/scripture";
+import { clearLiveCacheForTests } from "@/lib/scripture/live";
 import { bibleComUrl, appsLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
 import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
 import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
+
+afterEach(() => {
+  clearLiveCacheForTests();
+  vi.restoreAllMocks();
+});
 
 describe("parseReference", () => {
   it("parses a verse range", () => {
@@ -173,19 +179,13 @@ describe("getPassage", () => {
     expect(result.attribution).toBe(TRANSLATION_META.NET.attribution);
   });
 
-  it("returns null text for a bare chapter on a key-passage-only version", async () => {
-    const result = await getPassage("Matthew 1", "ESV");
-    expect(result.text).toBeNull();
-    expect(result.bibleComUrl).toContain("bible.com");
-  });
-
   it("looks up an exact key-passage reference for a non-full-text version", async () => {
     const result = await getPassage("Matthew 1:20-21", "ESV");
     expect(result.text).toBeTruthy();
   });
 
-  it("degrades to null text for a reference outside the curated key passages on a non-full-text version", async () => {
-    const result = await getPassage("Matthew 1:1", "ESV");
+  it("degrades to null text for a reference outside the curated key passages on a version bolls.life doesn't serve (CSB)", async () => {
+    const result = await getPassage("Matthew 1:1", "CSB");
     expect(result.text).toBeNull();
     expect(result.bibleComUrl).toContain("bible.com");
   });
@@ -198,8 +198,59 @@ describe("getPassage", () => {
 
   it("carries the translation's attribution line on every result, including a miss", async () => {
     const hit = await getPassage("Matthew 1:20-21", "NASB");
-    const miss = await getPassage("Matthew 1:1", "NASB");
+    const miss = await getPassage("Matthew 1:1", "CSB");
     expect(hit.attribution).toBe(TRANSLATION_META.NASB.attribution);
-    expect(miss.attribution).toBe(TRANSLATION_META.NASB.attribution);
+    expect(miss.attribution).toBe(TRANSLATION_META.CSB.attribution);
+  });
+});
+
+describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
+  it("fetches a chapter live for a key-passage version when the reference falls outside the curated passages", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([{ verse: 1, text: "In the beginning of the gospel of Jesus Christ." }]), { status: 200 }),
+    );
+
+    const result = await getPassage("Matthew 1:1", "ESV");
+
+    expect(result.text).toBe("In the beginning of the gospel of Jesus Christ.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://bolls.life/get-text/ESV/40/1/");
+  });
+
+  it("degrades to null text when the live fetch fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("", { status: 500 }));
+
+    const result = await getPassage("Matthew 1:1", "ESV");
+
+    expect(result.text).toBeNull();
+    expect(result.bibleComUrl).toContain("bible.com");
+  });
+
+  it("caches a live-fetched chapter so a second verse in the same chapter doesn't re-fetch", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          { verse: 1, text: "Verse one." },
+          { verse: 2, text: "Verse two." },
+        ]),
+        { status: 200 },
+      ),
+    );
+
+    const first = await getPassage("Matthew 1:1", "ESV");
+    const second = await getPassage("Matthew 1:2", "ESV");
+
+    expect(first.text).toBe("Verse one.");
+    expect(second.text).toBe("Verse two.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("never calls fetch for CSB and NIV, which bolls.life doesn't serve live", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    await getPassage("Matthew 1:1", "CSB");
+    await getPassage("Matthew 1:1", "NIV");
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

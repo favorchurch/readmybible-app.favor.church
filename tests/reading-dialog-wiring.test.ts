@@ -32,11 +32,15 @@ vi.mock("@/app/actions/getOrCreateJoinCode", () => ({
 vi.mock("@/app/actions/getTestGroupSnapshot", () => ({
   getTestGroupSnapshot: vi.fn(async () => ({ ok: false, error: "not used" })),
 }));
+vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
+  getJoinCodeForGroup: vi.fn(async () => ({ ok: true, code: null })),
+}));
 
 /** Mutable so one test can turn test mode on; reset in beforeEach. */
 const search = { value: "" };
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(search.value),
 }));
@@ -138,6 +142,7 @@ function baseProps(overrides: Partial<AppShellProps> = {}): AppShellProps {
     devMockToday: "2026-10-12",
     campusGroups: [],
     testWritableGroupId: null,
+    sectionSlot: null,
     ...overrides,
   };
 }

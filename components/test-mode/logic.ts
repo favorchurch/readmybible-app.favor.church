@@ -20,13 +20,12 @@ export type TestModeState = {
   viewer: TestModeViewer;
 };
 
-/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1` / `?tab=leader`, or admin inspection `?admin=1`. */
+/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1`, or admin inspection `?admin=1` / `?tab=admin`. `?tab=leader` alone is the primary nav landing on the Leader tab and must NOT activate test mode. */
 export function isTestModeRequested(searchParams: URLSearchParams): boolean {
   return (
     searchParams.has(TEST_MODE_PARAM) ||
     searchParams.has(DAY_PARAM) ||
     searchParams.has("leader") ||
-    searchParams.get("tab") === "leader" ||
     searchParams.has("admin") ||
     searchParams.get("tab") === "admin"
   );
