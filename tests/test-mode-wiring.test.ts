@@ -17,12 +17,17 @@
  */
 
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
 const SANDBOX = 87177;
+
+// Mutable so the #121 Leader-tab tests below can flip test mode off for one
+// case (real-user admin scope, no simulation) without disturbing every other
+// test in this file, which relies on test mode being active by default.
+const searchParams = vi.hoisted(() => ({ value: new URLSearchParams("test=1") }));
 
 type CheckInInput = { chapter: number; timezone: string; sandboxGroupId?: number };
 const checkIn = vi.fn(async (input: CheckInInput) => ({ ok: true, group: null, input }));
@@ -50,9 +55,9 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
-  // Test mode active. `groupId` is client state, not a URL param, so the
-  // sandbox selection is made through the panel below.
-  useSearchParams: () => new URLSearchParams("test=1"),
+  // Test mode active by default. `groupId` is client state, not a URL param,
+  // so the sandbox selection is made through the panel below.
+  useSearchParams: () => searchParams.value,
 }));
 
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
@@ -162,6 +167,7 @@ function stubScriptureFetch() {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  searchParams.value = new URLSearchParams("test=1");
 });
 beforeEach(() => {
   vi.stubGlobal("IntersectionObserver", ImmediateIntersectionObserver);
@@ -245,5 +251,72 @@ describe("AppShell wiring: a simulated group never falls back to the real group"
     await waitFor(() => {
       expect(screen.queryByText("Rico Test")).toBeNull();
     });
+  });
+});
+
+/**
+ * #121: in test mode, the simulated viewer must be the SOLE authority for the
+ * Leader tab -- a real signed-in admin (`props.isAdminScope === true`)
+ * simulating a plain member must not still see it. Before the fix,
+ * `isAdminScope` OR'd in `props.isAdminScope` regardless of which viewer was
+ * being simulated, so `canSeeLeaderTab` stayed true no matter what.
+ */
+describe("AppShell wiring: the Leader tab follows the simulated viewer, not the real user's scope (#121)", () => {
+  function mainNav() {
+    return screen.getByRole("navigation", { name: "Main navigation" });
+  }
+
+  function pickViewer(label: "Member" | "Leader" | "Admin" | "Non-member") {
+    fireEvent.click(screen.getByRole("button", { name: /show/i }));
+    const viewerGroup = screen.getByRole("group", { name: "Viewer" });
+    fireEvent.click(within(viewerGroup).getByRole("button", { name: label }));
+  }
+
+  it("REGRESSION: hides the Leader tab for a simulated member even though the real user has admin scope", () => {
+    const props: AppShellProps = { ...baseProps(), isAdminScope: true };
+    render(React.createElement(AppShell, props));
+
+    // The panel already defaults to viewer "member"; select it explicitly so
+    // the test does not depend on that default silently changing later.
+    pickViewer("Member");
+
+    expect(within(mainNav()).queryByRole("button", { name: "Leader" })).toBeNull();
+  });
+
+  it("hides the Leader tab for a simulated non-member", () => {
+    const props: AppShellProps = { ...baseProps(), isAdminScope: true };
+    render(React.createElement(AppShell, props));
+
+    pickViewer("Non-member");
+
+    // Viewer "non-member" renders SoloScreen instead of the shell -- there is
+    // no bottom nav to find the Leader tab in at all.
+    expect(screen.queryByRole("navigation", { name: "Main navigation" })).toBeNull();
+  });
+
+  it("shows the Leader tab for a simulated leader", () => {
+    const props = baseProps();
+    render(React.createElement(AppShell, props));
+
+    pickViewer("Leader");
+
+    expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
+  });
+
+  it("shows the Leader tab for a simulated admin", () => {
+    const props = baseProps();
+    render(React.createElement(AppShell, props));
+
+    pickViewer("Admin");
+
+    expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
+  });
+
+  it("no regression: outside test mode, a real admin-scope user still sees the Leader tab", () => {
+    searchParams.value = new URLSearchParams(""); // test mode off entirely
+    const props: AppShellProps = { ...baseProps(), isAdminScope: true };
+    render(React.createElement(AppShell, props));
+
+    expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
   });
 });
