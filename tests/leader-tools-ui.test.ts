@@ -81,7 +81,11 @@ const campusBoard: GroupStanding[] = [
   { groupId: 4, name: "Unknown One", ratio: 0, readersToday: 0, locality: null },
 ];
 
-function renderLeader(today: TodayState = activeToday, isAdminScope: boolean = false) {
+function renderLeader(
+  today: TodayState = activeToday,
+  hasGroupView: boolean = true,
+  sectionSlot: React.ReactNode = null,
+) {
   return render(
     React.createElement(LeaderScreen, {
       groupName: "Ortigas Alpha",
@@ -93,7 +97,8 @@ function renderLeader(today: TodayState = activeToday, isAdminScope: boolean = f
       readerGroupId: 1,
       onGetOrCreateJoinCode: async () => ({ ok: true as const, code: "TEST12" }),
       onEditProfile: () => {},
-      isAdminScope,
+      hasGroupView,
+      sectionSlot,
     }),
   );
 }
@@ -168,15 +173,26 @@ describe("LeaderScreen", () => {
     expect(addMember.getAttribute("rel")).toBe("noopener noreferrer");
   });
 
-  it("shows the Section Dashboard card only when isAdminScope is true", () => {
-    const { container: withoutAdmin } = renderLeader(activeToday, false);
-    expect(withoutAdmin.querySelector('[data-section="leader-admin-card"]')).toBeNull();
+  it("renders sectionSlot below the group content when hasGroupView is true", () => {
+    const { container } = renderLeader(
+      activeToday,
+      true,
+      React.createElement("div", { "data-testid": "section-dashboard-stub" }, "Section Dashboard"),
+    );
+    expect(container.querySelector('[data-section="group-pulse"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull();
+  });
 
-    cleanup();
-    const { container: withAdmin } = renderLeader(activeToday, true);
-    expect(withAdmin.querySelector('[data-section="leader-admin-card"]')).not.toBeNull();
-    const adminLink = screen.getByRole("link", { name: "Open Admin →" });
-    expect(adminLink.getAttribute("href")).toBe("/admin");
+  it("renders only sectionSlot, with no group scaffolding, when hasGroupView is false", () => {
+    const { container } = renderLeader(
+      activeToday,
+      false,
+      React.createElement("div", { "data-testid": "section-dashboard-stub" }, "Section Dashboard"),
+    );
+    expect(container.querySelector('[data-section="group-pulse"]')).toBeNull();
+    expect(container.querySelector('[data-section="bring-someone-in"]')).toBeNull();
+    expect(container.querySelector('[data-section="other-connects"]')).toBeNull();
+    expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull();
   });
 });
 

@@ -242,6 +242,7 @@ describe("LeaderScreen active-group join code", () => {
       readerGroupId: groupId,
       onGetOrCreateJoinCode,
       onEditProfile: () => {},
+      hasGroupView: true,
     });
 
     const { rerender } = render(React.createElement(LeaderScreen, props(101, "Alpha Connect")));
