@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ReactDOM from "react-dom";
 
 const title = "Read My Bible";
 const description = "Read anywhere. Grow together.";
@@ -29,11 +30,18 @@ export const metadata: Metadata = {
   },
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Must run during render, not at module scope: React only attaches resource
+  // hints to the response stream from inside a render pass, so module-level
+  // calls never reach the HTML.
+  ReactDOM.preload("/fonts/FavorSans-Bold.otf", { as: "font", crossOrigin: "anonymous" });
+  ReactDOM.preload("/fonts/Agharti-Bold.ttf", { as: "font", crossOrigin: "anonymous" });
+
   return (
     <html lang="en">
       <body>{children}</body>
