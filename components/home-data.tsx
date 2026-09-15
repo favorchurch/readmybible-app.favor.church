@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -15,11 +16,16 @@ import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, g
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
+import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
+import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
+import SectionDashboard, { SectionDashboardSkeleton } from "@/components/sections/section-dashboard";
 
 export async function HomeData({
   session,
+  searchParams = {},
 }: {
   session: Extract<SessionContext, { status: "ok" }>;
+  searchParams?: { test?: string; scope?: string };
 }) {
   const activeGroupId = session.activeGroup?.groupId;
   const rosterP = activeGroupId ? getRoster(activeGroupId) : Promise.resolve([]);
@@ -77,6 +83,40 @@ export async function HomeData({
   const savedAvatars = new Map(rosterProfiles.map((row) => [row.personId, row.avatar]));
   const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
+  let scope = resolveAdminScope(session);
+  let simulatedScope: "global" | "cluster" | "region" | undefined;
+
+  // Dev-only simulation of global/cluster/region scopes, re-homed verbatim
+  // from the original app/admin/page.tsx (see ef393bd). In production, the
+  // simulate bar is also available to a viewer with a real server-resolved
+  // admin scope when `?test=1` is present -- matches the old app/admin/page.tsx
+  // behavior of `params.test === "1" && session.status === "ok"`, narrowed to
+  // require a genuine admin scope rather than any logged-in session.
+  const isDev = process.env.NODE_ENV !== "production";
+  const isProdAdminTest = !isDev && scope !== null && searchParams.test === "1";
+  const isTest = (isDev && (searchParams.test === "1" || searchParams.scope !== undefined)) || isProdAdminTest;
+  if (isTest || (!scope && isDev)) {
+    const requestedScope = searchParams.scope ?? (scope?.kind === "sections" ? "sections" : "global");
+    if (requestedScope === "cluster") {
+      scope = { kind: "sections", rootIds: [23869] }; // Cluster // Cielo Pabalan & Peejay Pabalan
+      simulatedScope = "cluster";
+    } else if (requestedScope === "region") {
+      scope = { kind: "sections", rootIds: [23870] }; // Region // Arnel Guiron & Belle Guiron
+      simulatedScope = "region";
+    } else if (requestedScope === "global" || !scope) {
+      scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
+      simulatedScope = "global";
+    }
+  }
+
+  const sectionSlot = scope
+    ? (
+      <Suspense fallback={<SectionDashboardSkeleton />}>
+        <SectionDashboard scope={scope as AdminScope} simulatedScope={simulatedScope} />
+      </Suspense>
+    )
+    : null;
+
   const props: AppShellProps = {
     displayName: profileRow?.displayName || session.displayName,
     avatar,
@@ -109,6 +149,7 @@ export async function HomeData({
     devMockToday: devMockToday(),
     campusGroups,
     testWritableGroupId: writableGroupId,
+    sectionSlot,
   };
 
   return <AppShell {...props} />;

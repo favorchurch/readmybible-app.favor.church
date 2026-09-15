@@ -19,7 +19,7 @@ const CSS_FILES = [
   "app/styles/completion.css",
   "app/styles/misc.css",
   "app/styles/typography.css",
-  "app/admin/admin.css",
+  "components/sections/admin.css",
   "app/styles/leader.css",
 ];
 

@@ -6,7 +6,9 @@ import { HomeData } from "@/components/home-data";
 import { getSessionContext } from "@/lib/session";
 import { WelcomeLanding } from "@/components/welcome";
 
-export default async function Page() {
+export default async function Page(props?: {
+  searchParams?: Promise<{ test?: string; scope?: string }>;
+}) {
   const session = await getSessionContext();
 
   if (session.status === "logged-out") {
@@ -16,9 +18,11 @@ export default async function Page() {
     redirect("/not-found-in-rock");
   }
 
+  const searchParams = props?.searchParams ? await props.searchParams : {};
+
   return (
     <Suspense fallback={<AppSkeleton />}>
-      <HomeData session={session} />
+      <HomeData session={session} searchParams={searchParams} />
     </Suspense>
   );
 }

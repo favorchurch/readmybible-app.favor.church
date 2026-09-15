@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(""),
 }));
@@ -74,6 +75,7 @@ describe("SoloScreen", () => {
       campusBoard: [],
       appBaseUrl: "https://example.test",
       devMockToday: null,
+      sectionSlot: null,
       campusGroups: [],
       testWritableGroupId: null,
     };
@@ -83,5 +85,70 @@ describe("SoloScreen", () => {
     const logoutLink = screen.getByRole("link", { name: /log out/i });
     expect(logoutLink).toBeTruthy();
     expect(logoutLink.getAttribute("href")).toBe("/auth/logout");
+  });
+
+  // Guardrail for the admin-scope gating change: a groupless, non-admin
+  // viewer must still land on SoloScreen. isAdminScope must never be
+  // defaulted to true or inferred from anything other than props.isAdminScope
+  // -- if that regresses, this is the test that goes red.
+  it("still renders SoloScreen for a groupless viewer with no admin scope (isAdminScope omitted)", () => {
+    const props: AppShellProps = {
+      displayName: "No Scope Reader",
+      avatar: { ...defaultAvatarConfig },
+      avatarCustomized: false,
+      translation: "NIV",
+      memberships: [],
+      activeGroup: null,
+      needsGroupChoice: false,
+      isLeader: false,
+      campusName: null,
+      roster: [],
+      chapters: [],
+      readingDates: [],
+      groupStats: null,
+      campusBoard: [],
+      appBaseUrl: "https://example.test",
+      devMockToday: null,
+      sectionSlot: null,
+      campusGroups: [],
+      testWritableGroupId: null,
+      // isAdminScope intentionally omitted -- this must NOT widen access.
+    };
+
+    const { container } = render(React.createElement(AppShell, props));
+
+    expect(container.querySelector(".solo-screen")).not.toBeNull();
+    expect(container.querySelector(".leader-screen")).toBeNull();
+    expect(container.querySelector('.bottom-nav [data-tab="leader"]')).toBeNull();
+  });
+
+  it("lets a groupless admin-scope viewer reach the full shell instead of SoloScreen", () => {
+    const props: AppShellProps = {
+      displayName: "Section Head",
+      avatar: { ...defaultAvatarConfig },
+      avatarCustomized: false,
+      translation: "NIV",
+      memberships: [],
+      activeGroup: null,
+      needsGroupChoice: false,
+      isLeader: false,
+      campusName: null,
+      roster: [],
+      chapters: [],
+      readingDates: [],
+      groupStats: null,
+      campusBoard: [],
+      appBaseUrl: "https://example.test",
+      devMockToday: null,
+      sectionSlot: null,
+      campusGroups: [],
+      testWritableGroupId: null,
+      isAdminScope: true,
+    };
+
+    const { container } = render(React.createElement(AppShell, props));
+
+    expect(container.querySelector(".solo-screen")).toBeNull();
+    expect(container.querySelector('.bottom-nav [data-tab="leader"]')).not.toBeNull();
   });
 });

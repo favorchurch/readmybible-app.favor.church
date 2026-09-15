@@ -16,6 +16,7 @@ import {
   type UserProfile,
 } from "@/components/avatar";
 import { CompletionFlow } from "@/components/completion-flow";
+import { TestModeEntry } from "@/components/test-mode";
 import type { ChooseGroupHandler, ConnectSwitcherContext } from "@/components/connect-switcher";
 import { ProfileEditor } from "@/components/profile-editor";
 import { ScripturePopup } from "@/components/scripture-popup";
@@ -76,6 +77,7 @@ export type AppShellProps = {
   campusGroups: { groupId: number; groupName: string }[];
   testWritableGroupId: number | null;
   isAdminScope?: boolean;
+  sectionSlot: React.ReactNode | null;
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -259,7 +261,8 @@ export function AppShell(props: AppShellProps) {
   const isAdminScope = testMode.active
     ? testMode.state.viewer === "admin" || (props.isAdminScope ?? false)
     : (props.isAdminScope ?? false);
-  const activeTab = isLeader || tab !== "leader" ? tab : "today";
+  const canSeeLeaderTab = isLeader || isAdminScope;
+  const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
     if (awaitingSnapshot) return [];
@@ -427,7 +430,10 @@ export function AppShell(props: AppShellProps) {
   const effectiveHasGroup =
     testMode.active && testMode.state.groupId !== null ? true : !!props.activeGroup;
 
-  if (!effectiveHasGroup) {
+  // A viewer with admin scope (regional/cluster/department head, or an
+  // ADMIN_PERSON_IDS admin) still reaches the full shell even with no
+  // Connect Group of their own. Everyone else with no group is solo.
+  if (!effectiveHasGroup && !isAdminScope) {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
@@ -441,6 +447,7 @@ export function AppShell(props: AppShellProps) {
     <div className="app-shell">
       {activeTab !== "leader" && <div className="paper-noise" />}
       {testModePanel}
+      <TestModeEntry visible={isAdminScope} />
       {activeTab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
@@ -513,10 +520,11 @@ export function AppShell(props: AppShellProps) {
           onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
-          isAdminScope={isAdminScope}
+          sectionSlot={props.sectionSlot}
+          hasGroupView={!!props.activeGroup}
         />
       )}
-      <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
+      <BottomNav tab={activeTab} onSelect={selectTab} showLeaderTab={canSeeLeaderTab} />
       {flowChapter !== null && (
         <CompletionFlow
           step={flowStep}
