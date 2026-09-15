@@ -414,4 +414,34 @@
     background: var(--coral);
     color: #fff;
   }
+  .leader-admin-button:hover {
+    background: #243c5a;
+  }
+}
+
+.leader-admin-card {
+  background: var(--surface-1);
+  border-left: 4px solid var(--navy);
+}
+
+.leader-admin-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.leader-admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--navy);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: none;
 }

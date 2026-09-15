@@ -21,6 +21,10 @@
   outline-offset: 2px;
 }
 
+.test-mode-admin-banner { margin-top: 6px; padding: 4px 8px; background: rgba(23,41,67,.06); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.test-mode-admin-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--navy); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.test-mode-admin-link:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
 @media (hover: hover) and (pointer: fine) {
   .test-mode-header button:hover { border-color: var(--line-strong); }
   .test-mode-phase-row button:not(.selected):hover { border-color: var(--line-strong); }

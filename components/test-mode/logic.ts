@@ -9,7 +9,7 @@ export const TEST_MODE_BLOCKED_MESSAGE = "Test mode: writes are disabled.";
 
 export type SimulatedPhase = "pre-launch" | "active" | "grace" | "closed";
 
-export type TestModeViewer = "member" | "leader" | "non-member";
+export type TestModeViewer = "member" | "leader" | "admin" | "non-member";
 
 export type TestModeState = {
   day: number;
@@ -20,13 +20,15 @@ export type TestModeState = {
   viewer: TestModeViewer;
 };
 
-/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1` / `?tab=leader`. */
+/** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1` / `?tab=leader`, or admin inspection `?admin=1`. */
 export function isTestModeRequested(searchParams: URLSearchParams): boolean {
   return (
     searchParams.has(TEST_MODE_PARAM) ||
     searchParams.has(DAY_PARAM) ||
     searchParams.has("leader") ||
-    searchParams.get("tab") === "leader"
+    searchParams.get("tab") === "leader" ||
+    searchParams.has("admin") ||
+    searchParams.get("tab") === "admin"
   );
 }
 
@@ -36,16 +38,19 @@ function dayFromParams(searchParams: URLSearchParams): number {
   return 1;
 }
 
-/** The panel's starting values: `?day=N` seeds the day, `?leader=1` or `?tab=leader` seeds leader viewer. */
+/** The panel's starting values: `?day=N` seeds the day, `?leader=1` seeds leader viewer, `?admin=1` seeds admin viewer. */
 export function initialTestModeState(searchParams: URLSearchParams): TestModeState {
   const viewerParam = searchParams.get("viewer");
   const isLeaderParam = searchParams.get("leader") === "1" || searchParams.get("tab") === "leader";
+  const isAdminParam = searchParams.get("admin") === "1" || searchParams.get("tab") === "admin";
   const viewer: TestModeViewer =
-    viewerParam === "leader" || isLeaderParam
-      ? "leader"
-      : viewerParam === "non-member"
-        ? "non-member"
-        : "member";
+    viewerParam === "admin" || isAdminParam
+      ? "admin"
+      : viewerParam === "leader" || isLeaderParam
+        ? "leader"
+        : viewerParam === "non-member"
+          ? "non-member"
+          : "member";
   return {
     day: dayFromParams(searchParams),
     phase: "active",

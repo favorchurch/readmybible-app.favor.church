@@ -15,6 +15,7 @@ const PHASES: { value: SimulatedPhase; label: string }[] = [
 const VIEWERS: { value: TestModeViewer; label: string }[] = [
   { value: "member", label: "Member" },
   { value: "leader", label: "Leader" },
+  { value: "admin", label: "Admin" },
   { value: "non-member", label: "Non-member" },
 ];
 
@@ -106,6 +107,13 @@ export function TestModePanel({
                 </button>
               ))}
             </div>
+            {state.viewer === "admin" && (
+              <div className="test-mode-admin-banner">
+                <a href="/admin?test=1" className="test-mode-admin-link">
+                  Open Admin Dashboard →
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="test-mode-field" role="group" aria-label="Phase">

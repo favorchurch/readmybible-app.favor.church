@@ -75,6 +75,7 @@ export type AppShellProps = {
   devMockToday: string | null;
   campusGroups: { groupId: number; groupName: string }[];
   testWritableGroupId: number | null;
+  isAdminScope?: boolean;
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -252,7 +253,12 @@ export function AppShell(props: AppShellProps) {
       readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
   }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
-  const isLeader = testMode.active ? testMode.state.viewer === "leader" : props.isLeader;
+  const isLeader = testMode.active
+    ? testMode.state.viewer === "leader" || testMode.state.viewer === "admin"
+    : props.isLeader;
+  const isAdminScope = testMode.active
+    ? testMode.state.viewer === "admin" || (props.isAdminScope ?? false)
+    : (props.isAdminScope ?? false);
   const activeTab = isLeader || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
@@ -507,6 +513,7 @@ export function AppShell(props: AppShellProps) {
           onGetOrCreateJoinCode={guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
+          isAdminScope={isAdminScope}
         />
       )}
       <BottomNav tab={activeTab} onSelect={selectTab} isLeader={isLeader} />
@@ -540,7 +547,13 @@ export function AppShell(props: AppShellProps) {
         />
       )}
       {profileOpen && (
-        <ProfileEditor profile={profile} saving={savingProfile} onClose={() => setProfileOpen(false)} onSave={handleSaveProfile} />
+        <ProfileEditor
+          profile={profile}
+          saving={savingProfile}
+          onClose={() => setProfileOpen(false)}
+          onSave={handleSaveProfile}
+          isAdminScope={isAdminScope}
+        />
       )}
       {pending && <span className="sr-only" role="status">Saving…</span>}
     </div>

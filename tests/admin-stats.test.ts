@@ -92,16 +92,33 @@ describe("flattenGroupNodes / collectTopLevelSeriesInputs", () => {
     ]);
   });
 
-  it("falls back to the root itself when it has no child sections", () => {
+  it("breaks down by individual Connect Group when a section has no child sections", () => {
     const leafRoot: HierarchySectionNode = {
       id: 5,
-      name: "Solo Section",
+      name: "Region A",
       campusId: 2,
-      groups: [group({ id: 20, memberCount: 4 })],
+      groups: [
+        group({ id: 20, name: "Connect 1", memberCount: 4 }),
+        group({ id: 21, name: "Connect 2", memberCount: 6 }),
+      ],
       children: [],
     };
     expect(collectTopLevelSeriesInputs([leafRoot])).toEqual([
-      { label: "Solo Section", groupIds: [20], memberCount: 4 },
+      { label: "Connect 1", groupIds: [20], memberCount: 4 },
+      { label: "Connect 2", groupIds: [21], memberCount: 6 },
+    ]);
+  });
+
+  it("falls back to the root itself when it has no child sections and no groups", () => {
+    const emptyRoot: HierarchySectionNode = {
+      id: 6,
+      name: "Empty Section",
+      campusId: 2,
+      groups: [],
+      children: [],
+    };
+    expect(collectTopLevelSeriesInputs([emptyRoot])).toEqual([
+      { label: "Empty Section", groupIds: [], memberCount: 0 },
     ]);
   });
 

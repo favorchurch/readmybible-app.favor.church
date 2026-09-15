@@ -4,6 +4,79 @@
 
 .admin-screen { max-width: 1120px; margin: 0 auto; }
 
+.admin-header-row {
+  margin-bottom: 8px;
+}
+.admin-back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--navy);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .admin-back-link:hover {
+    text-decoration: underline;
+  }
+}
+
+.admin-test-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--paper);
+  border: 1px dashed var(--coral);
+  border-radius: 5px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.admin-test-badge {
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--coral-deep);
+  background: var(--coral-soft);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+  font-size: 12px;
+}
+.admin-test-label {
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+.admin-test-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.admin-test-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+}
+.admin-test-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+@media (hover: hover) {
+  .admin-test-btn:not(.active):hover {
+    border-color: var(--navy);
+  }
+}
+
 .admin-scope-card {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -11,7 +84,24 @@
   padding: 16px;
   margin-bottom: 20px;
 }
-.admin-scope-card h2 { font-size: 16px; margin: 0 0 8px; font-weight: 500; }
+.admin-scope-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.admin-role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--navy);
+  color: #fffaf0;
+  letter-spacing: .02em;
+}
+.admin-scope-card h2 { font-size: 16px; margin: 0; font-weight: 500; }
 .admin-scope-card p { margin: 0 0 6px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
 .admin-scope-card p:last-child { margin-bottom: 0; }
 

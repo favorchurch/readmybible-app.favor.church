@@ -110,9 +110,12 @@ export function flattenGroupNodes(sections: HierarchySectionNode[]): HierarchyGr
 export type TopLevelSeriesInput = { label: string; groupIds: number[]; memberCount: number };
 
 /**
- * One chart series per top-level child of the scope: the direct children of
- * each root section, or (when a root has no child sections -- it directly
- * holds GT25 groups) the root itself.
+ * One chart series per top-level breakdown of the scope:
+ * - When a root section has child sections (e.g. Org Admin -> Campuses, Cluster Head -> Regions),
+ *   each direct child section is one series.
+ * - When a root section has no child sections but holds leaf Connect Groups (e.g. Regional Leader),
+ *   each individual Connect Group is one series so the regional leader can compare their groups.
+ * - Falls back to the root itself if the root has no child sections and no groups.
  */
 export function collectTopLevelSeriesInputs(sections: HierarchySectionNode[]): TopLevelSeriesInput[] {
   function summarize(node: HierarchySectionNode): TopLevelSeriesInput {
@@ -127,6 +130,14 @@ export function collectTopLevelSeriesInputs(sections: HierarchySectionNode[]): T
   for (const root of sections) {
     if (root.children.length > 0) {
       for (const child of root.children) inputs.push(summarize(child));
+    } else if (root.groups.length > 0) {
+      for (const group of root.groups) {
+        inputs.push({
+          label: group.name,
+          groupIds: [group.id],
+          memberCount: group.memberCount,
+        });
+      }
     } else {
       inputs.push(summarize(root));
     }

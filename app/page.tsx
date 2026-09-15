@@ -93,6 +93,7 @@ export default async function Page() {
     activeGroup: session.activeGroup,
     needsGroupChoice: session.needsGroupChoice,
     isLeader: session.isLeader,
+    isAdminScope: session.isAdminScope,
     campusName,
     roster: roster.map((m) => {
       const history = memberReadingMap.get(m.PersonId);
