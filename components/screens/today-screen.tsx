@@ -180,16 +180,28 @@ export function TodayScreen({
               <section className="home-preview-card" data-section="home-preview">
                 <HomeIllustration stage={stageIndex("Tent")} />
                 <p>Your home starts as a Tent on October 1.</p>
-                <button
-                  type="button"
-                  className="home-growth-trigger secondary-link"
-                  data-section="home-growth-trigger"
-                  data-trigger="home-growth-sheet"
-                  aria-haspopup="dialog"
-                  onClick={() => setGrowthSheetOpen(true)}
-                >
-                  How your home grows
-                </button>
+                <div className="home-preview-actions">
+                  {groupName && (
+                    <button
+                      type="button"
+                      className="primary-button open-home-button"
+                      onClick={() => setHomeOpen(true)}
+                      aria-haspopup="dialog"
+                    >
+                      Open Home <span aria-hidden="true">↗</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="home-growth-trigger secondary-link"
+                    data-section="home-growth-trigger"
+                    data-trigger="home-growth-sheet"
+                    aria-haspopup="dialog"
+                    onClick={() => setGrowthSheetOpen(true)}
+                  >
+                    How your home grows
+                  </button>
+                </div>
               </section>
 
             <section className="how-it-works-card" data-section="how-it-works">
@@ -221,6 +233,32 @@ export function TodayScreen({
           onClose={() => setGrowthSheetOpen(false)}
           currentStage={stage}
         />
+        <MemberProfileSheet
+          open={profileSheetOpen}
+          onClose={() => setProfileSheetOpen(false)}
+          member={selectedMember}
+          todayLocal={today.todayLocal}
+        />
+        {homeOpen && groupName && (
+          <FullHome
+            onClose={() => setHomeOpen(false)}
+            groupName={groupName}
+            coins={groupCoins}
+            stage={stageIndex("Tent")}
+            progress={nextStage}
+            milestone={nextStageMilestone(ratio)}
+            overallPct={Math.round(ratio * 100)}
+            today={today}
+            roster={roster}
+            profile={profile}
+            selectedMemberId={selectedMember?.personId ?? null}
+            onSelectMember={(member) => {
+              setSelectedMember(member);
+              setProfileSheetOpen(true);
+            }}
+            onViewPlan={onViewProgress}
+          />
+        )}
       </main>
     );
   }
