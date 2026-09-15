@@ -45,7 +45,7 @@ vi.mock("@/components/app-shell", () => ({ AppShell: mocks.AppShellMarker }));
 vi.mock("@/components/welcome", () => ({ WelcomeLanding: mocks.WelcomeLandingMarker }));
 
 import Page from "@/app/page";
-import { AppSkeleton } from "@/components/app-splash";
+import { AppBrandSplash } from "@/components/app-splash";
 import { HomeData } from "@/components/home-data";
 
 beforeEach(() => {
@@ -96,7 +96,7 @@ describe("Page() session branching", () => {
 
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect((result as { type: unknown }).type).toBe(Suspense);
-    expect((result as { props: { fallback: { type: unknown } } }).props.fallback.type).toBe(AppSkeleton);
+    expect((result as { props: { fallback: { type: unknown } } }).props.fallback.type).toBe(AppBrandSplash);
 
     const child = (result as { props: { children: { type: unknown } } }).props.children;
     expect(child.type).toBe(HomeData);

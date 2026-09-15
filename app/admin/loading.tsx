@@ -1,5 +1,5 @@
-import { AppSplash } from "@/components/app-splash";
+import { AppBrandSplash } from "@/components/app-splash";
 
 export default function Loading() {
-  return <AppSplash />;
+  return <AppBrandSplash />;
 }

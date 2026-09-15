@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { AppSplash } from "@/components/app-splash";
+import { AppBrandSplash } from "@/components/app-splash";
 import type { AdminScope } from "@/lib/admin/access";
 import { resolveScopeRole } from "@/lib/admin/access";
 import { loadSectionSubtree } from "@/lib/rock/hierarchy";
@@ -118,5 +118,5 @@ export default async function SectionDashboard({
 }
 
 export function SectionDashboardSkeleton() {
-  return <AppSplash />;
+  return <AppBrandSplash />;
 }
