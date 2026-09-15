@@ -11,6 +11,7 @@ const CSS_FILES = [
   "app/styles/progress.css",
   "app/styles/sheet.css",
   "app/styles/nav.css",
+  "app/styles/toast.css",
   "app/styles/onboarding.css",
   "app/styles/home3d.css",
   "app/styles/full-home.css",

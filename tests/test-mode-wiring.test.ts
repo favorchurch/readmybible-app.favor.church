@@ -235,7 +235,9 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
     fireEvent.change(input, { target: { value: "F52A" } });
     fireEvent.submit(input.closest("form")!);
 
-    expect(await screen.findByText(/writes are disabled/i)).toBeTruthy();
+    // Two surfaces now show the blocked reason (the inline form error and the
+    // #126 bottom toast), so this can no longer assume a single match.
+    expect((await screen.findAllByText(/writes are disabled/i)).length).toBeGreaterThan(0);
     expect(joinByCode).not.toHaveBeenCalled();
   });
 });

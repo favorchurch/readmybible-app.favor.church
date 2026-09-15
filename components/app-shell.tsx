@@ -17,6 +17,7 @@ import {
   type UserProfile,
 } from "@/components/avatar";
 import { TestModeEntry } from "@/components/test-mode";
+import { ToastProvider, useToastAction } from "@/components/toast";
 import type { ChooseGroupHandler, ConnectSwitcherContext } from "@/components/connect-switcher";
 import { ReadingDialog, type ReadingDialogMode } from "@/components/reading-dialog";
 import { ProfileEditor } from "@/components/profile-editor";
@@ -87,7 +88,16 @@ function toUserProfile(displayName: string, avatar: AvatarConfig, translation: T
 }
 
 export function AppShell(props: AppShellProps) {
+  return (
+    <ToastProvider>
+      <AppShellInner {...props} />
+    </ToastProvider>
+  );
+}
+
+function AppShellInner(props: AppShellProps) {
   const router = useRouter();
+  const runToastAction = useToastAction();
   const realToday = useToday(props.devMockToday);
   const testMode = useTestMode();
   const simulatedToday = useMemo(
@@ -405,13 +415,18 @@ export function AppShell(props: AppShellProps) {
 
     firedChapters.current.add(chapter);
     setTick({ kind: "ticked", group: null, simulated: false });
-    void checkInWithRetry(
-      () => guardedCheckIn({ chapter, timezone: today.timezone }),
-      // Same ownership check as the result below: the silent retry must not
-      // paint "retrying" onto whatever chapter the reader has since opened.
-      () => {
-        if (openChapter.current === chapter) setTick({ kind: "retrying" });
-      },
+    void runToastAction(
+      "Saving your reading…",
+      "Reading saved.",
+      () =>
+        checkInWithRetry(
+          () => guardedCheckIn({ chapter, timezone: today.timezone }),
+          // Same ownership check as the result below: the silent retry must not
+          // paint "retrying" onto whatever chapter the reader has since opened.
+          () => {
+            if (openChapter.current === chapter) setTick({ kind: "retrying" });
+          },
+        ),
     ).then((result) => {
       // The reader can close this chapter and open another while the request is
       // in flight. `tick` is shared by whichever chapter the dialog is showing,
@@ -459,7 +474,9 @@ export function AppShell(props: AppShellProps) {
       /* Profile still works for this session without device storage. */
     }
     const { displayName, translation, ...avatar } = next;
-    const result = await guardedSaveProfile({ displayName, translation, avatar });
+    const result = await runToastAction("Saving your profile…", "Profile saved.", () =>
+      guardedSaveProfile({ displayName, translation, avatar }),
+    );
     setSavingProfile(false);
     setProfileOpen(false);
     if (result.ok) {
@@ -477,7 +494,14 @@ export function AppShell(props: AppShellProps) {
     setChooseGroupError(null);
     setPending(true);
     try {
-      const result = await guardedChooseGroup({ groupId });
+      const result = await runToastAction(
+        "Saving your group…",
+        "Group saved.",
+        () => guardedChooseGroup({ groupId }),
+        // Matches the catch branch below, so a thrown failure reads the same
+        // in the toast and in the inline error.
+        "We couldn't save that group. Please try again.",
+      );
       if (result.ok) {
         router.refresh();
       } else {
@@ -497,7 +521,7 @@ export function AppShell(props: AppShellProps) {
   async function handleJoinCode(code: string) {
     setJoinError(null);
     setPending(true);
-    const result = await guardedJoinByCode({ code });
+    const result = await runToastAction("Joining group…", "You're in.", () => guardedJoinByCode({ code }));
     setPending(false);
     if (result.ok) {
       router.refresh();
@@ -691,7 +715,6 @@ export function AppShell(props: AppShellProps) {
           onSave={handleSaveProfile}
         />
       )}
-      {pending && <span className="sr-only" role="status">Saving…</span>}
     </div>
   );
 }
