@@ -167,9 +167,77 @@
    tests/css-rules.test.ts rejects an infinite animation, and the global
    reduced-motion rule in motion.css neutralizes all of them. */
 .reading-dialog-sheet .passage-text { margin: 0 0 var(--space-5); }
-.reading-pullquote { margin: 0 0 var(--space-5); padding: var(--space-4) var(--space-5); border-left: 3px solid var(--gold); background: rgba(231, 167, 47, .09); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
-.reading-pullquote p { margin: 0 0 var(--space-2); font-style: italic; }
-.reading-pullquote cite { font-style: normal; font-weight: 900; letter-spacing: .1em; font-size: 12px; color: var(--coral); }
+
+/* The chapter body carries the treatment the old key-verse pull-quote had --
+   gold left bar on a warm card -- now that the whole chapter is what's on
+   screen. The extra top margin separates it from the title and version pill,
+   which sat too close once the pull-quote between them was removed. */
+.passage-chapter {
+  margin: var(--space-5) 0;
+  padding: var(--space-4) var(--space-5);
+  border-left: 3px solid var(--gold);
+  background: rgba(231, 167, 47, .09);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.passage-verse { margin: 0 0 var(--space-2); }
+.passage-verse:last-child { margin-bottom: 0; }
+
+/* The number is decoration over the text, so it never inherits the body
+   variant's italic and stays legible at the smaller size. */
+.passage-verse-number {
+  margin-right: 5px;
+  font-style: normal;
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
+  vertical-align: super;
+  color: var(--coral);
+}
+
+/* The day's key passage, marked where it sits rather than quoted above the
+   chapter. A tint only: the verse stays in the paragraph flow so the chapter
+   still reads straight through. */
+.passage-verse[data-key-verse="true"] {
+  background: var(--gold-soft);
+  border-radius: var(--radius-md);
+  padding: 2px 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+/* Dev-only A/B (components/reading-body-switch.tsx): "bold" is the pull-quote
+   setting applied verbatim to the chapter, "plain" keeps the card but sets the
+   body upright at reading weight. */
+.passage-chapter[data-body-style="bold"] .passage-verse {
+  font-style: italic;
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.passage-chapter[data-body-style="plain"] .passage-verse {
+  /* serif-exception */
+  /* The same serif .passage-text used: this variant exists for reading a
+     28-verse chapter end to end, which is what that face was chosen for. */
+  font-family: Georgia, serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.reading-body-switch { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.reading-body-switch button {
+  padding: 4px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: inherit;
+  font-size: 11px; /* decorative */
+  cursor: pointer;
+}
 
 /* A zero-height marker, not a visible element: the observer watches this to
    decide the reader reached the end. */
