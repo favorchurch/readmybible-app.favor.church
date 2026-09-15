@@ -1,17 +1,43 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { CheckInGroupState } from "@/app/actions/checkIn";
 import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
+import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
 import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
-import { TRANSLATIONS } from "@/lib/scripture/types";
+import { TRANSLATIONS, type ScriptureSource } from "@/lib/scripture/types";
 
-type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
-type PassageState = { text: string | null; bibleComUrl: string; attribution: string } | "loading" | "error";
+type PassageResponse = {
+  ref: string;
+  translation: Translation;
+  text: string | null;
+  verses: Record<string, string> | null;
+  bibleComUrl: string;
+  attribution: string;
+  source: ScriptureSource;
+};
+type PassageState =
+  | {
+      text: string | null;
+      verses: Record<string, string> | null;
+      bibleComUrl: string;
+      attribution: string;
+      source: ScriptureSource;
+    }
+  | "loading"
+  | "error";
+
+/**
+ * Bumped whenever the response shape changes. The API sends
+ * Cache-Control: public, max-age=86400, so without this a reader's browser
+ * serves a body from before the deploy for a full day -- which is how a
+ * response with `text` and no `verses` reached the dialog at all.
+ */
+const PASSAGE_SHAPE_VERSION = "2";
 
 /**
  * `preview` is pre-launch (D12): the passage is readable, nothing ticks.
@@ -21,10 +47,18 @@ export type ReadingDialogMode = "preview" | "unread" | "read";
 
 async function fetchPassage(ref: string, translation: Translation): Promise<PassageState> {
   try {
-    const res = await fetch(`/api/scripture?ref=${encodeURIComponent(ref)}&t=${translation}`);
+    const res = await fetch(
+      `/api/scripture?ref=${encodeURIComponent(ref)}&t=${translation}&v=${PASSAGE_SHAPE_VERSION}`,
+    );
     if (!res.ok) return "error";
     const data = (await res.json()) as PassageResponse;
-    return { text: data.text, bibleComUrl: data.bibleComUrl, attribution: data.attribution };
+    return {
+      text: data.text,
+      verses: data.verses,
+      bibleComUrl: data.bibleComUrl,
+      attribution: data.attribution,
+      source: data.source,
+    };
   } catch {
     return "error";
   }
@@ -43,7 +77,6 @@ export function ReadingDialog({
   chapter,
   passageRef,
   keyPassageRef,
-  hasFullText,
   translation,
   mode,
   isCatchUp,
@@ -60,7 +93,6 @@ export function ReadingDialog({
   chapter: number;
   passageRef: string;
   keyPassageRef: string | null;
-  hasFullText: boolean;
   translation: Translation;
   mode: ReadingDialogMode;
   isCatchUp: boolean;
@@ -78,7 +110,7 @@ export function ReadingDialog({
   // so a stale result for the previous translation reads as "loading" during
   // the next render instead of needing a synchronous reset in the effect.
   const [fetched, setFetched] = useState<{ ref: string; translation: Translation; value: PassageState } | null>(null);
-  const [fetchedKeyVerse, setFetchedKeyVerse] = useState<{ ref: string; translation: Translation; text: string | null } | null>(null);
+  const bodyStyle = useReadingBodyStyle();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
   const [replayKey, setReplayKey] = useState(0);
@@ -86,17 +118,18 @@ export function ReadingDialog({
   const passage: PassageState =
     fetched && fetched.ref === passageRef && fetched.translation === translation ? fetched.value : "loading";
 
-  // A1: the pull-quote only exists for the two full-text versions. For the
-  // other eight the key passage IS the body, so quoting it above would print
-  // the same verses twice in one scroll.
-  const keyVerse =
-    hasFullText &&
-    keyPassageRef &&
-    fetchedKeyVerse &&
-    fetchedKeyVerse.ref === keyPassageRef &&
-    fetchedKeyVerse.translation === translation
-      ? fetchedKeyVerse.text
-      : null;
+  // The key passage used to be pulled out into a blockquote above the body.
+  // Now that every version renders its whole chapter, quoting it there printed
+  // the same verses twice in one scroll, so it is tinted in place instead --
+  // this is just which verse numbers get the tint.
+  const keyVerseNumbers = useMemo(() => {
+    const parsedKey = keyPassageRef ? parseReference(keyPassageRef) : null;
+    if (!parsedKey || parsedKey.chapter !== chapter) return new Set<number>();
+    const end = parsedKey.verseEnd ?? parsedKey.verseStart;
+    const numbers = new Set<number>();
+    for (let v = parsedKey.verseStart; v <= end; v++) numbers.add(v);
+    return numbers;
+  }, [keyPassageRef, chapter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,28 +141,24 @@ export function ReadingDialog({
     };
   }, [passageRef, translation]);
 
-  useEffect(() => {
-    if (!hasFullText || !keyPassageRef) return;
-    let cancelled = false;
-    void fetchPassage(keyPassageRef, translation).then((next) => {
-      if (cancelled) return;
-      setFetchedKeyVerse({
-        ref: keyPassageRef,
-        translation,
-        text: next === "loading" || next === "error" ? null : next.text,
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [hasFullText, keyPassageRef, translation]);
-
   const resolved = passage !== "loading";
   // F3: arm only once scripture is actually on screen. `resolved` alone counts
   // an API error as resolved, and the error body is a single "available at
   // Bible.com" line -- entirely within view on open, so the reader would be
   // checked in for a chapter the app never showed them. No text, no tick.
-  const armed = mode !== "preview" && resolved && passage !== "error" && Boolean(passage.text);
+  //
+  // Keyed off `verses` because that is what the body below actually renders.
+  // Keying it off `text` instead let the two disagree: the API sets
+  // Cache-Control: public, max-age=86400, so for a day after this shipped a
+  // returning reader on a bundled version would be served a pre-deploy body
+  // that has `text` and no `verses` -- the dialog would render the "available
+  // at Bible.com" line, arm anyway, and tick them in for a chapter it never
+  // showed. Derive arming from the rendered content, not from a sibling field
+  // the client has to trust the server to keep in sync -- and count the keys
+  // rather than testing the object, because `{}` is truthy and would arm an
+  // empty card.
+  const armed =
+    mode !== "preview" && resolved && passage !== "error" && Object.keys(passage.verses ?? {}).length > 0;
 
   // Held in a ref so the observer effect does not depend on the callback's
   // identity. It is a new closure on every render, and re-running the effect
@@ -225,6 +254,7 @@ export function ReadingDialog({
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>
+      <ReadingBodySwitch />
       <p className="eyebrow">{eyebrow}</p>
       <div className="scripture-heading">
         <h2 id="reading-dialog-title">Matthew {chapter}</h2>
@@ -242,26 +272,47 @@ export function ReadingDialog({
         </select>
       </div>
 
-      {keyVerse && keyPassageRef && (
-        <blockquote className="reading-pullquote" data-section="key-verse">
-          <p>{keyVerse}</p>
-          <cite>{keyPassageRef}</cite>
-        </blockquote>
-      )}
-
       {passage === "loading" && <p className="passage-note">Loading…</p>}
       {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
-      {resolved && passage !== "error" && passage.text && <p className="passage-text">{passage.text}</p>}
-      {resolved && passage !== "error" && !passage.text && (
+      {resolved && passage !== "error" && passage.verses && (
+        <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
+          {/* The heading says "Matthew 4" but a degraded body is only the key
+              passage. Saying so turns a silent substitution into an honest
+              one -- without it the reader has no way to tell they are looking
+              at three verses instead of the chapter. */}
+          {passage.source === "key-passage-fallback" && (
+            <p className="passage-degraded-note" data-section="passage-degraded">
+              Only the key passage is available right now. Read the full chapter on Bible.com below.
+            </p>
+          )}
+          {Object.keys(passage.verses)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map((n) => (
+              <p
+                key={n}
+                className="passage-verse"
+                data-key-verse={keyVerseNumbers.has(n) ? "true" : undefined}
+              >
+                {/* Not aria-hidden: the number tells a reader which verse this
+                    is, which is content, not ornament. It is sized as content
+                    for the same reason. */}
+                <sup className="passage-verse-number">{n}</sup>{" "}
+                {passage.verses?.[String(n)]}
+              </p>
+            ))}
+        </div>
+      )}
+      {resolved && passage !== "error" && !passage.verses && (
         <p className="passage-note">This passage is available at Bible.com.</p>
       )}
 
-      {parsed && !hasFullText && (
+      {parsed && (
         <a className="primary-button scripture-chapter-action" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
-          Read the rest of Matthew {chapter} on Bible.com ↗
+          Read the entire chapter on Bible.com ↗
         </a>
       )}
-      {parsed && hasFullText && (
+      {parsed && (
         <div className="link-groups">
           <details className="link-group link-disclosure">
             <summary>Commentaries</summary>

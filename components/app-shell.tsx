@@ -42,7 +42,6 @@ import { LeaderScreen } from "@/components/screens/leader-screen";
 import { coinsFor, streak as computeStreak, TOTAL_CHAPTERS } from "@/lib/game";
 import { planEntryForChapter } from "@/lib/plan";
 import { checkInWithRetry, shouldWrite, simulatedCheckInGroup, type TickState } from "@/lib/reading-tick";
-import { TRANSLATION_META } from "@/lib/scripture/types";
 import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
@@ -298,20 +297,20 @@ export function AppShell(props: AppShellProps) {
   }, [chapters, today]);
 
   /**
-   * What the dialog asks the scripture API for. Only NET and KRV bundle the
-   * whole book, so for the other eight versions the chapter reference would
-   * resolve to nothing -- they get their key passage as the body instead, plus
-   * the Bible.com link for the rest (R1 of docs/reading-dialog-tick.md).
+   * What the dialog asks the scripture API for: always the whole chapter, for
+   * every version. The five `fullText` versions resolve it from bundled data
+   * and the other six from a live per-chapter fetch, so the old fork that sent
+   * a key-passage reference for the non-bundled versions (and showed only
+   * those few verses) is gone. `keyPassageRef` survives because the dialog now
+   * tints those verses where they sit inside the chapter.
    */
   const readingPassage = useMemo(() => {
-    const hasFullText = TRANSLATION_META[profile.translation].fullText;
     const keyPassageRef = readingChapter === null ? null : (planEntryForChapter(readingChapter)?.keyPassage ?? null);
     return {
-      hasFullText,
       keyPassageRef,
-      passageRef: hasFullText ? `Matthew ${readingChapter ?? 1}` : (keyPassageRef ?? `Matthew ${readingChapter ?? 1}`),
+      passageRef: `Matthew ${readingChapter ?? 1}`,
     };
-  }, [profile.translation, readingChapter]);
+  }, [readingChapter]);
 
   const readingMode: ReadingDialogMode =
     today.displayPhase === "pre-launch" ? "preview" : tick.kind === "ticked" || tick.kind === "retrying" ? "read" : "unread";
@@ -628,7 +627,6 @@ export function AppShell(props: AppShellProps) {
           chapter={readingChapter}
           passageRef={readingPassage.passageRef}
           keyPassageRef={readingPassage.keyPassageRef}
-          hasFullText={readingPassage.hasFullText}
           translation={profile.translation}
           mode={readingMode}
           isCatchUp={readingChapter !== today.entry?.chapter}

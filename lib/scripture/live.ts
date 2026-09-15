@@ -7,10 +7,8 @@
  * in memory per warm instance to avoid re-fetching the same chapter on
  * every request; the cache is never persisted.
  *
- * CSB and NIV (2011) are not served by bolls.life at all -- see
- * scripts/build-scripture.ts and intent/DECISIONS.md D-csb-niv-source --
- * so they are deliberately excluded from LIVE_FETCH_VERSIONS and keep
- * degrading to the Bible.com link like today.
+ * CSB, NIV (2011), and NASB 2020 are served through API.Bible instead of
+ * bolls.life; they are deliberately excluded from LIVE_FETCH_VERSIONS.
  */
 import type { Translation } from "@/lib/scripture/types";
 
@@ -79,7 +77,13 @@ export async function fetchLiveChapter(version: Translation, bookCode: string, c
   if (chapterCache.has(cacheKey)) return chapterCache.get(cacheKey) ?? null;
 
   const result = await fetchFromBolls(version, bookNumber, chapter);
-  chapterCache.set(cacheKey, result);
+  // Only a real chapter is cached. Caching the failure too meant one timeout
+  // pinned that version/chapter to "unavailable" for the life of the warm
+  // instance, so a reader who retried kept getting the cached outage instead
+  // of a fresh attempt. The length check matters because a 200 carrying an
+  // empty array yields `{}`, which is truthy -- an empty chapter would
+  // otherwise be cached exactly like a real one.
+  if (result && Object.keys(result).length > 0) chapterCache.set(cacheKey, result);
   return result;
 }
 

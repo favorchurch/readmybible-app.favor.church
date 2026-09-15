@@ -210,15 +210,6 @@
   cursor: pointer;
 }
 
-.passage-text {
-  font-family: Georgia, serif;
-  font-size: 18px;
-  line-height: 1.7;
-  color: var(--ink);
-  font-weight: 400;
-  /* serif-exception */
-}
-
 .passage-attribution {
   margin-top: 24px;
   color: var(--ink-muted);

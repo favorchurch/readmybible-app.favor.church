@@ -201,7 +201,7 @@ Typography establishes an intentional distinction between modern UI controls and
 - **Sans-Serif Headings & Body (Favor Sans):** The foundational UI workhorse across all screens, dialogs, buttons, and rosters. Renders with tight negative letter-spacing on headings (`-0.02em`) and relaxed tracking (`0.008em`) on body text.
 - **Serif Scripture Exception (Georgia):** Two intentional exceptions in the system preserve Georgia serif styling:
   1. The chapter and verse reference in Quick Verse (`.quick-verse-button strong`, e.g., "Matthew 8:23-27").
-  2. The Scripture passage body (`.passage-text`) in modal reading panes.
+  2. The readable chapter body (`.passage-chapter[data-body-style="plain"] .passage-verse`) in modal reading panes, for reading a whole chapter end to end.
   Both are annotated with `/* serif-exception */` in stylesheets and verified by automated regression tests to keep Scripture distinct from app chrome.
 - **Legibility Floor:** Text is maintained at 12px or larger for readable content. 11px micro-text is strictly limited to decorative eyebrow chips and verified with `/* decorative */` annotations.
 

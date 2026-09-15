@@ -167,6 +167,7 @@ beforeEach(() => {
           ref: "Matthew 12",
           translation: "NIV",
           text: "Then one said unto him.",
+          verses: { "1": "Then one said unto him." },
           bibleComUrl: "",
           attribution: "NIV attribution",
         }),
@@ -334,6 +335,112 @@ describe("review regressions", () => {
     reachBottomAgain();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(checkIn).not.toHaveBeenCalled();
+  });
+
+  it("a stale cached body with text but no verses renders nothing and never ticks", async () => {
+    // The API sends Cache-Control: public, max-age=86400 and the dialog fetches
+    // with the browser's default cache mode, so for a day after the per-verse
+    // field shipped a returning reader is served a pre-deploy body: `text`
+    // present, `verses` absent. That body renders no scripture at all, so it
+    // must not arm. Arming off `text` here ticked the reader in for a chapter
+    // the dialog never showed -- and every test in this file passed anyway,
+    // because the shared mock had the same shape.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ref: "Matthew 12",
+            translation: "NIV",
+            text: "Then one said unto him.",
+            bibleComUrl: "",
+            attribution: "NIV attribution",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(observers).toHaveLength(0);
+    reachBottomAgain();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(checkIn).not.toHaveBeenCalled();
+  });
+
+  it("renders every verse with its number, and marks only the key verses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ref: "Matthew 12",
+            translation: "NIV",
+            text: "ten eleven twelve thirteen",
+            verses: { "10": "ten", "11": "eleven", "12": "twelve", "13": "thirteen" },
+            bibleComUrl: "",
+            attribution: "NIV attribution",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => {
+      const chapter = document.querySelector('[data-section="passage-chapter"]');
+      expect(chapter).toBeTruthy();
+      expect(chapter!.querySelectorAll(".passage-verse")).toHaveLength(4);
+      expect([...chapter!.querySelectorAll(".passage-verse-number")].map((n) => n.textContent)).toEqual([
+        "10",
+        "11",
+        "12",
+        "13",
+      ]);
+      // The plan's key passage for Matthew 12 is 12:11-12, so the tint must
+      // land on exactly those two and not on the verses either side of them.
+      const keyed = [...chapter!.querySelectorAll('.passage-verse[data-key-verse="true"]')];
+      expect(keyed.map((v) => v.querySelector(".passage-verse-number")?.textContent)).toEqual(["11", "12"]);
+    });
+  });
+
+  it("says so when only the key passage is available, instead of substituting silently", async () => {
+    // The heading still reads "Matthew 12" while the body is a few verses, so
+    // without this line the reader cannot tell a degraded day from a whole
+    // chapter. They can still tick -- the fallback is better than a blank day
+    // -- but they are told what they are looking at.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            ref: "Matthew 12",
+            translation: "NIV",
+            text: "eleven twelve",
+            verses: { "11": "eleven", "12": "twelve" },
+            bibleComUrl: "",
+            attribution: "NIV attribution",
+            source: "key-passage-fallback",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => {
+      expect(document.querySelector('[data-section="passage-degraded"]')).toBeTruthy();
+    });
+  });
+
+  it("shows no degraded note for a complete chapter", async () => {
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => {
+      expect(document.querySelector('[data-section="passage-chapter"]')).toBeTruthy();
+    });
+    expect(document.querySelector('[data-section="passage-degraded"]')).toBeNull();
   });
 
   it("F7: a blocked test-mode sentinel entry never reaches the server action", async () => {

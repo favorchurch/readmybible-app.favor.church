@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getPassage } from "@/lib/scripture";
+import { clearApiBibleCacheForTests } from "@/lib/scripture/api-bible";
 import { clearLiveCacheForTests } from "@/lib/scripture/live";
 import { bibleComUrl, appsLinkGroup, commentaryLinkGroup, parseReference } from "@/lib/scripture/reference";
 import { loadChapterVerses, loadKeyPassage } from "@/lib/scripture/store";
 import { isTranslation, TRANSLATIONS, TRANSLATION_META } from "@/lib/scripture/types";
 
 afterEach(() => {
+  clearApiBibleCacheForTests();
   clearLiveCacheForTests();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
@@ -93,8 +96,8 @@ describe("commentaryLinkGroup", () => {
 });
 
 describe("isTranslation", () => {
-  it("accepts all ten supported translations (D1)", () => {
-    expect(TRANSLATIONS).toHaveLength(10);
+  it("accepts all eleven supported translations (D1)", () => {
+    expect(TRANSLATIONS).toHaveLength(11);
     for (const t of TRANSLATIONS) {
       expect(isTranslation(t)).toBe(true);
     }
@@ -117,9 +120,9 @@ describe("TRANSLATION_META", () => {
     }
   });
 
-  it("flags only NET and KRV as full-text, per D3", () => {
+  it("flags the bundled full-text versions", () => {
     const fullText = TRANSLATIONS.filter((t) => TRANSLATION_META[t].fullText);
-    expect(fullText.sort()).toEqual(["KRV", "NET"]);
+    expect(fullText.sort()).toEqual(["CSB", "KRV", "NASB2020", "NET", "NIV"]);
   });
 });
 
@@ -155,11 +158,13 @@ describe("lib/scripture/store (bundled data on disk)", () => {
     expect(loadKeyPassage("ESV", "Matthew 1:1")).toBeNull();
   });
 
-  it("loads CSB and NIV (2011) key passages, sourced independently of bolls.life per #49", () => {
-    const csb = loadKeyPassage("CSB", "Matthew 1:20-21");
-    const niv = loadKeyPassage("NIV", "Matthew 1:20-21");
+  it("loads full Matthew chapters for API.Bible versions", () => {
+    const csb = loadChapterVerses("CSB", 1);
+    const niv = loadChapterVerses("NIV", 1);
+    const nasb2020 = loadChapterVerses("NASB2020", 1);
     expect(csb?.["20"]).toBeTruthy();
     expect(niv?.["20"]).toBeTruthy();
+    expect(nasb2020?.["20"]).toBeTruthy();
     // Distinct translations, not a duplicated/misfiled text.
     expect(csb?.["20"]).not.toBe(niv?.["20"]);
   });
@@ -184,10 +189,11 @@ describe("getPassage", () => {
     expect(result.text).toBeTruthy();
   });
 
-  it("degrades to null text for a reference outside the curated key passages on a version bolls.life doesn't serve (CSB)", async () => {
-    const result = await getPassage("Matthew 1:1", "CSB");
+  it("degrades to null text for an API.Bible reference when the API is unavailable", async () => {
+    const result = await getPassage("Matthew 29:1", "CSB");
     expect(result.text).toBeNull();
     expect(result.bibleComUrl).toContain("bible.com");
+    expect(result.source).toBe("unavailable");
   });
 
   it("degrades to null text and an empty bibleComUrl for an unparseable reference", async () => {
@@ -201,6 +207,31 @@ describe("getPassage", () => {
     const miss = await getPassage("Matthew 1:1", "CSB");
     expect(hit.attribution).toBe(TRANSLATION_META.NASB.attribution);
     expect(miss.attribution).toBe(TRANSLATION_META.CSB.attribution);
+  });
+
+  it("returns the passage keyed by verse number alongside the joined text", async () => {
+    const result = await getPassage("Matthew 5:3-5", "NET");
+    expect(Object.keys(result.verses ?? {})).toEqual(["3", "4", "5"]);
+    // The numbered map is what the dialog renders; `text` must stay the same
+    // passage so the two can never drift into showing different words.
+    expect(result.text).toBe(Object.values(result.verses ?? {}).join(" "));
+  });
+
+  it("keys a bare-chapter reference by every verse in the chapter, in numeric order", async () => {
+    const result = await getPassage("Matthew 4", "NET");
+    const numbers = Object.keys(result.verses ?? {}).map(Number);
+    expect(numbers[0]).toBe(1);
+    expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+    expect(numbers.length).toBeGreaterThan(20);
+  });
+
+  it("nulls `verses` exactly when `text` is null", async () => {
+    const miss = await getPassage("Matthew 29:1", "CSB");
+    const unparseable = await getPassage("not a reference", "NET");
+    expect(miss.text).toBeNull();
+    expect(miss.verses).toBeNull();
+    expect(unparseable.text).toBeNull();
+    expect(unparseable.verses).toBeNull();
   });
 });
 
@@ -226,6 +257,35 @@ describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
     expect(result.bibleComUrl).toContain("bible.com");
   });
 
+  it("serves a whole chapter live for a key-passage version", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([{ verse: 1, text: "one" }, { verse: 2, text: "two" }]), { status: 200 }),
+    );
+
+    const result = await getPassage("Matthew 4", "ESV");
+
+    expect(Object.keys(result.verses ?? {})).toEqual(["1", "2"]);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://bolls.life/get-text/ESV/40/4/");
+  });
+
+  it("falls back to the bundled key passage when the chapter cannot be fetched", async () => {
+    // Asking for a whole chapter made these six versions depend on a third
+    // party for any scripture at all. When it is down they must still get the
+    // curated passage that has always been on disk -- otherwise the reader
+    // sees nothing and, because arming is keyed to rendered verses, cannot
+    // check in either.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 503 }));
+
+    const result = await getPassage("Matthew 4", "ESV");
+
+    expect(result.verses).not.toBeNull();
+    expect(result.text).toBeTruthy();
+    // Deliberately NOT "bundled": the route refuses to cache a degraded answer
+    // for a day, and the dialog says so to the reader. Both are impossible if
+    // a partial answer looks identical to a complete chapter.
+    expect(result.source).toBe("key-passage-fallback");
+  });
+
   it("caches a live-fetched chapter so a second verse in the same chapter doesn't re-fetch", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(
@@ -245,12 +305,66 @@ describe("getPassage (live fetch fallback, mocked bolls.life)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("never calls fetch for CSB and NIV, which bolls.life doesn't serve live", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch");
+  it("fetches and parses an API.Bible chapter for CSB", async () => {
+    vi.stubEnv("BIBLE_API_URL", "https://rest.api.bible");
+    vi.stubEnv("BIBLE_API_KEY", "test-key");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: {
+            content: [
+              {
+                name: "para",
+                type: "tag",
+                items: [
+                  {
+                    name: "verse-span",
+                    type: "tag",
+                    attrs: { verseId: "MAT.29.1" },
+                    items: [{ name: "verse", type: "tag", items: [{ type: "text", text: "1" }] }],
+                  },
+                  {
+                    name: "verse-span",
+                    type: "tag",
+                    attrs: { verseId: "MAT.29.1" },
+                    items: [{ type: "text", text: "Fallback verse." }],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        { status: 200 },
+      ),
+    );
 
-    await getPassage("Matthew 1:1", "CSB");
-    await getPassage("Matthew 1:1", "NIV");
+    const result = await getPassage("Matthew 29:1", "CSB");
 
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.text).toBe("Fallback verse.");
+    expect(result.source).toBe("api-bible");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toContain("/v1/bibles/a556c5305ee15c3f-01/passages/MAT.29?");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ headers: { "api-key": "test-key" } });
+  });
+
+  it("uses the API.Bible chapter cache for a second reference", async () => {
+    vi.stubEnv("BIBLE_API_URL", "https://rest.api.bible");
+    vi.stubEnv("BIBLE_API_KEY", "test-key");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ data: { content: [{ name: "para", type: "tag", items: [
+          { name: "verse-span", type: "tag", attrs: { verseId: "MAT.29.1" }, items: [{ type: "text", text: "One." }] },
+          { name: "verse-span", type: "tag", attrs: { verseId: "MAT.29.2" }, items: [{ type: "text", text: "Two." }] },
+        ] }] } }),
+        { status: 200 },
+      ),
+    );
+
+    const first = await getPassage("Matthew 29:1", "CSB");
+    const second = await getPassage("Matthew 29:2", "CSB");
+
+    expect(first.text).toBe("One.");
+    expect(second.text).toBe("Two.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

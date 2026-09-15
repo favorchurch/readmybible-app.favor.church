@@ -22,10 +22,8 @@ below the tick row.
 
 ```
 eyebrow + "Matthew 12" + translation select
-key verse pull-quote
-chapter body                    (NET, KRV)
-  — or —
-key passage + "Read the rest on Bible.com ↗"   (ESV, CSB, NIV, NLT, MSG, NKJV, NASB, AMP)
+chapter body, every verse numbered, key verses tinted in place   (all 11 versions — D14)
+"Read the entire chapter on Bible.com ↗"
 ──────────────── divider ────────────────
 tick row   ✓ Read today · +10
 [ I read today ✓ ]
@@ -78,10 +76,13 @@ chips, and the progress-screen day preview all open `ReadingDialog` instead of t
 **D12 — Pre-launch.** `DAY 1 PREVIEW` opens the same dialog in preview mode: no sentinel,
 no tick row, one line saying it counts from October 1.
 
-**D13 — The no-scroll dwell.** D4 made the tick instant on reaching the end. For the eight
-translations that bundle only the key passage, the dialog body is a few verses plus a link,
-which on a phone is often entirely in view on open — so for most of the audience "reading
-records the day" would mean "opening the sheet records the day", while NET/KRV readers scroll
+**D13 — The no-scroll dwell.** D4 made the tick instant on reaching the end. When this was
+written, eight translations bundled only the key passage, so their dialog body was a few
+verses plus a link — on a phone often entirely in view on open. D14 has since given every
+version the whole chapter, so that short body now appears only when a live chapter fetch
+fails and the bundled key passage is served instead; the dwell still exists for that case.
+Historically: "reading records the day" would otherwise have meant "opening the sheet records
+the day" for most of the audience, while NET/KRV readers scroll
 a real chapter to earn the same tick.
 
 The rule is not "which translation". It is whether the reader had to scroll:
@@ -95,10 +96,41 @@ phone.
 The dwell is a local gate only. Nothing about how long the sheet was open is recorded, sent,
 or shown, so the reading-time non-goal below still holds.
 
+### D14 — every version shows the whole chapter
+
+Supersedes the earlier split where only the `fullText` versions rendered a chapter and the rest
+showed their curated key passage plus a Bible.com link for the remainder.
+
+Five versions (NET, CSB, NIV, NASB2020, KRV) resolve the chapter from bundled data; the other
+six (ESV, NLT, MSG, NKJV, NASB, AMP) resolve it from a live per-chapter fetch. Both paths
+already existed — `LIVE_FETCH_VERSIONS` covered exactly those six — so the change is that the
+dialog now *asks* for `Matthew {chapter}` on every version instead of forking on `fullText`.
+
+Consequences worth naming:
+
+- The key-verse pull-quote is gone. With the whole chapter on screen it printed the same verses
+  twice in one scroll. Those verses are tinted where they sit instead (`data-key-verse`).
+- `getPassage` returns `verses`, the passage keyed by verse number, so each verse can carry a
+  numbered superscript. `text` stays on the response, derived from `verses`, for callers that
+  want the flat string. The tick arms off `verses`, because that is what the dialog actually
+  renders: arming off `text` let a stale cached body (text present, verses absent) render the
+  "available at Bible.com" line and tick the reader in anyway.
+- A chapter that cannot be fetched falls back to the bundled key passage rather than to
+  nothing, so a bolls.life outage cannot make the day unreadable or uncheckable for the six
+  live-fetch versions. Misses are sent `Cache-Control: no-store` so an outage is never cached
+  for a day.
+- `hasFullText` is no longer a rendering input to `ReadingDialog` and was removed from its
+  props rather than left as a dead one.
+- This widens what the app serves beyond the original per-publisher quotation limit that
+  `D-csb-niv-source` recorded (that decision lived in `intent/DECISIONS.md`, archived in
+  `docs/history.jsonl`). It was taken deliberately and with the licensing tradeoff stated.
+
 ## Non-goals
 
 - Any change to what a check-in writes server-side. `app/actions/checkIn.ts` is untouched.
-- Any change to translation licensing or which versions bundle full text.
+- Any change to which versions *bundle* full text on disk. (D14 did change what the app
+  *serves* — every version now shows a whole chapter. The licensing widening is recorded
+  there and is the one item in this run that needs explicit owner sign-off.)
 - Any change to `writesBlocked` semantics for `saveProfile`, `chooseGroup`, `joinByCode`,
   `getOrCreateJoinCode`.
 - Reading-time or duration tracking. `components/reading-visibility-note.tsx` promises the
