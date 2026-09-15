@@ -8,6 +8,7 @@ import { Celebration } from "@/components/celebration";
 import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
+import { chapterReference } from "@/lib/plan";
 import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
 import { TRANSLATIONS, type ScriptureSource } from "@/lib/scripture/types";
 
@@ -248,7 +249,7 @@ export function ReadingDialog({
       <ReadingBodySwitch />
       <p className="eyebrow">{eyebrow}</p>
       <div className="scripture-heading">
-        <h2 id="reading-dialog-title">Matthew {chapter}</h2>
+        <h2 id="reading-dialog-title">{chapterReference(chapter)}</h2>
         <select
           className="translation-select"
           aria-label="Bible translation"
@@ -267,8 +268,8 @@ export function ReadingDialog({
       {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
       {resolved && passage !== "error" && passage.verses && (
         <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
-          {/* The heading says "Matthew 4" but a degraded body is only the key
-              passage. Saying so turns a silent substitution into an honest
+          {/* The heading says "Matthew 4:1-25" but a degraded body is only the
+              key passage. Saying so turns a silent substitution into an honest
               one -- without it the reader has no way to tell they are looking
               at three verses instead of the chapter. */}
           {passage.source === "key-passage-fallback" && (

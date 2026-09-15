@@ -59,6 +59,36 @@ export function planEntryForChapter(chapter: number): PlanEntry | undefined {
   return PLAN.find((entry) => entry.chapter === chapter);
 }
 
+/**
+ * Last verse number for each Matthew chapter, 1-28 in order. This is a static
+ * table, not derived from a loaded passage: the reading dialog's heading must
+ * already show the right range while `passage === "loading"`, before any
+ * fetch resolves, and `passage.source === "key-passage-fallback"` bodies only
+ * carry 2-3 verses, which would otherwise render a wrong range like
+ * "Matthew 20:26-28" instead of the whole chapter.
+ */
+export const MATTHEW_VERSE_COUNTS: readonly number[] = [
+  25, 23, 17, 25, 48, 34, 29, 34, 38, 42, 30, 50, 58, 36, 39, 28, 27, 35, 30, 34, 46, 46, 39, 51, 46, 75, 66, 20,
+];
+
+/**
+ * "Matthew {chapter}:1-{last verse}", e.g. "Matthew 20:1-34". The only place
+ * the book name "Matthew" is hardcoded for chapter-range references -- reuse
+ * this rather than rebuilding the string elsewhere.
+ *
+ * A chapter outside 1-28 is clamped to the nearest valid chapter rather than
+ * thrown: `chapter` here already passes through `clampReadingChapter`
+ * upstream and is expected to stay in range, but this heading renders
+ * unconditionally, so a defensive clamp keeps a future off-by-one from
+ * producing "Matthew 29:1-undefined" instead of a readable (if wrong)
+ * reference.
+ */
+export function chapterReference(chapter: number): string {
+  const safeChapter = Math.min(Math.max(Math.trunc(chapter), 1), MATTHEW_VERSE_COUNTS.length);
+  const last = MATTHEW_VERSE_COUNTS[safeChapter - 1];
+  return `Matthew ${safeChapter}:1-${last}`;
+}
+
 export function clampReadingChapter(chapter: number, todayChapter: number): number {
   return Math.min(Math.max(chapter, 1), todayChapter + 1);
 }
