@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import type { Translation } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
-import { TRANSLATIONS } from "@/lib/scripture/types";
+import { TRANSLATIONS, type ScriptureSource } from "@/lib/scripture/types";
 
-type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string };
+type PassageResponse = { ref: string; translation: Translation; text: string | null; bibleComUrl: string; attribution: string; source: ScriptureSource };
 
 export function ScripturePopup({
   passageRef,
@@ -20,14 +20,14 @@ export function ScripturePopup({
   onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
-  const [state, setState] = useState<{ text: string | null; bibleComUrl: string; attribution: string } | "loading" | "error">("loading");
+  const [state, setState] = useState<{ text: string | null; bibleComUrl: string; attribution: string; source: ScriptureSource } | "loading" | "error">("loading");
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/scripture?ref=${encodeURIComponent(passageRef)}&t=${translation}`)
       .then((res) => (res.ok ? (res.json() as Promise<PassageResponse>) : Promise.reject(res)))
       .then((data) => {
-        if (!cancelled) setState({ text: data.text, bibleComUrl: data.bibleComUrl, attribution: data.attribution });
+        if (!cancelled) setState({ text: data.text, bibleComUrl: data.bibleComUrl, attribution: data.attribution, source: data.source });
       })
       .catch(() => {
         if (!cancelled) setState("error");
@@ -98,7 +98,12 @@ export function ScripturePopup({
         </div>
       )}
       {state !== "loading" && state !== "error" && state.attribution && (
-        <p className="passage-attribution">{state.attribution}</p>
+        <p className="passage-attribution">
+          {state.attribution}
+          {state.source === "api-bible" && (
+            <> Text provided by <a href="https://www.api.bible/" target="_blank" rel="noreferrer">API.Bible</a>.</>
+          )}
+        </p>
       )}
     </Sheet>
   );

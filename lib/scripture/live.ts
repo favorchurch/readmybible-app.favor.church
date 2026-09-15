@@ -7,10 +7,8 @@
  * in memory per warm instance to avoid re-fetching the same chapter on
  * every request; the cache is never persisted.
  *
- * CSB and NIV (2011) are not served by bolls.life at all -- see
- * scripts/build-scripture.ts and intent/DECISIONS.md D-csb-niv-source --
- * so they are deliberately excluded from LIVE_FETCH_VERSIONS and keep
- * degrading to the Bible.com link like today.
+ * CSB, NIV (2011), and NASB 2020 are served through API.Bible instead of
+ * bolls.life; they are deliberately excluded from LIVE_FETCH_VERSIONS.
  */
 import type { Translation } from "@/lib/scripture/types";
 
