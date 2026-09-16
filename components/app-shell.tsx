@@ -383,7 +383,9 @@ function AppShellInner(props: AppShellProps) {
     ? simulatedScope.isAdminScope
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
-  const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
+  const showReaderTabs = today.displayPhase !== "pre-launch" || canSeeLeaderTab;
+  const activeTab =
+    !showReaderTabs && tab !== "today" ? "today" : canSeeLeaderTab || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
     if (awaitingSnapshot) return [];
@@ -705,6 +707,7 @@ function AppShellInner(props: AppShellProps) {
           connectSwitcher={connectSwitcher}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
+          allowPreLaunchNavigation={showReaderTabs}
         />
       )}
       {activeTab === "connect" && (
@@ -767,7 +770,12 @@ function AppShellInner(props: AppShellProps) {
           hasGroupView={testMode.active ? (syntheticView ? syntheticView.activeGroup !== null : simulatedGroupId !== null) : !!props.activeGroup}
         />
       )}
-      <BottomNav tab={activeTab} onSelect={selectTab} showLeaderTab={canSeeLeaderTab} />
+      <BottomNav
+        tab={activeTab}
+        onSelect={selectTab}
+        showLeaderTab={canSeeLeaderTab}
+        showReaderTabs={showReaderTabs}
+      />
       {readingChapter !== null && (
         <ReadingDialog
           key={readingChapter}

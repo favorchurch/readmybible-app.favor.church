@@ -48,10 +48,10 @@ vi.mock("@/components/avatar", () => ({
   resolveAvatar: () => ({}),
 }));
 vi.mock("@/components/app-shell", () => ({ AppShell: mocks.AppShellMarker }));
-vi.mock("@/components/welcome", () => ({ WelcomeLanding: mocks.WelcomeLandingMarker }));
 
 import Page from "@/app/page";
 import { AppBrandSplash } from "@/components/app-splash";
+import { FontReadyGate } from "@/components/font-ready-gate";
 import { HomeData } from "@/components/home-data";
 
 beforeEach(() => {
@@ -66,13 +66,22 @@ beforeEach(() => {
 });
 
 describe("Page() session branching", () => {
-  it("renders WelcomeLanding for a logged-out visitor instead of redirecting", async () => {
+  it("redirects a logged-out visitor to the branded login entry", async () => {
     mocks.getSessionContext.mockResolvedValue({ status: "logged-out" });
 
-    const result = await Page();
+    await expect(Page()).rejects.toThrow("REDIRECT:/login");
 
-    expect(mocks.redirect).not.toHaveBeenCalled();
-    expect((result as { type: unknown }).type).toBe(mocks.WelcomeLandingMarker);
+    expect(mocks.redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("preserves an internal return destination while sending guests to login", async () => {
+    mocks.getSessionContext.mockResolvedValue({ status: "logged-out" });
+
+    await expect(Page({ searchParams: Promise.resolve({ returnTo: "/join/ABC123" }) })).rejects.toThrow(
+      "REDIRECT:/login?returnTo=%2Fjoin%2FABC123",
+    );
+
+    expect(mocks.redirect).toHaveBeenCalledWith("/login?returnTo=%2Fjoin%2FABC123");
   });
 
   it("still redirects to /not-found-in-rock when the person has no Rock record", async () => {
@@ -82,7 +91,7 @@ describe("Page() session branching", () => {
     expect(mocks.redirect).toHaveBeenCalledWith("/not-found-in-rock");
   });
 
-  it("renders Suspense with HomeData, not WelcomeLanding, for an authenticated session", async () => {
+  it("renders Suspense with HomeData for an authenticated session", async () => {
     mocks.getSessionContext.mockResolvedValue({
       status: "ok",
       rockPersonId: 13358,
@@ -101,12 +110,12 @@ describe("Page() session branching", () => {
     const result = await Page();
 
     expect(mocks.redirect).not.toHaveBeenCalled();
-    expect((result as { type: unknown }).type).toBe(Suspense);
-    expect((result as { props: { fallback: { type: unknown } } }).props.fallback.type).toBe(AppBrandSplash);
+    const gate = result as { type: unknown; props: { children: { type: unknown; props: { fallback: { type: unknown }; children: { type: unknown } } } } };
+    expect(gate.type).toBe(FontReadyGate);
+    expect(gate.props.children.type).toBe(Suspense);
+    expect(gate.props.children.props.fallback.type).toBe(AppBrandSplash);
 
-    const child = (result as { props: { children: { type: unknown } } }).props.children;
-    expect(child.type).toBe(HomeData);
-    expect(child.type).not.toBe(mocks.WelcomeLandingMarker);
+    expect(gate.props.children.props.children.type).toBe(HomeData);
   });
 
   it("passes all connect groups across all campuses to AppShell even in production, when test mode is requested", async () => {
@@ -132,15 +141,17 @@ describe("Page() session branching", () => {
         { groupId: 101, groupName: "Group Manila — Manila" },
       ]);
 
-      // Page() now returns a Suspense boundary, so the campus list is built one
-      // level down, in HomeData. Render that child to reach the AppShell props.
+      // Page() now returns a font gate around the Suspense boundary, so the
+      // campus list is built two levels down, in HomeData. Render that child to
+      // reach the AppShell props.
       // The guarantee under test is unchanged: when the list IS built, it is still
       // every Connect Group across every campus, in production too. What changed is
       // that building it now requires the URL to ask for test mode -- see the
       // companion test below for the ordinary-load half of that contract.
       const result = await Page({ searchParams: Promise.resolve({ test: "1" }) });
-      const child = (result as { props: { children: { props: unknown } } }).props.children;
-      const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
+      const gate = (result as { props: { children: { props: { children: { props: unknown } } } } }).props.children;
+      const suspense = gate.props.children;
+      const rendered = await HomeData(suspense.props as Parameters<typeof HomeData>[0]);
 
       // The list is no longer awaited in HomeData -- it is handed down unresolved
       // so the shell can paint while the org-wide Rock call is in flight, and the
@@ -180,8 +191,9 @@ describe("Page() session branching", () => {
     // so a several-hundred-group Rock call must not block the shell render for
     // an ordinary member.
     const result = await Page();
-    const child = (result as { props: { children: { props: unknown } } }).props.children;
-    const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
+    const gate = (result as { props: { children: { props: { children: { props: unknown } } } } }).props.children;
+    const suspense = gate.props.children;
+    const rendered = await HomeData(suspense.props as Parameters<typeof HomeData>[0]);
 
     expect(getAllConnectGroups).not.toHaveBeenCalled();
     const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;

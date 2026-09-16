@@ -206,6 +206,32 @@ describe("BottomNav leader visibility", () => {
     expect(container.querySelectorAll("button")).toHaveLength(3);
     expect(container.querySelector('[data-tab="leader"]')).toBeNull();
   });
+
+  it("shows Today only to ordinary readers before launch", () => {
+    const { container } = render(
+      React.createElement(BottomNav, {
+        tab: "today",
+        onSelect: () => {},
+        showLeaderTab: false,
+        showReaderTabs: false,
+      }),
+    );
+
+    expect([...container.querySelectorAll("button")].map((button) => button.dataset.tab)).toEqual(["today"]);
+  });
+
+  it("keeps the Leader tab available when oversight access is present before launch", () => {
+    const { container } = render(
+      React.createElement(BottomNav, {
+        tab: "today",
+        onSelect: () => {},
+        showLeaderTab: true,
+        showReaderTabs: false,
+      }),
+    );
+
+    expect([...container.querySelectorAll("button")].map((button) => button.dataset.tab)).toEqual(["today", "leader"]);
+  });
 });
 
 describe("AppShell leader role guard and paper noise", () => {

@@ -12,6 +12,7 @@ export function BottomNav({
   tab,
   onSelect,
   showLeaderTab,
+  showReaderTabs = true,
 }: {
   tab: Tab;
   onSelect: (next: Tab) => void;
@@ -19,10 +20,14 @@ export function BottomNav({
   // admin-scope viewers (regional/cluster/department heads, ADMIN_PERSON_IDS)
   // who may have no Connect Group of their own.
   showLeaderTab: boolean;
+  // Before launch, ordinary readers get Today only. Oversight viewers keep
+  // the regular reader tabs alongside Leader/Test Mode through the role gate.
+  showReaderTabs?: boolean;
 }) {
+  const readerItems = showReaderTabs ? BASE_NAV_ITEMS : [BASE_NAV_ITEMS[0]];
   const items = showLeaderTab
-    ? [...BASE_NAV_ITEMS, { id: "leader" as const, label: "Leader", icon: "key" as const }]
-    : BASE_NAV_ITEMS;
+    ? [...readerItems, { id: "leader" as const, label: "Leader", icon: "key" as const }]
+    : readerItems;
   return (
     <nav
       className="bottom-nav"
