@@ -217,8 +217,9 @@ describe("Page() session branching", () => {
     });
 
     const result = await Page({ searchParams: Promise.resolve({ test: "1" }) });
-    const child = (result as { props: { children: { props: unknown } } }).props.children;
-    const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
+    const gate = (result as { props: { children: { props: { children: { props: unknown } } } } }).props.children;
+    const suspense = gate.props.children;
+    const rendered = await HomeData(suspense.props as Parameters<typeof HomeData>[0]);
     const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;
 
     expect(mocks.getAuthorizedTestGroupOptions).not.toHaveBeenCalled();
