@@ -91,6 +91,15 @@ describe("simulated admin CSV scope", () => {
     expect(mocks.loadSectionSubtree).toHaveBeenCalled();
   });
 
+  it("does not let a section admin's test URL replace their real roots", async () => {
+    mocks.resolveAdminScope.mockReturnValue({ kind: "sections", rootIds: [41] });
+
+    const response = await GET(new Request("https://example.test/admin/export.csv?test=1&scope=global"));
+
+    expect(response.status).toBe(200);
+    expect(mocks.loadSectionSubtree).toHaveBeenCalledWith([41]);
+  });
+
   // These deliberately omit `test=1`. They pin the fail-closed guard, not the
   // export links the page generates -- those always carry `test=1`, and
   // `?scope=cluster&test=1` exports normally (covered above). Without the

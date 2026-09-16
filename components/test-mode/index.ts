@@ -17,6 +17,9 @@ export {
   simulatedTodayState,
   SIMULATED_SECTION_ROOTS,
   STAGE_PRESETS,
+  SYNTHETIC_TEST_MODE_SCENARIOS,
+  TEST_MODE_SCENARIOS,
+  testModeCampusFromSession,
   TEST_MODE_BLOCKED_MESSAGE,
   TEST_MODE_CAMPUSES,
   writesBlocked,
@@ -24,6 +27,9 @@ export {
   type SimulatedRoleScope,
   type TestModeCampus,
   type TestModeRole,
+  type TestModeScenario,
   type TestModeState,
+  type SyntheticTestModeScenario,
   type SimulatedScopeSelection,
 } from "./logic";
+export { syntheticTestModeView, type SyntheticTestModeView } from "./synthetic-fixtures";

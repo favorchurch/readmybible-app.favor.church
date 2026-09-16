@@ -81,6 +81,7 @@ function appShellProps(): AppShellProps {
     devMockToday: "2026-10-05",
     sectionSlot: null,
     campusGroups: [],
+    testModeAuthorized: true,
     testWritableGroupId: null,
   };
 }

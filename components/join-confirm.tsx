@@ -21,7 +21,7 @@ export function JoinConfirm(props: { code: string; groupName: string }) {
 
 function JoinConfirmInner({ code, groupName }: { code: string; groupName: string }) {
   const router = useRouter();
-  const testMode = useTestMode();
+  const testMode = useTestMode(true);
   const guardedJoinByCode = useMemo(() => guardWrite(testMode.active, joinByCode), [testMode.active]);
   const runToastAction = useToastAction();
   const [pending, setPending] = useState(false);

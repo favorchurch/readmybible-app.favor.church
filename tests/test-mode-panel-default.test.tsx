@@ -22,6 +22,7 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 
 const state: TestModeState = {
   groupId: null,
+  scenario: "real",
   role: "member",
   campus: 1,
   phase: "active",
@@ -80,5 +81,20 @@ describe("TestModePanel default collapsed state (#127)", () => {
     );
     await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/group list is unavailable/i));
     expect(screen.getByRole("group", { name: "Role" })).toBeTruthy();
+  });
+
+  it("switches from real data to a synthetic compound scenario", () => {
+    const onChange = vi.fn();
+    render(<TestModePanel state={state} onChange={onChange} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Scenario" }), {
+      target: { value: "two-regions" },
+    });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      scenario: "two-regions",
+      groupId: null,
+      role: "regional",
+    }));
   });
 });

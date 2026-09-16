@@ -64,6 +64,7 @@ describe("initialTestModeState", () => {
     expect(state.completionPct).toBe(0);
     expect(state.groupPct).toBe(0);
     expect(state.groupId).toBeNull();
+    expect(state.scenario).toBe("real");
     expect(state.role).toBe("member");
     expect(state.campus).toBe(1);
     expect(state).not.toHaveProperty("viewer");

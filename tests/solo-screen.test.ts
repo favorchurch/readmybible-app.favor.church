@@ -77,6 +77,7 @@ describe("SoloScreen", () => {
       devMockToday: null,
       sectionSlot: null,
       campusGroups: [],
+      testModeAuthorized: false,
       testWritableGroupId: null,
     };
 
@@ -111,6 +112,7 @@ describe("SoloScreen", () => {
       devMockToday: null,
       sectionSlot: null,
       campusGroups: [],
+      testModeAuthorized: false,
       testWritableGroupId: null,
       // isAdminScope intentionally omitted -- this must NOT widen access.
     };
@@ -142,6 +144,7 @@ describe("SoloScreen", () => {
       devMockToday: null,
       sectionSlot: null,
       campusGroups: [],
+      testModeAuthorized: true,
       testWritableGroupId: null,
       isAdminScope: true,
     };

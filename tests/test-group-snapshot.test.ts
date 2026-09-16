@@ -1,9 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+vi.mock("server-only", () => ({}));
+
 import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
+import { canAccessRealTestGroup, isTestModeAuthorized } from "@/lib/test-mode-auth";
 
 vi.mock("@/lib/session", () => ({
   getSessionContext: vi.fn(),
+}));
+
+vi.mock("@/lib/test-mode-auth", () => ({
+  isTestModeAuthorized: vi.fn(),
+  canAccessRealTestGroup: vi.fn(),
 }));
 
 vi.mock("@/lib/test-mode-config", () => ({
@@ -33,7 +41,9 @@ vi.mock("@/db", () => ({
 
 describe("getTestGroupSnapshot", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.mocked(isTestModeAuthorized).mockReturnValue(true);
+    vi.mocked(canAccessRealTestGroup).mockResolvedValue(true);
   });
 
   it("allows when NODE_ENV is production", async () => {
@@ -65,9 +75,12 @@ describe("getTestGroupSnapshot", () => {
     }
   });
 
-  it("allows when caller is not admin scope", async () => {
+  it("refuses a real snapshot when caller is not admin scope", async () => {
     const { getSessionContext } = await import("@/lib/session");
     const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
+
+    vi.mocked(isTestModeAuthorized).mockReturnValueOnce(false);
+    vi.mocked(canAccessRealTestGroup).mockResolvedValueOnce(false);
 
     vi.mocked(getSessionContext).mockResolvedValueOnce({
       status: "ok",
@@ -83,23 +96,13 @@ describe("getTestGroupSnapshot", () => {
       isAdminScope: false,
       defaultTranslation: "NET",
     });
-    vi.mocked(getGroupBasic).mockResolvedValueOnce({
-      Id: 87177,
-      Name: "Connect Group",
-      GroupTypeId: 25,
-      CampusId: 1,
-      ParentGroupId: null,
-      IsActive: true,
-      IsArchived: false,
-      locality: null,
-    });
-    vi.mocked(getRoster).mockResolvedValueOnce([]);
-
     const result = await getTestGroupSnapshot({ groupId: 87177 });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toMatch(/empty roster/i);
+      expect(result.error).toMatch(/access/i);
     }
+    expect(getGroupBasic).not.toHaveBeenCalled();
+    expect(getRoster).not.toHaveBeenCalled();
   });
 
   it("refuses when caller is not logged in", async () => {
@@ -352,5 +355,34 @@ describe("getTestGroupSnapshot", () => {
       expect(result.roster[0].chapters).toEqual([1, 2]);
       expect(result.groupStats.checkinCount).toBe(2);
     }
+  });
+
+  it("serves an authorized synthetic scenario without touching Rock or the database", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+    const { getGroupBasic, getRoster } = await import("@/lib/rock/client");
+
+    vi.mocked(isTestModeAuthorized).mockReturnValueOnce(true);
+    vi.mocked(getSessionContext).mockResolvedValueOnce(okSession);
+
+    const result = await getTestGroupSnapshot({ scenario: "two-connect-memberships" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.groupName).toBe("Synthetic Connect A");
+      expect(result.roster.every((member) => member.name.startsWith("Synthetic reader"))).toBe(true);
+    }
+    expect(getGroupBasic).not.toHaveBeenCalled();
+    expect(getRoster).not.toHaveBeenCalled();
+  });
+
+  it("refuses a synthetic scenario for an unauthorized caller", async () => {
+    const { getSessionContext } = await import("@/lib/session");
+
+    vi.mocked(isTestModeAuthorized).mockReturnValueOnce(false);
+    vi.mocked(getSessionContext).mockResolvedValueOnce({ ...okSession, isAdminScope: false });
+
+    const result = await getTestGroupSnapshot({ scenario: "ordinary-member" });
+
+    expect(result.ok).toBe(false);
   });
 });

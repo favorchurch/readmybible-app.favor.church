@@ -15,6 +15,42 @@ export type AdminScope =
   | { kind: "global"; rootIds: [typeof GLOBAL_ROOT_SECTION_ID] }
   | { kind: "sections"; rootIds: number[] };
 
+export type TestScopeName = "global" | "cluster" | "region";
+
+export type TestScopeResolution = {
+  scope: AdminScope | null;
+  simulatedScope: TestScopeName | undefined;
+};
+
+/**
+ * Applies the legacy admin test scope only where the real caller can already
+ * see the whole tree. A section-scoped viewer keeps their server-resolved
+ * roots, even when a URL asks for `scope=global` (issue #92).
+ */
+export function resolveTestScope(
+  realScope: AdminScope | null,
+  options: { isDev: boolean; testRequested: boolean; scopeParam?: string },
+): TestScopeResolution {
+  if (!realScope) return { scope: null, simulatedScope: undefined };
+  if (realScope.kind !== "global") return { scope: realScope, simulatedScope: undefined };
+
+  const shouldSimulate = options.isDev
+    ? options.testRequested || options.scopeParam !== undefined
+    : options.testRequested;
+  if (!shouldSimulate) return { scope: realScope, simulatedScope: undefined };
+
+  switch (options.scopeParam ?? "global") {
+    case "global":
+      return { scope: { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] }, simulatedScope: "global" };
+    case "cluster":
+      return { scope: { kind: "sections", rootIds: [23869] }, simulatedScope: "cluster" };
+    case "region":
+      return { scope: { kind: "sections", rootIds: [23870] }, simulatedScope: "region" };
+    default:
+      return { scope: realScope, simulatedScope: undefined };
+  }
+}
+
 function getAdminPersonIds(): number[] {
   return (process.env.ADMIN_PERSON_IDS ?? "")
     .split(",")

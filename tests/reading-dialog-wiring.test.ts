@@ -141,6 +141,7 @@ function baseProps(overrides: Partial<AppShellProps> = {}): AppShellProps {
     appBaseUrl: "https://example.test",
     devMockToday: "2026-10-12",
     campusGroups: [],
+    testModeAuthorized: true,
     testWritableGroupId: null,
     sectionSlot: null,
     ...overrides,

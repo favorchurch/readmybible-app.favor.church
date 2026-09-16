@@ -14,7 +14,8 @@ function testModeCampusForId(campusId: number | null): TestModeCampus {
 
 export async function GET(request: Request) {
   const session = await getSessionContext();
-  let scope = resolveAdminScope(session);
+  const realScope = resolveAdminScope(session);
+  let scope = realScope;
 
   const url = new URL(request.url);
   const isDev = process.env.NODE_ENV !== "production";
@@ -25,9 +26,10 @@ export async function GET(request: Request) {
     url.searchParams.get("scope") !== null ||
     url.searchParams.get("test") === "1";
   if (hasSimulationQuery) {
-    const isAuthorizedProductionSimulation = isDev || (url.searchParams.get("test") === "1" && scope !== null);
+    const isAuthorizedProductionSimulation =
+      realScope?.kind === "global" && (isDev || url.searchParams.get("test") === "1");
     if (!isAuthorizedProductionSimulation) {
-      scope = null;
+      scope = realScope;
     } else if (url.searchParams.get("test") !== "1") {
       scope = null;
     } else {

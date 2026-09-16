@@ -89,6 +89,7 @@ function baseProps(): AppShellProps {
       { groupId: REAL_GROUP, groupName: "TEST // Connect Group" },
       { groupId: OTHER_GROUP, groupName: "Some Other Group" },
     ],
+    testModeAuthorized: true,
     testWritableGroupId: null,
   };
 }
@@ -139,7 +140,7 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
 
     render(React.createElement(AppShell, baseProps()));
     expandPanel();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: String(OTHER_GROUP) } });
     const roleControl = screen.getByRole("group", { name: /role/i });
     fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
     const navLeader = screen.getAllByRole("button", { name: /^leader$/i }).find((el) => !roleControl.contains(el));
@@ -162,9 +163,9 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     await waitFor(() => expect(screen.getByText("SOMECODE")).toBeTruthy());
 
     // Switch groups a couple of times -- still never a write.
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: String(OTHER_GROUP) } });
     await waitFor(() => expect(getJoinCodeForGroup).toHaveBeenCalledWith(OTHER_GROUP));
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "" } });
     await waitFor(() => expect(getJoinCodeForGroup).toHaveBeenCalledWith(REAL_GROUP));
 
     expect(getOrCreateJoinCode).not.toHaveBeenCalled();
@@ -182,7 +183,7 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     render(React.createElement(AppShell, props));
 
     expandPanel();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: String(OTHER_GROUP) } });
     const roleControl = screen.getByRole("group", { name: /role/i });
     fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
     const navLeader = screen

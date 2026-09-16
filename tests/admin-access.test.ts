@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveAdminScope, resolveScopeRole } from "@/lib/admin/access";
+import { resolveAdminScope, resolveScopeRole, resolveTestScope } from "@/lib/admin/access";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import type { SessionContext } from "@/lib/session";
 
@@ -104,5 +104,32 @@ describe("resolveScopeRole", () => {
       [{ name: "Young Adults East", children: [] }],
     );
     expect(role).toBe("Regional Leader");
+  });
+});
+
+describe("resolveTestScope", () => {
+  it("keeps a section admin on their real roots despite scope=global", () => {
+    const realScope = { kind: "sections" as const, rootIds: [100] };
+    expect(resolveTestScope(realScope, { isDev: false, testRequested: true, scopeParam: "global" })).toEqual({
+      scope: realScope,
+      simulatedScope: undefined,
+    });
+  });
+
+  it("allows a global admin to simulate a narrower scope", () => {
+    expect(resolveTestScope(
+      { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] },
+      { isDev: false, testRequested: true, scopeParam: "region" },
+    )).toEqual({
+      scope: { kind: "sections", rootIds: [23870] },
+      simulatedScope: "region",
+    });
+  });
+
+  it("never creates a scope for an unauthorised session", () => {
+    expect(resolveTestScope(null, { isDev: true, testRequested: true, scopeParam: "global" })).toEqual({
+      scope: null,
+      simulatedScope: undefined,
+    });
   });
 });
