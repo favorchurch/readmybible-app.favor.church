@@ -5,7 +5,6 @@ export type Tab = "today" | "connect" | "rewards" | "progress" | "leader";
 const BASE_NAV_ITEMS: { id: Tab; label: string; icon: NavIconName }[] = [
   { id: "today", label: "Today", icon: "home" },
   { id: "connect", label: "Connect", icon: "people" },
-  { id: "rewards", label: "Rewards", icon: "medal" },
   { id: "progress", label: "Progress", icon: "progress" },
 ];
 
