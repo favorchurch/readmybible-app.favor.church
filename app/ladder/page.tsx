@@ -38,6 +38,8 @@ export default async function LadderPage(props: {
   const searchParams = props.searchParams ? await props.searchParams : {};
   const viewer = viewerFrom(searchParams.viewer);
   const variant = variantFrom(searchParams.variant);
+  const viewerConfig = LADDER_VIEWERS[viewer];
+  const ownGroupId = "ownGroupId" in viewerConfig ? viewerConfig.ownGroupId : null;
   const { sections, unavailableGroupIds } = await loadLadderTreeAs(viewer);
 
   return (
@@ -45,6 +47,7 @@ export default async function LadderPage(props: {
       roots={sections}
       unavailableGroupIds={unavailableGroupIds}
       viewer={viewer}
+      ownGroupId={ownGroupId}
       viewers={Object.entries(LADDER_VIEWERS).map(([key, value]) => ({ key, label: value.label }))}
       initialVisitedKey={visitKeyFrom(searchParams.home)}
       initialVariant={variant}

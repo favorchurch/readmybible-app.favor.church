@@ -25,6 +25,7 @@ export function LadderPrototype({
   roots,
   unavailableGroupIds,
   viewer,
+  ownGroupId,
   viewers,
   initialVisitedKey,
   initialVariant,
@@ -32,6 +33,7 @@ export function LadderPrototype({
   roots: SectionWithStats[];
   unavailableGroupIds: number[];
   viewer: string;
+  ownGroupId: number | null;
   viewers: Array<{ key: string; label: string }>;
   initialVisitedKey?: `group:${number}` | null;
   initialVariant: LadderVariant;
@@ -78,6 +80,7 @@ export function LadderPrototype({
           roots={roots}
           unavailableGroupIds={unavailableGroupIds}
           viewer={viewer}
+          ownGroupId={ownGroupId}
           viewers={viewers}
           initialVisitedKey={currentVisitedKey}
           onChangeViewer={(next) => {

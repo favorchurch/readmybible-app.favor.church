@@ -1,10 +1,10 @@
 /**
  * Reachability gate for the home-ladder prototype route.
  *
- * The ladder prototype renders a frozen fixture containing real member names
- * and synthetic check-in numbers. It is a design surface, not a product
- * surface, and `main` deploys straight to production -- so the route must be
- * unreachable in a production build.
+ * The ladder prototype reads live Rock structure at request time and applies
+ * synthetic ratios. It is a design surface, not a product surface, and
+ * `main` deploys straight to production -- so the route must be unreachable
+ * in a production build.
  *
  * This repo already carries an open bug for exactly this failure (issue #52:
  * the `?test=1` debug panel reachable in production), which is why the gate

@@ -17,6 +17,12 @@ import type { LadderGroupLegend } from "@/lib/ladder/legend-contract";
 
 type VisitKey = `group:${number}`;
 type VisitTarget = SectionWithStats["groups"][number];
+type GroupContext = {
+  rootIndex: number;
+  regionIndex: number;
+  region: SectionWithStats;
+  group: VisitTarget;
+};
 
 const CLUSTER_VIEWERS = new Set(["clusterHead", "bigClusterHead", "departmentAsCluster", "singleRegionDepartment", "multiScope"]);
 
@@ -35,6 +41,27 @@ function groupFromKey(groups: SectionWithStats["groups"], key: VisitKey | null):
   return groups.find((group) => group.id === id) ?? null;
 }
 
+function regionsForRoot(root: SectionWithStats): SectionWithStats[] {
+  if (root.children.length > 0) return root.children;
+  return root.groups.length > 0 ? [root] : [];
+}
+
+function findGroupContext(
+  roots: SectionWithStats[],
+  isClusterViewer: boolean,
+  key: VisitKey | null,
+): GroupContext | null {
+  if (!key) return null;
+  for (const [rootIndex, root] of roots.entries()) {
+    const regions = isClusterViewer ? regionsForRoot(root) : [root];
+    for (const [regionIndex, region] of regions.entries()) {
+      const group = groupFromKey(region.groups, key);
+      if (group) return { rootIndex, regionIndex, region, group };
+    }
+  }
+  return null;
+}
+
 function defaultLegendsOn(viewer: string): boolean {
   return viewer === "connectMember" || viewer === "connectLeader";
 }
@@ -43,6 +70,7 @@ export function LadderTownView({
   roots,
   unavailableGroupIds,
   viewer,
+  ownGroupId,
   viewers,
   onChangeViewer,
   initialVisitedKey,
@@ -50,44 +78,50 @@ export function LadderTownView({
   roots: SectionWithStats[];
   unavailableGroupIds: number[];
   viewer: string;
+  ownGroupId: number | null;
   viewers: Array<{ key: string; label: string }>;
   onChangeViewer: (next: string) => void;
   initialVisitedKey?: VisitKey | null;
 }) {
   const isClusterViewer = CLUSTER_VIEWERS.has(viewer);
   const isConnectViewer = viewer === "connectMember" || viewer === "connectLeader";
-  const [rootIndex, setRootIndex] = useState(0);
-  const [regionIndex, setRegionIndex] = useState(0);
+  const initialContext = findGroupContext(roots, isClusterViewer, initialVisitedKey ?? null);
+  const [rootIndex, setRootIndex] = useState(initialContext?.rootIndex ?? 0);
+  const [regionIndex, setRegionIndex] = useState(initialContext?.regionIndex ?? 0);
   const [cursor, setCursor] = useState(0);
   const [visitedKey, setVisitedKey] = useState<VisitKey | null>(initialVisitedKey ?? null);
+  const [visitEntryActive, setVisitEntryActive] = useState(false);
   const [bonusesResolved, setBonusesResolved] = useState(false);
   const [showLegends, setShowLegends] = useState(() => defaultLegendsOn(viewer));
 
   useEffect(() => {
     const onPopState = () => {
       const next = visitKeyFrom(new URL(window.location.href).searchParams.get("home") ?? undefined);
+      const context = findGroupContext(roots, isClusterViewer, next);
+      if (context) {
+        setRootIndex(context.rootIndex);
+        setRegionIndex(context.regionIndex);
+        setCursor(0);
+      }
       setVisitedKey(next);
+      setVisitEntryActive(false);
       setBonusesResolved(Boolean(next));
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [isClusterViewer, roots]);
 
   const safeRootIndex = Math.min(rootIndex, Math.max(0, roots.length - 1));
   const root = roots[safeRootIndex];
-  const regions = root
-    ? root.children.length > 0
-      ? root.children
-      : root.groups.length > 0
-        ? [root]
-        : []
-    : [];
+  const regions = root ? regionsForRoot(root) : [];
   const safeRegionIndex = Math.min(regionIndex, Math.max(0, regions.length - 1));
-  const region = isClusterViewer ? regions[safeRegionIndex] : root;
+  const currentRegion = isClusterViewer ? regions[safeRegionIndex] : root;
+  const visitContext = findGroupContext(roots, isClusterViewer, visitedKey);
+  const region = visitContext?.region ?? currentRegion;
   const groups = region?.groups ?? [];
   const safeCursor = Math.min(cursor, Math.max(0, groups.length - 1));
-  const visitedGroup = groupFromKey(groups, visitedKey);
-  const ownGroup = isConnectViewer && !visitedKey ? groups[0] ?? null : null;
+  const visitedGroup = visitContext?.group ?? null;
+  const ownGroup = isConnectViewer && !visitedKey ? groupFromKey(groups, ownGroupId === null ? null : `group:${ownGroupId}`) : null;
   const activeGroup = visitedGroup ?? ownGroup;
 
   // #118's amendment: a local Connect view paints first. This timer is only a
@@ -106,7 +140,16 @@ export function LadderTownView({
     const method = historyMode === "push" ? "pushState" : "replaceState";
     window.history[method]({}, "", `${url.pathname}${url.search}${url.hash}`);
     setVisitedKey(next);
+    setVisitEntryActive(historyMode === "push" && next !== null);
     setBonusesResolved(Boolean(next));
+  }
+
+  function returnFromVisit() {
+    if (visitEntryActive) {
+      window.history.back();
+      return;
+    }
+    updateVisited(null, "replace");
   }
 
   if (!root) {
@@ -180,7 +223,7 @@ export function LadderTownView({
           showLegends={showLegends}
           isOwnHome={ownGroup !== null}
           onToggleLegends={() => setShowLegends((visible) => !visible)}
-          onReturn={() => updateVisited(null, "push")}
+          onReturn={returnFromVisit}
         />
       ) : region ? (
         <>
@@ -327,7 +370,7 @@ function VisitedConnectHome({
 }) {
   const [legend, setLegend] = useState<LadderGroupLegend | null>(null);
   const [legendLoading, setLegendLoading] = useState(false);
-  const [legendError, setLegendError] = useState(false);
+  const [legendError, setLegendError] = useState<"forbidden" | "unavailable" | null>(null);
 
   useEffect(() => {
     if (!showLegends) return;
@@ -335,19 +378,19 @@ function VisitedConnectHome({
     const start = window.setTimeout(() => {
       if (cancelled) return;
       setLegendLoading(true);
-      setLegendError(false);
+      setLegendError(null);
       fetch(`/ladder/legend?groupId=${group.id}`, { cache: "no-store" })
-        .then((response) => response.json() as Promise<LadderGroupLegend>)
-        .then((result) => {
+        .then((response) => response.json().then((result) => ({ result: result as LadderGroupLegend, status: response.status })))
+        .then(({ result, status }) => {
           if (cancelled) return;
           setLegendLoading(false);
           if (result.ok) setLegend(result);
-          else setLegendError(true);
+          else setLegendError(status === 401 || status === 403 ? "forbidden" : "unavailable");
         })
         .catch(() => {
           if (cancelled) return;
           setLegendLoading(false);
-          setLegendError(true);
+          setLegendError("unavailable");
         });
     }, 0);
     return () => {
@@ -379,8 +422,10 @@ function VisitedConnectHome({
           <p>Hidden by settings. Authorized Connect viewers can turn it on.</p>
         ) : legendLoading ? (
           <p>Loading the authorized Connect legend…</p>
-        ) : legendError ? (
+        ) : legendError === "forbidden" ? (
           <p>Only authorized leaders or members of this Connect can view the legend.</p>
+        ) : legendError === "unavailable" ? (
+          <p>The legend is temporarily unavailable. Try again shortly.</p>
         ) : legend?.ok && legend.members.length ? (
           <div className="ladder-member-list">
             {legend.members.map((member) => (
