@@ -22,7 +22,8 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 
 const state: TestModeState = {
   groupId: null,
-  viewer: "member",
+  role: "member",
+  campus: 1,
   phase: "active",
   day: 1,
   completionPct: 0,
@@ -34,21 +35,21 @@ afterEach(cleanup);
 describe("TestModePanel default collapsed state (#127)", () => {
   it("renders its body expanded on first mount", () => {
     render(<TestModePanel state={state} onChange={() => {}} />);
-    // The Viewer control lives in the body, so its presence is the body's presence.
-    expect(screen.queryByRole("group", { name: "Viewer" })).not.toBeNull();
+    // The Role control lives in the body, so its presence is the body's presence.
+    expect(screen.queryByRole("group", { name: "Role" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Hide" })).toBeTruthy();
   });
 
   it("still collapses and re-expands via the toggle", () => {
     render(<TestModePanel state={state} onChange={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "Hide" }));
-    expect(screen.queryByRole("group", { name: "Viewer" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Role" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
-    expect(screen.queryByRole("group", { name: "Viewer" })).not.toBeNull();
+    expect(screen.queryByRole("group", { name: "Role" })).not.toBeNull();
   });
 
-  it("does not render a deprecated Admin dashboard link for an admin viewer", () => {
-    render(<TestModePanel state={{ ...state, viewer: "admin" }} onChange={() => {}} />);
+  it("does not render a deprecated Admin dashboard link for an admin-scope role", () => {
+    render(<TestModePanel state={{ ...state, role: "department" }} onChange={() => {}} />);
 
     expect(screen.queryByRole("link", { name: /Admin Dashboard/i })).toBeNull();
     expect(screen.queryByText("Open Admin Dashboard →")).toBeNull();

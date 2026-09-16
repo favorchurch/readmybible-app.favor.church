@@ -24,6 +24,7 @@ import { ProfileEditor } from "@/components/profile-editor";
 import {
   TestModePanel,
   guardWrite,
+  scopeForRole,
   simulatedChapters,
   simulatedGroupRatio,
   simulatedMemberHistory,
@@ -301,17 +302,22 @@ function AppShellInner(props: AppShellProps) {
       readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
   }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
-  const isLeader = testMode.active
-    ? testMode.state.viewer === "leader" || testMode.state.viewer === "admin"
-    : props.isLeader;
-  // While test mode is active, the simulated viewer is the SOLE authority for
+  // One derivation of what the simulated role means, shared with the panel and
+  // the tests (`scopeForRole`, components/test-mode/logic.ts), so the shell
+  // never re-implements the role table inline.
+  const simulatedScope = useMemo(
+    () => scopeForRole(testMode.state.role, testMode.state.campus),
+    [testMode.state.role, testMode.state.campus],
+  );
+  const isLeader = testMode.active ? simulatedScope.isLeader : props.isLeader;
+  // While test mode is active, the simulated role is the SOLE authority for
   // admin scope -- the real signed-in user's own `props.isAdminScope` must not
-  // leak through, or a real admin simulating "member"/"non-member"/"leader"
+  // leak through, or a real admin simulating "member"/"new"/"connect-leader"
   // would still see admin-only surfaces (the Leader tab, the test-mode entry
-  // point, the profile editor's admin section) no matter which viewer they
+  // point, the profile editor's admin section) no matter which role they
   // picked. Issue #121.
   const isAdminScope = testMode.active
-    ? testMode.state.viewer === "admin"
+    ? simulatedScope.isAdminScope
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
   const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
@@ -563,7 +569,7 @@ function AppShellInner(props: AppShellProps) {
     />
   ) : null;
 
-  if (testMode.active && testMode.state.viewer === "non-member") {
+  if (testMode.active && !simulatedScope.hasGroup) {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
