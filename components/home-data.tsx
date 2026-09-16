@@ -16,7 +16,12 @@ import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, g
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
-import { isTestModeRequestedFromQuery } from "@/components/test-mode/logic";
+import {
+  initialTestModeState,
+  isTestModeRequestedFromQuery,
+  scopeForRole,
+  type TestModeCampus,
+} from "@/components/test-mode/logic";
 import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import SectionDashboard, { SectionDashboardSkeleton } from "@/components/sections/section-dashboard";
@@ -24,6 +29,10 @@ import SectionDashboard, { SectionDashboardSkeleton } from "@/components/section
 /** Next hands repeated query keys through as an array; every caller here wants the first value. */
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function testModeCampusForId(campusId: number | null): TestModeCampus {
+  return campusId === 2 || campusId === 3 ? campusId : 1;
 }
 
 export async function HomeData({
@@ -113,19 +122,36 @@ export async function HomeData({
   const isDev = process.env.NODE_ENV !== "production";
   const testParam = firstParam(searchParams.test);
   const scopeParam = firstParam(searchParams.scope);
+  const roleParam = firstParam(searchParams.role) ?? firstParam(searchParams.viewer);
+  const campusParam = firstParam(searchParams.campus);
   const isProdAdminTest = !isDev && scope !== null && testParam === "1";
   const isTest = (isDev && (testParam === "1" || scopeParam !== undefined)) || isProdAdminTest;
   if (isTest || (!scope && isDev)) {
-    const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
-    if (requestedScope === "cluster") {
-      scope = { kind: "sections", rootIds: [23869] }; // Cluster // Cielo Pabalan & Peejay Pabalan
-      simulatedScope = "cluster";
-    } else if (requestedScope === "region") {
-      scope = { kind: "sections", rootIds: [23870] }; // Region // Arnel Guiron & Belle Guiron
-      simulatedScope = "region";
-    } else if (requestedScope === "global" || !scope) {
-      scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
-      simulatedScope = "global";
+    if (roleParam !== undefined || campusParam !== undefined) {
+      const query = new URLSearchParams();
+      if (roleParam !== undefined) query.set("role", roleParam);
+      if (campusParam !== undefined) query.set("campus", campusParam);
+      const state = initialTestModeState(query, testModeCampusForId(session.campusId));
+      const simulated = scopeForRole(state.role, state.campus);
+      if (simulated.isAdminScope && simulated.rootIds) {
+        scope = { kind: "sections", rootIds: simulated.rootIds };
+        simulatedScope = state.role === "cluster" ? "cluster" : state.role === "regional" ? "region" : undefined;
+      } else {
+        scope = null;
+        simulatedScope = undefined;
+      }
+    } else {
+      const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
+      if (requestedScope === "cluster") {
+        scope = { kind: "sections", rootIds: scopeForRole("cluster", 1).rootIds! };
+        simulatedScope = "cluster";
+      } else if (requestedScope === "region") {
+        scope = { kind: "sections", rootIds: scopeForRole("regional", 1).rootIds! };
+        simulatedScope = "region";
+      } else if (requestedScope === "global" || !scope) {
+        scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
+        simulatedScope = "global";
+      }
     }
   }
 
@@ -171,6 +197,7 @@ export async function HomeData({
     campusGroups: [],
     campusGroupsPromise: campusGroupsP,
     testWritableGroupId: writableGroupId,
+    campusId: session.campusId,
     sectionSlot,
   };
 

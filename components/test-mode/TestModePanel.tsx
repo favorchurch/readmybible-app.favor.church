@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, use, useEffect, useMemo, useState } from "react";
+import React, { Suspense, use, useEffect, useMemo, useState } from "react";
 
 import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { PLAN } from "@/lib/plan";
@@ -61,7 +61,13 @@ function GroupPicker({
   selectedGroupId: number | null;
   onSelect: (groupId: number | null) => void;
 }) {
-  const resolved = promise ? use(promise) : groups;
+  const safePromise = useMemo(
+    () => promise?.then((value) => ({ value }), (error: unknown) => ({ error })),
+    [promise],
+  );
+  const result = safePromise ? use(safePromise) : { value: groups };
+  if ("error" in result) throw result.error;
+  const resolved = result.value;
   const [groupFilter, setGroupFilter] = useState("");
 
   // The real active group is offered only as the "(my group)" option, so it is
@@ -144,6 +150,32 @@ function GroupPickerSkeleton() {
   );
 }
 
+class GroupPickerErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <p className="test-mode-note test-mode-note-error" role="alert">
+          Group list is unavailable right now. You can still use the other test controls.
+        </p>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function GroupPickerFailure({ error }: { error: Error }): never {
+  throw error;
+}
+
 export function TestModePanel({
   state,
   onChange,
@@ -173,6 +205,7 @@ export function TestModePanel({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null | undefined>(undefined);
   const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
+  const [groupPickerError, setGroupPickerError] = useState<Error | null>(null);
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
   const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
   const isA2Mismatch =
@@ -196,6 +229,19 @@ export function TestModePanel({
       cancelled = true;
     };
   }, [simulatedGroupId]);
+
+  useEffect(() => {
+    if (!campusGroupsPromise) return;
+    let cancelled = false;
+    campusGroupsPromise.catch((error: unknown) => {
+      if (!cancelled) {
+        setGroupPickerError(error instanceof Error ? error : new Error("Group list unavailable"));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [campusGroupsPromise]);
 
   return (
     <>
@@ -245,17 +291,23 @@ export function TestModePanel({
             <p className="test-mode-note">View-only. Writes disabled.</p>
           )}
 
-          <Suspense fallback={<GroupPickerSkeleton />}>
-            <GroupPicker
-              groups={campusGroups}
-              promise={campusGroupsPromise}
-              realActiveGroup={realActiveGroup}
-              realActiveGroupId={realActiveGroupId}
-              campus={state.campus}
-              selectedGroupId={state.groupId}
-              onSelect={(groupId) => onChange({ ...state, groupId })}
-            />
-          </Suspense>
+          <GroupPickerErrorBoundary key={campusGroupsPromise ? "streamed" : "resolved"}>
+            {groupPickerError ? (
+              <GroupPickerFailure error={groupPickerError} />
+            ) : (
+              <Suspense fallback={<GroupPickerSkeleton />}>
+                <GroupPicker
+                  groups={campusGroups}
+                  promise={campusGroupsPromise}
+                  realActiveGroup={realActiveGroup}
+                  realActiveGroupId={realActiveGroupId}
+                  campus={state.campus}
+                  selectedGroupId={state.groupId}
+                  onSelect={(groupId) => onChange({ ...state, groupId })}
+                />
+              </Suspense>
+            )}
+          </GroupPickerErrorBoundary>
 
           {simulatedGroupId !== null && (
             <p className="test-mode-note test-mode-join-code" data-testid="test-mode-join-code">

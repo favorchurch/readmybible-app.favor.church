@@ -175,7 +175,7 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
   // of their own -- exactly the population the test-mode entry point is gated
   // to -- then hit LeaderScreen's no-group early return, so the tile never
   // rendered and the fetch never fired.
-  it("renders the code tile for a groupless department role who picks a group in the panel", async () => {
+  it("renders the code tile for a groupless connect-leader role who picks a group in the panel", async () => {
     getJoinCodeForGroup.mockResolvedValue({ ok: true, code: "PICKEDCODE", groupId: OTHER_GROUP });
 
     const props: AppShellProps = { ...baseProps(), activeGroup: null, isAdminScope: true };

@@ -10,7 +10,7 @@
  */
 
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TestModePanel } from "@/components/test-mode/TestModePanel";
@@ -53,5 +53,32 @@ describe("TestModePanel default collapsed state (#127)", () => {
 
     expect(screen.queryByRole("link", { name: /Admin Dashboard/i })).toBeNull();
     expect(screen.queryByText("Open Admin Dashboard →")).toBeNull();
+  });
+
+  it("keeps the panel recoverable when the streamed group list fails", async () => {
+    let rejectGroups!: (error: Error) => void;
+    const campusGroupsPromise = new Promise<never>((_, reject) => {
+      rejectGroups = reject;
+    });
+    const view = render(
+      <TestModePanel
+        state={state}
+        onChange={() => {}}
+        campusGroupsPromise={campusGroupsPromise}
+      />,
+    );
+
+    await act(async () => {
+      rejectGroups(new Error("group service unavailable"));
+    });
+    view.rerender(
+      <TestModePanel
+        state={state}
+        onChange={() => {}}
+        campusGroupsPromise={campusGroupsPromise}
+      />,
+    );
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/group list is unavailable/i));
+    expect(screen.getByRole("group", { name: "Role" })).toBeTruthy();
   });
 });

@@ -278,7 +278,7 @@ describe("AppShell wiring: the Leader tab follows the simulated role, not the re
     return screen.getByRole("navigation", { name: "Main navigation" });
   }
 
-  function pickRole(label: "Member" | "Connect Leader" | "Department" | "New") {
+  function pickRole(label: "Member" | "Connect Leader" | "Department" | "Cluster" | "Regional" | "New") {
     // The panel is expanded by default (#127); click Show only if some
     // future default leaves it collapsed. Asserts nothing either way.
     const show = screen.queryByRole("button", { name: /^show$/i });
@@ -325,6 +325,54 @@ describe("AppShell wiring: the Leader tab follows the simulated role, not the re
     pickRole("Department");
 
     expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
+  });
+
+  it("renders the section surface only for the three simulated admin roles", () => {
+    const roles = [
+      ["New", false],
+      ["Member", false],
+      ["Connect Leader", false],
+      ["Department", true],
+      ["Cluster", true],
+      ["Regional", true],
+    ] as const;
+
+    for (const [role, hasSectionSurface] of roles) {
+      cleanup();
+      const props: AppShellProps = {
+        ...baseProps(),
+        isAdminScope: true,
+        sectionSlot: React.createElement("div", { "data-testid": "section-surface" }, "Section surface"),
+      };
+      render(React.createElement(AppShell, props));
+      pickRole(role);
+
+      if (hasSectionSurface || role === "Connect Leader") {
+        fireEvent.click(within(mainNav()).getByRole("button", { name: "Leader" }));
+      }
+
+      expect(screen.queryByTestId("section-surface") !== null).toBe(hasSectionSurface);
+    }
+  });
+
+  it("defaults test mode to the real Brisbane campus", () => {
+    const props = Object.assign(baseProps(), { campusId: 2 }) as AppShellProps;
+    render(React.createElement(AppShell, props));
+
+    expect(screen.getByRole("button", { name: "BNE" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "MNL" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("publishes role and campus selections for the server scope", () => {
+    window.history.replaceState(null, "", "/?test=1");
+    render(React.createElement(AppShell, baseProps()));
+
+    fireEvent.click(screen.getByRole("button", { name: "BNE" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Role" })).getByRole("button", { name: "Regional" }));
+
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get("role")).toBe("regional");
+    expect(params.get("campus")).toBe("BNE");
   });
 
   it("no regression: outside test mode, a real admin-scope user still sees the Leader tab", () => {
