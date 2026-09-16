@@ -40,6 +40,43 @@ export type TestModeRole =
   | "cluster"
   | "regional";
 
+export type SyntheticTestModeScenario =
+  | "two-regions"
+  | "two-connect-memberships"
+  | "multi-scope-leadership"
+  | "connect-and-upstream-leader"
+  | "upstream-leader-no-connect"
+  | "ordinary-member"
+  | "ordinary-non-member";
+
+export type TestModeScenario = "real" | SyntheticTestModeScenario;
+
+export const SYNTHETIC_TEST_MODE_SCENARIOS = [
+  "two-regions",
+  "two-connect-memberships",
+  "multi-scope-leadership",
+  "connect-and-upstream-leader",
+  "upstream-leader-no-connect",
+  "ordinary-member",
+  "ordinary-non-member",
+] as const satisfies readonly SyntheticTestModeScenario[];
+
+export const TEST_MODE_SCENARIOS: ReadonlyArray<{
+  value: TestModeScenario;
+  label: string;
+  description: string;
+  defaultRole: TestModeRole;
+}> = [
+  { value: "real", label: "Real authorized data", description: "Only groups in your real admin scope load from Rock.", defaultRole: "department" },
+  { value: "two-regions", label: "Two regions", description: "Synthetic upstream scope with two regions.", defaultRole: "regional" },
+  { value: "two-connect-memberships", label: "Two Connect memberships", description: "Synthetic reader with two Connect memberships.", defaultRole: "member" },
+  { value: "multi-scope-leadership", label: "Multi-scope leadership", description: "Synthetic leader over two Connect scopes.", defaultRole: "regional" },
+  { value: "connect-and-upstream-leader", label: "Connect + upstream leader", description: "Synthetic Connect leader who also leads upstream.", defaultRole: "regional" },
+  { value: "upstream-leader-no-connect", label: "Upstream leader, no Connect", description: "Synthetic upstream leader without a Connect membership.", defaultRole: "regional" },
+  { value: "ordinary-member", label: "Ordinary member", description: "Synthetic ordinary member regression state.", defaultRole: "member" },
+  { value: "ordinary-non-member", label: "Ordinary non-member", description: "Synthetic no-membership regression state.", defaultRole: "new" },
+];
+
 /** Rock CampusIds: 1 = Manila (MNL), 2 = Brisbane (BNE), 3 = Seoul (SEL). */
 export type TestModeCampus = 1 | 2 | 3;
 
@@ -49,12 +86,18 @@ export const TEST_MODE_CAMPUSES: ReadonlyArray<{ id: TestModeCampus; code: strin
   { id: 3, code: "SEL", name: "Seoul" },
 ];
 
+export function testModeCampusFromSession(campusId: number | null): TestModeCampus {
+  const matchingCampus = TEST_MODE_CAMPUSES.find((campus) => campus.id === campusId);
+  return matchingCampus?.id ?? TEST_MODE_CAMPUSES[0].id;
+}
+
 export type TestModeState = {
   day: number;
   phase: SimulatedPhase;
   completionPct: number;
   groupPct: number;
   groupId: number | null;
+  scenario: TestModeScenario;
   role: TestModeRole;
   campus: TestModeCampus;
 };
@@ -253,6 +296,7 @@ export function initialTestModeState(
     completionPct: 0,
     groupPct: 0,
     groupId: null,
+    scenario: "real",
     role,
     campus: campusFromParams(searchParams, sessionCampus),
   };

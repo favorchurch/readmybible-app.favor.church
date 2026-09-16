@@ -98,6 +98,7 @@ function baseProps(): AppShellProps {
     devMockToday: null,
     sectionSlot: null,
     campusGroups: [{ groupId: SANDBOX, groupName: "TEST // Connect Group" }],
+    testModeAuthorized: true,
     testWritableGroupId: SANDBOX,
   };
 }
@@ -256,7 +257,7 @@ describe("AppShell wiring: a simulated group never falls back to the real group"
     const show = screen.queryByRole("button", { name: /^show$/i });
     if (show) fireEvent.click(show);
   }
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "999" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "999" } });
 
     // "Rico Test" is the REAL group's only member. It must not appear under a
     // different group's selection -- that was the silent wrong-group render.

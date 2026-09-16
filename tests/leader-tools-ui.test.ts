@@ -256,6 +256,7 @@ describe("AppShell leader role guard and paper noise", () => {
         activeGroup: { groupId: 1, groupName: "Alex's Connect", campusId: 1, roleId: 24, isLeader: true },
         needsGroupChoice: false,
         campusGroups: [],
+        testModeAuthorized: true,
         testWritableGroupId: null,
         isLeader: true,
         campusName: "Manila",

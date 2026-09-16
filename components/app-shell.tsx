@@ -29,11 +29,12 @@ import {
   simulatedGroupRatio,
   simulatedMemberHistory,
   simulatedTodayState,
+  syntheticTestModeView,
+  testModeCampusFromSession,
   useTestMode,
   dateForSimulatedDay,
   writesBlocked,
   TEST_MODE_CAMPUSES,
-  type TestModeCampus,
 } from "@/components/test-mode";
 import { useToday } from "@/components/use-today";
 import { BottomNav, type Tab } from "@/components/screens/bottom-nav";
@@ -92,6 +93,7 @@ export type AppShellProps = {
   campusGroupsPromise?: Promise<{ groupId: number; groupName: string }[]>;
   testWritableGroupId: number | null;
   campusId?: number | null;
+  testModeAuthorized: boolean;
   isAdminScope?: boolean;
   sectionSlot: React.ReactNode | null;
 };
@@ -112,23 +114,37 @@ function AppShellInner(props: AppShellProps) {
   const router = useRouter();
   const runToastAction = useToastAction();
   const realToday = useToday(props.devMockToday);
-  const sessionCampus: TestModeCampus = props.campusId === 2 || props.campusId === 3 ? props.campusId : 1;
-  const testMode = useTestMode(sessionCampus);
+  const testMode = useTestMode(
+    props.testModeAuthorized,
+    testModeCampusFromSession(props.campusId ?? null),
+  );
+  const syntheticView = useMemo(
+    () =>
+      testMode.active && testMode.state.scenario !== "real"
+        ? syntheticTestModeView(testMode.state.scenario, testMode.state.campus)
+        : null,
+    [testMode.active, testMode.state.scenario, testMode.state.campus],
+  );
   const simulatedToday = useMemo(
     () => simulatedTodayState(dateForSimulatedDay(testMode.state.day, testMode.state.phase), realToday.timezone),
     [testMode.state.day, testMode.state.phase, realToday.timezone],
   );
   const today = testMode.active ? simulatedToday : realToday;
-  const blocked = useMemo(
-    () =>
-      writesBlocked(
-        testMode.active,
-        testMode.state.groupId,
-        props.activeGroup?.groupId ?? null,
-        props.testWritableGroupId,
-      ),
-    [testMode.active, testMode.state.groupId, props.activeGroup?.groupId, props.testWritableGroupId],
-  );
+  const blocked = useMemo(() => {
+    if (testMode.active && testMode.state.scenario !== "real") return true;
+    return writesBlocked(
+      testMode.active,
+      testMode.state.groupId,
+      props.activeGroup?.groupId ?? null,
+      props.testWritableGroupId,
+    );
+  }, [
+    testMode.active,
+    testMode.state.scenario,
+    testMode.state.groupId,
+    props.activeGroup?.groupId,
+    props.testWritableGroupId,
+  ]);
   // Only checkIn is ever unblocked by the sandbox group. It writes a check-in
   // row against the server's real active group, which `writesBlocked` has
   // already pinned to the sandbox -- so the write cannot land anywhere else.
@@ -160,7 +176,7 @@ function AppShellInner(props: AppShellProps) {
   // real active group when nothing is picked -- same resolution TestModePanel
   // already uses for its own "Join code: ..." preview (`simulatedGroupId`
   // there), so the two stay showing the same group's code.
-  const simulatedGroupId = testMode.active
+  const simulatedGroupId = testMode.active && testMode.state.scenario === "real"
     ? (testMode.state.groupId ?? props.activeGroup?.groupId ?? null)
     : null;
   // Read-only substitute for `getOrCreateJoinCode` while test mode is active:
@@ -171,6 +187,9 @@ function AppShellInner(props: AppShellProps) {
   // a fabricated code.
   const testModeGetJoinCode = useMemo(() => {
     return async (): Promise<JoinCodeResult> => {
+      if (testMode.state.scenario !== "real") {
+        return { ok: false, error: "Synthetic scenarios do not have real join codes.", reason: "no-code-yet" };
+      }
       if (simulatedGroupId === null) {
         return { ok: false, error: "No group code yet.", reason: "no-code-yet" };
       }
@@ -181,7 +200,7 @@ function AppShellInner(props: AppShellProps) {
       }
       return { ok: true, code: result.code };
     };
-  }, [simulatedGroupId]);
+  }, [simulatedGroupId, testMode.state.scenario]);
 
   const [snapshot, setSnapshot] = useState<{
     groupId: number;
@@ -193,7 +212,7 @@ function AppShellInner(props: AppShellProps) {
   const [snapshotError, setSnapshotError] = useState<{ groupId: number; error: string } | null>(null);
 
   useEffect(() => {
-    if (!testMode.active || testMode.state.groupId === null) {
+    if (!testMode.active || testMode.state.scenario !== "real" || testMode.state.groupId === null) {
       return;
     }
 
@@ -226,7 +245,7 @@ function AppShellInner(props: AppShellProps) {
     return () => {
       cancelled = true;
     };
-  }, [testMode.active, testMode.state.groupId]);
+  }, [testMode.active, testMode.state.scenario, testMode.state.groupId]);
 
   // The server-sent profile is the source of truth. `optimisticProfile`
   // briefly overrides it between a saveProfile call and the router.refresh()
@@ -282,29 +301,46 @@ function AppShellInner(props: AppShellProps) {
   const currentStreak = computeStreak(props.readingDates, today.todayLocal);
 
   const currentSnapshot =
-    testMode.active && snapshot && snapshot.groupId === testMode.state.groupId ? snapshot : null;
+    testMode.active &&
+    testMode.state.scenario === "real" &&
+    snapshot &&
+    snapshot.groupId === testMode.state.groupId
+      ? snapshot
+      : null;
 
   // A group is being simulated but its snapshot hasn't arrived (still loading,
   // or the action errored). Falling back to props.* here would render the
   // reader's OWN group's members and stats under the selected group's name --
   // the wrong group, silently, in a tool whose whole value is trusting what you
   // see. Render an explicit empty state instead.
-  const awaitingSnapshot = testMode.active && testMode.state.groupId !== null && !currentSnapshot;
+  const awaitingSnapshot =
+    testMode.active &&
+    testMode.state.scenario === "real" &&
+    testMode.state.groupId !== null &&
+    !currentSnapshot;
 
-  const groupName = currentSnapshot
-    ? currentSnapshot.groupName
-    : awaitingSnapshot
-      ? null
-      : (props.activeGroup?.groupName ?? null);
-  const campusName = currentSnapshot
-    ? currentSnapshot.campusName
-    : awaitingSnapshot
-      ? null
-      : props.campusName;
+  const groupName = syntheticView
+    ? syntheticView.groupName
+    : currentSnapshot
+      ? currentSnapshot.groupName
+      : awaitingSnapshot
+        ? null
+        : (props.activeGroup?.groupName ?? null);
+  const campusName = syntheticView
+    ? syntheticView.campusName
+    : currentSnapshot
+      ? currentSnapshot.campusName
+      : awaitingSnapshot
+        ? null
+        : props.campusName;
 
   const groupStats = useMemo((): GroupStats | null => {
     if (awaitingSnapshot) return null;
-    const baseStats = currentSnapshot ? currentSnapshot.groupStats : props.groupStats;
+    const baseStats = syntheticView
+      ? syntheticView.groupStats
+      : currentSnapshot
+        ? currentSnapshot.groupStats
+        : props.groupStats;
     if (!testMode.active) return baseStats;
     const ratio = simulatedGroupRatio(testMode.state.groupPct);
     const memberCount = baseStats?.memberCount ?? 1;
@@ -314,7 +350,7 @@ function AppShellInner(props: AppShellProps) {
       ratio,
       readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
-  }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
+  }, [testMode.active, testMode.state.groupPct, currentSnapshot, syntheticView, props.groupStats, awaitingSnapshot]);
   // One derivation of what the simulated role means, shared with the panel and
   // the tests (`scopeForRole`, components/test-mode/logic.ts), so the shell
   // never re-implements the role table inline.
@@ -353,7 +389,11 @@ function AppShellInner(props: AppShellProps) {
 
   const roster = useMemo(() => {
     if (awaitingSnapshot) return [];
-    const baseRoster = currentSnapshot ? currentSnapshot.roster : props.roster;
+    const baseRoster = syntheticView
+      ? syntheticView.roster
+      : currentSnapshot
+        ? currentSnapshot.roster
+        : props.roster;
     if (!testMode.active) return baseRoster;
     return baseRoster.map((member) => {
       const simulated = simulatedMemberHistory(member.personId, testMode.state.completionPct, today.todayLocal);
@@ -364,7 +404,7 @@ function AppShellInner(props: AppShellProps) {
         readingDates: simulated.readingDates,
       };
     });
-  }, [testMode.active, currentSnapshot, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
+  }, [testMode.active, currentSnapshot, syntheticView, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
   const catchUpChapter = useMemo(() => {
     const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
@@ -577,8 +617,8 @@ function AppShellInner(props: AppShellProps) {
       : null;
 
   const connectSwitcher: ConnectSwitcherContext = {
-    memberships: props.memberships,
-    activeGroup: props.activeGroup,
+    memberships: syntheticView?.memberships ?? props.memberships,
+    activeGroup: syntheticView ? syntheticView.activeGroup : props.activeGroup,
     pending,
     onChooseGroup: handleChooseGroup,
   };
@@ -595,6 +635,13 @@ function AppShellInner(props: AppShellProps) {
       campusGroups={props.campusGroups}
       campusGroupsPromise={props.campusGroupsPromise}
       writableGroupId={props.testWritableGroupId}
+      loading={
+        testMode.active &&
+        testMode.state.scenario === "real" &&
+        testMode.state.groupId !== null &&
+        currentSnapshot === null &&
+        currentSnapshotError === null
+      }
       error={currentSnapshotError}
     />
   ) : null;
@@ -609,7 +656,7 @@ function AppShellInner(props: AppShellProps) {
     );
   }
 
-  if (props.needsGroupChoice) {
+  if (props.needsGroupChoice && !syntheticView) {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
@@ -619,8 +666,11 @@ function AppShellInner(props: AppShellProps) {
     );
   }
 
-  const effectiveHasGroup =
-    testMode.active && testMode.state.groupId !== null ? true : !!props.activeGroup;
+  const effectiveHasGroup = syntheticView
+    ? syntheticView.activeGroup !== null
+    : testMode.active && testMode.state.groupId !== null
+      ? true
+      : !!props.activeGroup;
 
   // A viewer with admin scope (regional/cluster/department head, or an
   // ADMIN_PERSON_IDS admin) still reaches the full shell even with no
@@ -707,7 +757,7 @@ function AppShellInner(props: AppShellProps) {
           today={today}
           profile={profile}
           appBaseUrl={props.appBaseUrl}
-          readerGroupId={testMode.active ? simulatedGroupId : (props.activeGroup?.groupId ?? null)}
+          readerGroupId={testMode.active ? (syntheticView?.activeGroup?.groupId ?? simulatedGroupId) : (props.activeGroup?.groupId ?? null)}
           onGetOrCreateJoinCode={testMode.active ? testModeGetJoinCode : guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
@@ -717,7 +767,7 @@ function AppShellInner(props: AppShellProps) {
           // pick a group in the panel and still hit LeaderScreen's no-group early
           // return -- no code tile at all, and the fetch never fired. That is
           // exactly the population the test-mode entry point is gated to.
-          hasGroupView={testMode.active ? simulatedGroupId !== null : !!props.activeGroup}
+          hasGroupView={testMode.active ? (syntheticView ? syntheticView.activeGroup !== null : simulatedGroupId !== null) : !!props.activeGroup}
         />
       )}
       <BottomNav

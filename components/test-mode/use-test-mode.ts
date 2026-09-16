@@ -25,9 +25,12 @@ export type TestMode = {
  * the panel opens scoped to where the tester actually is. It only seeds the
  * initial state -- once the panel is open the campus pills own the value.
  */
-export function useTestMode(sessionCampus: TestModeCampus = 1): TestMode {
+export function useTestMode(authorized: boolean, sessionCampus: TestModeCampus = 1): TestMode {
   const searchParams = useSearchParams();
-  const active = useMemo(() => isTestModeRequested(searchParams), [searchParams]);
+  const active = useMemo(
+    () => authorized && isTestModeRequested(searchParams),
+    [authorized, searchParams],
+  );
   const [state, setState] = useState<TestModeState>(() =>
     initialTestModeState(searchParams, sessionCampus),
   );

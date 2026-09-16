@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
 import { TEST_MODE_PARAM } from "./logic";
 
@@ -17,6 +18,7 @@ export function TestModeEntry({ visible }: { visible: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   if (!visible) return null;
   if (searchParams.get(TEST_MODE_PARAM) === "1") return null;
@@ -24,12 +26,19 @@ export function TestModeEntry({ visible }: { visible: boolean }) {
   function activate() {
     const next = new URLSearchParams(searchParams.toString());
     next.set(TEST_MODE_PARAM, "1");
-    router.push(`${pathname}?${next.toString()}`);
+    startTransition(() => router.push(`${pathname}?${next.toString()}`));
   }
 
   return (
-    <button type="button" className="test-mode-entry" onClick={activate} data-testid="test-mode-entry">
-      Enter test mode
+    <button
+      type="button"
+      className="test-mode-entry"
+      onClick={activate}
+      disabled={isPending}
+      aria-busy={isPending}
+      data-testid="test-mode-entry"
+    >
+      {isPending ? "Loading test mode…" : "Enter test mode"}
     </button>
   );
 }

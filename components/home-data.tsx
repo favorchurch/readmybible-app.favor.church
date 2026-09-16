@@ -12,8 +12,7 @@ import {
   getGroupStats,
   getPersonReadingState,
 } from "@/lib/data/stats";
-import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
-import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
+import { getCampusName, getRoster } from "@/lib/rock/client";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
 import {
@@ -22,6 +21,7 @@ import {
   type TestModeCampus,
 } from "@/components/test-mode/logic";
 import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
+import { getAuthorizedTestGroupOptions, isTestModeAuthorized } from "@/lib/test-mode-auth";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import SectionDashboard, { SectionDashboardSkeleton } from "@/components/sections/section-dashboard";
 
@@ -57,39 +57,18 @@ export async function HomeData({
     : Promise.resolve(new Map());
 
   const writableGroupId = testWritableGroupId();
+  const realAdminScope = resolveAdminScope(session);
+  const testModeAuthorized = isTestModeAuthorized(session);
 
-  // Test mode simulates ANY active Connect Group, org-wide, across all campuses.
-  // The sandbox is still fetched by id and appended if missing, because it is
-  // the one group test mode can write to and it would drop off the list if it
-  // were ever archived or deactivated.
-  //
-  // Gated on the URL actually asking for test mode: this is a several-hundred-group
-  // Rock call that only the test panel reads, and it used to block the shell render
-  // for every logged-in user on every page load. `isTestModeRequestedFromQuery` is
-  // the same trigger list the client panel activates on, so the list is present
-  // whenever the panel can appear and skipped otherwise.
+  // The list is both expensive and sensitive. The server auth helper limits it
+  // to the tester's genuine global or section-admin scope before any group list
+  // is fetched.
   const wantsTestMode = isTestModeRequestedFromQuery(searchParams);
   type CampusGroupRow = { groupId: number; groupName: string };
-  const campusGroupsP: Promise<CampusGroupRow[]> = !wantsTestMode ? Promise.resolve([]) : (async () => {
-    const [allGroups, campusNames, sandbox] = await Promise.all([
-      getAllConnectGroups(),
-      getAllCampusNames(),
-      writableGroupId ? getGroupBasic(writableGroupId) : Promise.resolve(null),
-    ]);
-    // Several hundred groups share names across campuses, so label each with
-    // its campus and sort, or the picker is unusable.
-    const list = allGroups
-      .filter((g) => g.GroupTypeId === GROUP_TYPE_CONNECT_GROUP)
-      .map((g) => {
-        const campus = g.CampusId === null ? null : (campusNames.get(g.CampusId) ?? null);
-        return { groupId: g.Id, groupName: campus ? `${g.Name} — ${campus}` : g.Name };
-      })
-      .sort((a, b) => a.groupName.localeCompare(b.groupName));
-    if (sandbox && !list.some((g) => g.groupId === sandbox.Id)) {
-      list.unshift({ groupId: sandbox.Id, groupName: sandbox.Name });
-    }
-    return list;
-  })();
+  const campusGroupsP: Promise<CampusGroupRow[]> =
+    !wantsTestMode || !testModeAuthorized
+      ? Promise.resolve([])
+      : getAuthorizedTestGroupOptions(session);
 
   // `campusGroupsP` is deliberately absent from this Promise.all. It is handed
   // to AppShell UNRESOLVED and read behind a Suspense boundary in the panel, so
@@ -118,7 +97,7 @@ export async function HomeData({
   const savedAvatars = new Map(rosterProfiles.map((row) => [row.personId, row.avatar]));
   const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
-  let scope = resolveAdminScope(session);
+  let scope = realAdminScope;
   let simulatedScope: "global" | "cluster" | "region" | "department" | undefined;
   let simulatedCampus: TestModeCampus | undefined;
 
@@ -135,7 +114,7 @@ export async function HomeData({
   const campusParam = firstParam(searchParams.campus);
   const isProdAdminTest = !isDev && scope !== null && testParam === "1";
   const isTest = (isDev && (testParam === "1" || scopeParam !== undefined)) || isProdAdminTest;
-  if (isTest || (!scope && isDev)) {
+  if ((isTest || (!scope && isDev)) && scope?.kind === "global") {
     const hasSimulationQuery =
       roleParam !== undefined || campusParam !== undefined || scopeParam !== undefined || testParam === "1";
     if (hasSimulationQuery) {
@@ -152,8 +131,8 @@ export async function HomeData({
         simulatedCampus = undefined;
       }
     } else {
-      const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
-      if (requestedScope === "global" || !scope) {
+      const requestedScope = scopeParam ?? "global";
+      if (requestedScope === "global") {
         scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
         simulatedScope = "global";
       }
@@ -182,6 +161,7 @@ export async function HomeData({
     needsGroupChoice: session.needsGroupChoice,
     isLeader: session.isLeader,
     isAdminScope: session.isAdminScope,
+    testModeAuthorized,
     campusName,
     roster: roster.map((m) => {
       const history = memberReadingMap.get(m.PersonId);

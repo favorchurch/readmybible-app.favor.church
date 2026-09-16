@@ -90,6 +90,7 @@ function baseProps(): AppShellProps {
     devMockToday: null,
     sectionSlot: null,
     campusGroups: [{ groupId: SANDBOX, groupName: "TEST // Connect Group" }],
+    testModeAuthorized: true,
     testWritableGroupId: SANDBOX,
   };
 }

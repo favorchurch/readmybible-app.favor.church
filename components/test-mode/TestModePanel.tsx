@@ -7,9 +7,11 @@ import { PLAN } from "@/lib/plan";
 import {
   STAGE_PRESETS,
   TEST_MODE_CAMPUSES,
+  TEST_MODE_SCENARIOS,
   writesBlocked,
   type SimulatedPhase,
   type TestModeRole,
+  type TestModeScenario,
   type TestModeState,
 } from "./logic";
 
@@ -29,6 +31,10 @@ const ROLES: { value: TestModeRole; label: string }[] = [
   { value: "cluster", label: "Cluster" },
   { value: "department", label: "Department" },
 ];
+
+function scenarioFromValue(value: string): TestModeScenario | null {
+  return TEST_MODE_SCENARIOS.find((scenario) => scenario.value === value)?.value ?? null;
+}
 
 export type CampusGroupOption = {
   groupId: number;
@@ -183,6 +189,7 @@ export function TestModePanel({
   campusGroups = [],
   campusGroupsPromise,
   writableGroupId = null,
+  loading = false,
   error = null,
 }: {
   state: TestModeState;
@@ -191,6 +198,7 @@ export function TestModePanel({
   campusGroups?: CampusGroupOption[];
   campusGroupsPromise?: Promise<CampusGroupOption[]>;
   writableGroupId?: number | null;
+  loading?: boolean;
   error?: string | null;
 }) {
   // Expanded by default: ?test=1 is an explicit opt-in, so the tester has
@@ -207,10 +215,11 @@ export function TestModePanel({
   const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
   const [groupPickerError, setGroupPickerError] = useState<Error | null>(null);
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
-  const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
+  const isSynthetic = state.scenario !== "real";
+  const isBlocked = isSynthetic || writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
   const isA2Mismatch =
-    writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
-  const simulatedGroupId = state.groupId ?? realActiveGroupId;
+    !isSynthetic && writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
+  const simulatedGroupId = !isSynthetic ? (state.groupId ?? realActiveGroupId) : null;
 
   useEffect(() => {
     if (simulatedGroupId === null) return;
@@ -291,23 +300,63 @@ export function TestModePanel({
             <p className="test-mode-note">View-only. Writes disabled.</p>
           )}
 
-          <GroupPickerErrorBoundary key={campusGroupsPromise ? "streamed" : "resolved"}>
-            {groupPickerError ? (
-              <GroupPickerFailure error={groupPickerError} />
-            ) : (
-              <Suspense fallback={<GroupPickerSkeleton />}>
-                <GroupPicker
-                  groups={campusGroups}
-                  promise={campusGroupsPromise}
-                  realActiveGroup={realActiveGroup}
-                  realActiveGroupId={realActiveGroupId}
-                  campus={state.campus}
-                  selectedGroupId={state.groupId}
-                  onSelect={(groupId) => onChange({ ...state, groupId })}
-                />
-              </Suspense>
-            )}
-          </GroupPickerErrorBoundary>
+          <div className="test-mode-field" role="group" aria-label="Scenario">
+            <span>Scenario</span>
+            <select
+              aria-label="Scenario"
+              value={state.scenario}
+              onChange={(event) => {
+                const scenario = scenarioFromValue(event.target.value);
+                if (scenario === null) return;
+                const definition = TEST_MODE_SCENARIOS.find((candidate) => candidate.value === scenario);
+                onChange({
+                  ...state,
+                  scenario,
+                  groupId: null,
+                  role: definition?.defaultRole ?? state.role,
+                });
+              }}
+            >
+              {TEST_MODE_SCENARIOS.map((scenario) => (
+                <option key={scenario.value} value={scenario.value}>
+                  {scenario.label}
+                </option>
+              ))}
+            </select>
+            <span className="test-mode-note">
+              {TEST_MODE_SCENARIOS.find((scenario) => scenario.value === state.scenario)?.description}
+            </span>
+          </div>
+
+          {isSynthetic ? (
+            <p className="test-mode-note test-mode-synthetic-note" data-testid="test-mode-synthetic-note" role="status">
+              Synthetic scenario — no real group, roster, or scope data is loaded.
+            </p>
+          ) : (
+            <GroupPickerErrorBoundary key={campusGroupsPromise ? "streamed" : "resolved"}>
+              {groupPickerError ? (
+                <GroupPickerFailure error={groupPickerError} />
+              ) : (
+                <Suspense fallback={<GroupPickerSkeleton />}>
+                  <GroupPicker
+                    groups={campusGroups}
+                    promise={campusGroupsPromise}
+                    realActiveGroup={realActiveGroup}
+                    realActiveGroupId={realActiveGroupId}
+                    campus={state.campus}
+                    selectedGroupId={state.groupId}
+                    onSelect={(groupId) => onChange({ ...state, scenario: "real", groupId })}
+                  />
+                </Suspense>
+              )}
+            </GroupPickerErrorBoundary>
+          )}
+
+          {loading && (
+            <p className="test-mode-note" role="status" aria-busy="true" data-testid="test-mode-snapshot-loading">
+              Loading selected group…
+            </p>
+          )}
 
           {simulatedGroupId !== null && (
             <p className="test-mode-note test-mode-join-code" data-testid="test-mode-join-code">

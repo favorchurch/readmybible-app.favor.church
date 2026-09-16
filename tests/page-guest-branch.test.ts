@@ -12,6 +12,12 @@ const mocks = vi.hoisted(() => ({
   // AppShell is a "use client" component with a heavy tree of its own; the
   // branching test only needs to know Page() reached it, not how it renders.
   AppShellMarker: vi.fn(() => null),
+  // WelcomeLanding's own markup (anchor target, sample-content labelling,
+  // image dimensions) is covered separately in welcome-landing.test.ts; this
+  // file only asserts Page() selects it for the logged-out branch.
+  WelcomeLandingMarker: () => null,
+  getAuthorizedTestGroupOptions: vi.fn().mockResolvedValue([]),
+  isTestModeAuthorized: vi.fn((session: { isAdminScope: boolean }) => session.isAdminScope),
 }));
 
 vi.mock("@/lib/session", () => ({ getSessionContext: mocks.getSessionContext }));
@@ -20,6 +26,10 @@ vi.mock("@/db", () => ({ db: { select: mocks.select } }));
 vi.mock("@/db/schema", () => ({ profiles: { rockPersonId: "rockPersonId" } }));
 vi.mock("@/lib/dev-clock", () => ({ devMockToday: () => null }));
 vi.mock("@/lib/test-mode-config", () => ({ testWritableGroupId: () => null }));
+vi.mock("@/lib/test-mode-auth", () => ({
+  getAuthorizedTestGroupOptions: mocks.getAuthorizedTestGroupOptions,
+  isTestModeAuthorized: mocks.isTestModeAuthorized,
+}));
 vi.mock("@/lib/rock/client", () => ({
   getAllConnectGroups: vi.fn().mockResolvedValue([]),
   getAllCampusNames: vi.fn().mockResolvedValue(new Map()),
@@ -122,39 +132,14 @@ describe("Page() session branching", () => {
         needsGroupChoice: false,
         campusId: null,
         isLeader: false,
-        isAdminScope: false,
+        isAdminScope: true,
         defaultTranslation: "NIV",
       });
 
-      const { getAllConnectGroups, getAllCampusNames } = await import("@/lib/rock/client");
-      vi.mocked(getAllConnectGroups).mockResolvedValueOnce([
-        {
-          Id: 101,
-          Name: "Group Manila",
-          GroupTypeId: 25,
-          CampusId: 1,
-          ParentGroupId: null,
-          IsActive: true,
-          IsArchived: false,
-          locality: null,
-        },
-        {
-          Id: 202,
-          Name: "Group Brisbane",
-          GroupTypeId: 25,
-          CampusId: 2,
-          ParentGroupId: null,
-          IsActive: true,
-          IsArchived: false,
-          locality: null,
-        },
+      mocks.getAuthorizedTestGroupOptions.mockResolvedValueOnce([
+        { groupId: 202, groupName: "Group Brisbane — Brisbane" },
+        { groupId: 101, groupName: "Group Manila — Manila" },
       ]);
-      vi.mocked(getAllCampusNames).mockResolvedValueOnce(
-        new Map([
-          [1, "Manila"],
-          [2, "Brisbane"],
-        ]),
-      );
 
       // Page() now returns a font gate around the Suspense boundary, so the
       // campus list is built two levels down, in HomeData. Render that child to
@@ -212,6 +197,32 @@ describe("Page() session branching", () => {
 
     expect(getAllConnectGroups).not.toHaveBeenCalled();
     const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;
+    await expect(props.campusGroupsPromise).resolves.toEqual([]);
+  });
+
+  it("does not fetch real group options for an unauthorized test-mode URL", async () => {
+    mocks.getSessionContext.mockResolvedValue({
+      status: "ok",
+      rockPersonId: 13358,
+      rockGender: 1,
+      displayName: "Alex",
+      memberships: [],
+      sectionMemberships: [],
+      activeGroup: null,
+      needsGroupChoice: false,
+      campusId: null,
+      isLeader: false,
+      isAdminScope: false,
+      defaultTranslation: "NIV",
+    });
+
+    const result = await Page({ searchParams: Promise.resolve({ test: "1" }) });
+    const gate = (result as { props: { children: { props: { children: { props: unknown } } } } }).props.children;
+    const suspense = gate.props.children;
+    const rendered = await HomeData(suspense.props as Parameters<typeof HomeData>[0]);
+    const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;
+
+    expect(mocks.getAuthorizedTestGroupOptions).not.toHaveBeenCalled();
     await expect(props.campusGroupsPromise).resolves.toEqual([]);
   });
 });

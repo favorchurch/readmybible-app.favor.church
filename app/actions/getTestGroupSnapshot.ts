@@ -11,10 +11,17 @@ import { getCampusName, getGroupBasic, getRoster } from "@/lib/rock/client";
 import { GROUP_TYPE_CONNECT_GROUP, ROLE_GT25_LEADER, ROLE_GT25_ASSISTANT_LEADER } from "@/lib/rock/constants";
 import { getGroupMembersReadingHistory, getGroupStats, type GroupStats } from "@/lib/data/stats";
 import { getSessionContext } from "@/lib/session";
+import { canAccessRealTestGroup, isTestModeAuthorized } from "@/lib/test-mode-auth";
+import { syntheticTestModeView } from "@/components/test-mode/synthetic-fixtures";
+import { SYNTHETIC_TEST_MODE_SCENARIOS } from "@/components/test-mode/logic";
 
 const inputSchema = z.object({
-  groupId: z.number().int().positive(),
-});
+  groupId: z.number().int().positive().optional(),
+  scenario: z.enum(SYNTHETIC_TEST_MODE_SCENARIOS).optional(),
+}).refine(
+  ({ groupId, scenario }) => (groupId === undefined) !== (scenario === undefined),
+  "Choose either a real group or a synthetic scenario.",
+);
 
 export type GetTestGroupSnapshotInput = z.infer<typeof inputSchema>;
 
@@ -29,20 +36,42 @@ export type TestGroupSnapshotResult =
   | { ok: false; error: string };
 
 /**
- * Returns snapshot data (roster, stats, campus name) for any Connect Group,
- * allowing test-mode simulation of that group across all campuses org-wide.
- * Requires an authenticated session and a GT25 Connect Group.
+ * Returns a real snapshot only inside the caller's genuine admin scope. A
+ * synthetic scenario is resolved locally and never reaches Rock or the DB.
  */
 export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Promise<TestGroupSnapshotResult> {
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Invalid group ID." };
   }
-  const { groupId } = parsed.data;
-
   const session = await getSessionContext();
   if (session.status !== "ok") {
     return { ok: false, error: "You need to be logged in." };
+  }
+
+  if (parsed.data.scenario !== undefined) {
+    if (!isTestModeAuthorized(session)) {
+      return { ok: false, error: "You don't have access to Test Mode." };
+    }
+    const view = syntheticTestModeView(parsed.data.scenario, 1);
+    const groupStats: GroupStats = view.groupStats ?? {
+      checkinCount: 0,
+      memberCount: 0,
+      ratio: 0,
+      readersTodayIds: [],
+    };
+    return {
+      ok: true,
+      groupName: view.groupName ?? "Synthetic scenario",
+      campusName: view.campusName,
+      roster: view.roster,
+      groupStats,
+    };
+  }
+
+  const groupId = parsed.data.groupId;
+  if (groupId === undefined || !await canAccessRealTestGroup(session, groupId)) {
+    return { ok: false, error: "You don't have access to this Connect Group." };
   }
 
   const groupBasic = await getGroupBasic(groupId);
@@ -50,13 +79,11 @@ export async function getTestGroupSnapshot(input: GetTestGroupSnapshotInput): Pr
     return { ok: false, error: `Group ${groupId} not found.` };
   }
 
-  // A server action is a directly callable HTTP endpoint, so it enforces scope
-  // itself rather than trusting the picker that displays it.
-  //
-  // Test mode simulates any Connect Group org-wide across all campuses.
-  // What bounds this is the authentication check above and the group type check below.
   if (groupBasic.GroupTypeId !== GROUP_TYPE_CONNECT_GROUP) {
     return { ok: false, error: `Group ${groupId} is not a Connect Group.` };
+  }
+  if (!groupBasic.IsActive || groupBasic.IsArchived) {
+    return { ok: false, error: `Group ${groupId} is not available.` };
   }
 
   const rockRoster = await getRoster(groupId);
