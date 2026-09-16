@@ -34,8 +34,8 @@ export default async function AuthErrorPage({
           <span>Choose a login option</span>
           <span aria-hidden="true">→</span>
         </Link>
-        <Link className="secondary-link" href="/">
-          Back to landing page
+        <Link className="secondary-link" href="/login">
+          Back to sign-in
         </Link>
       </div>
     </main>

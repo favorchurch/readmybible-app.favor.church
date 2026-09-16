@@ -83,17 +83,23 @@ export function SplashCompanion({ size = DEFAULT_COMPANION_SIZE }: { size?: numb
   );
 }
 
+export function SplashBrandLockup({ companionSize = DEFAULT_COMPANION_SIZE }: { companionSize?: number } = {}) {
+  return (
+    <div className="splash-brand-scene">
+      <SplashCompanion size={companionSize} />
+      <div className="brand" aria-hidden="true">
+        <span>READ</span>
+        <span>MY</span>
+        <span>BIBLE</span>
+      </div>
+    </div>
+  );
+}
+
 function SplashBrandOverlay() {
   return (
     <div className="splash-phase-a" aria-hidden="true">
-      <div className="splash-brand-scene">
-        <SplashCompanion />
-        <div className="brand" aria-hidden="true">
-          <span>READ</span>
-          <span>MY</span>
-          <span>BIBLE</span>
-        </div>
-      </div>
+      <SplashBrandLockup />
     </div>
   );
 }

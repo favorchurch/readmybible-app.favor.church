@@ -539,6 +539,7 @@
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out);
 }
+.readiness-row-static { cursor: default; }
 .readiness-row:first-of-type { border-top: 0; }
 .readiness-label {
   font-size: 14px;
@@ -584,7 +585,7 @@
 .home-preview-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; margin-top: var(--space-3); }
 .home-preview-actions > * { margin: 0; }
 .prelaunch-screen .hero-copy { margin-top: 26px; margin-bottom: 20px; }
-.prelaunch-screen .hero-copy h1 { font-size: clamp(40px, 10vw, 64px); }
+.prelaunch-screen .hero-copy h1 { font-size: clamp(34px, 8.5vw, 54px); }
 .prelaunch-screen .readiness-card { margin-top: 0; }
 .prelaunch-screen .readiness-card + .day1-preview-card { margin-top: var(--space-6); }
 .prelaunch-screen .home-preview-card,

@@ -88,7 +88,7 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
       <div className="full-home-footer">
         {isCampsite && !gatheringOpen && <div className="scene-access-note" role="status" data-scene-access={eligibility.kind}>
           <p>{eligibility.message}</p>
-          {!gatheringOpen && eligibility.kind === "locked" && <button type="button" onClick={today.displayPhase === "active" ? onViewReading : onViewPlan}>
+          {!gatheringOpen && eligibility.kind === "locked" && (today.displayPhase === "active" ? onViewReading : onViewPlan) && <button type="button" onClick={today.displayPhase === "active" ? onViewReading : onViewPlan}>
             {today.displayPhase === "active" ? "Read a chapter →" : "View reading plan →"}
           </button>}
         </div>}
@@ -99,12 +99,12 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           <span>{progress ? `${progress.pct}% through this stage · ${progress.stage} unlocks at ${milestone?.pct ?? 100}% overall` : 'Every stage reached'}</span>
           <p>{isCampsite && gatheringOpen ? eligibility.message : "Your group's reading grows this home."}</p>
           <ProgressBar value={progress?.pct ?? 100} max={100} />
-          {today.displayPhase === "pre-launch" && <><small>Reading begins October 1.</small><button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button></>}
+          {today.displayPhase === "pre-launch" && <><small>Reading begins October 1.</small>{onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}</>}
           {today.displayPhase === "active" && (currentMember?.readToday
             ? <button type="button" className="primary-button home-reading-cta" disabled>You&apos;re done for today <span aria-hidden="true">✓</span></button>
             : <button type="button" className="primary-button home-reading-cta" onClick={onViewReading}>{today.entry ? `Read Matthew ${today.entry.chapter}` : "Continue reading"} <span aria-hidden="true">→</span></button>)}
-          {today.displayPhase === "grace" && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
-          {today.displayPhase === "closed" && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
+          {today.displayPhase === "grace" && onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
+          {today.displayPhase === "closed" && onViewPlan && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
           </div>
         </details>
         {supportsScene && <div className="home-scene-switch" role="group" aria-label="Scene presentation">

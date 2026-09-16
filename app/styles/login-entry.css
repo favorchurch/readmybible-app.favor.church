@@ -1,0 +1,98 @@
+.login-entry-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+  background: var(--cream);
+}
+
+.login-entry-content {
+  width: min(100%, 500px);
+  display: grid;
+  justify-items: center;
+  gap: 30px;
+  text-align: center;
+}
+
+.login-entry-brand {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+
+.login-entry-brand .splash-brand-scene {
+  gap: 16px;
+}
+
+.login-entry-brand .brand {
+  min-height: 0;
+  color: var(--navy);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 7vw, 42px);
+  line-height: .84;
+  text-transform: lowercase;
+}
+
+.login-entry-brand .brand span {
+  color: var(--coral);
+}
+
+.login-entry-copy {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.login-entry-copy .eyebrow {
+  margin: 0;
+}
+
+.login-entry-copy h1 {
+  max-width: 420px;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(34px, 7vw, 50px);
+  line-height: 1.04;
+  font-weight: 900;
+  letter-spacing: -.045em;
+}
+
+.login-entry-copy p:last-child {
+  max-width: 330px;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.login-entry-cta {
+  width: min(100%, 280px);
+  justify-content: center;
+  gap: 28px;
+  text-decoration: none;
+}
+
+.login-entry-cta span:first-child {
+  font-size: 15px;
+}
+
+.login-entry-cta .login-entry-arrow {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.login-entry-note {
+  margin: -14px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .login-entry-screen {
+    padding: 32px 18px;
+  }
+
+  .login-entry-content {
+    gap: 26px;
+  }
+}
