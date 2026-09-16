@@ -153,20 +153,20 @@ describe("chooseGroup stays blocked in the sandbox state", () => {
 });
 
 describe("getOrCreateJoinCode stays blocked in the sandbox state", () => {
-  it("does not mint a join code for a simulated leader", async () => {
+  it("does not mint a join code for a simulated connect leader", async () => {
     render(React.createElement(AppShell, baseProps()));
     await assertUnblocked();
 
     // The join code is requested from an effect in the Leader screen (#66 moved
     // it there off Connect), and the Leader nav item only appears for a leader.
-    // Simulate the leader viewer first, then open that tab.
-    // "Leader" names both the panel's viewer control and the nav item, so scope
-    // the first click to the panel's Viewer group.
-    const viewerControl = screen.getByRole("group", { name: /viewer/i });
-    fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
+    // Simulate the connect leader role first, then open that tab.
+    // "Leader" names the nav item, while "Connect Leader" names the panel's
+    // role control, so scope the first click to the panel's Role group.
+    const roleControl = screen.getByRole("group", { name: /role/i });
+    fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
 
     const navLeader = (await screen.findAllByRole("button", { name: /^leader$/i })).filter(
-      (el) => !viewerControl.contains(el),
+      (el) => !roleControl.contains(el),
     );
     expect(navLeader).toHaveLength(1);
     fireEvent.click(navLeader[0]);

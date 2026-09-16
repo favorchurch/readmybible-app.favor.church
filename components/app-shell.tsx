@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { checkIn } from "@/app/actions/checkIn";
@@ -24,6 +24,7 @@ import { ProfileEditor } from "@/components/profile-editor";
 import {
   TestModePanel,
   guardWrite,
+  scopeForRole,
   simulatedChapters,
   simulatedGroupRatio,
   simulatedMemberHistory,
@@ -31,6 +32,8 @@ import {
   useTestMode,
   dateForSimulatedDay,
   writesBlocked,
+  TEST_MODE_CAMPUSES,
+  type TestModeCampus,
 } from "@/components/test-mode";
 import { useToday } from "@/components/use-today";
 import { BottomNav, type Tab } from "@/components/screens/bottom-nav";
@@ -78,7 +81,17 @@ export type AppShellProps = {
   appBaseUrl: string;
   devMockToday: string | null;
   campusGroups: { groupId: number; groupName: string }[];
+  /**
+   * The same list, unresolved. When present the panel renders its picker behind
+   * a Suspense boundary and `use()`s this instead, so the org-wide Rock call no
+   * longer blocks the shell from painting in test mode -- the rest of the app
+   * is interactive while the several-hundred-group list is still in flight.
+   * `campusGroups` stays the resolved fallback for every non-streaming caller
+   * (all the tests construct props directly).
+   */
+  campusGroupsPromise?: Promise<{ groupId: number; groupName: string }[]>;
   testWritableGroupId: number | null;
+  campusId?: number | null;
   isAdminScope?: boolean;
   sectionSlot: React.ReactNode | null;
 };
@@ -99,7 +112,8 @@ function AppShellInner(props: AppShellProps) {
   const router = useRouter();
   const runToastAction = useToastAction();
   const realToday = useToday(props.devMockToday);
-  const testMode = useTestMode();
+  const sessionCampus: TestModeCampus = props.campusId === 2 || props.campusId === 3 ? props.campusId : 1;
+  const testMode = useTestMode(sessionCampus);
   const simulatedToday = useMemo(
     () => simulatedTodayState(dateForSimulatedDay(testMode.state.day, testMode.state.phase), realToday.timezone),
     [testMode.state.day, testMode.state.phase, realToday.timezone],
@@ -301,17 +315,36 @@ function AppShellInner(props: AppShellProps) {
       readersTodayIds: baseStats?.readersTodayIds ?? [],
     };
   }, [testMode.active, testMode.state.groupPct, currentSnapshot, props.groupStats, awaitingSnapshot]);
-  const isLeader = testMode.active
-    ? testMode.state.viewer === "leader" || testMode.state.viewer === "admin"
-    : props.isLeader;
-  // While test mode is active, the simulated viewer is the SOLE authority for
+  // One derivation of what the simulated role means, shared with the panel and
+  // the tests (`scopeForRole`, components/test-mode/logic.ts), so the shell
+  // never re-implements the role table inline.
+  const simulatedScope = useMemo(
+    () => scopeForRole(testMode.state.role, testMode.state.campus),
+    [testMode.state.role, testMode.state.campus],
+  );
+  const setTestModeState = useCallback(
+    (next: typeof testMode.state) => {
+      const roleOrCampusChanged = next.role !== testMode.state.role || next.campus !== testMode.state.campus;
+      testMode.setState(next);
+      if (testMode.active && roleOrCampusChanged) {
+        const params = new URLSearchParams(window.location.search);
+        params.set("role", next.role);
+        params.set("campus", TEST_MODE_CAMPUSES.find((campus) => campus.id === next.campus)?.code ?? "MNL");
+        window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+        router.refresh();
+      }
+    },
+    [router, testMode],
+  );
+  const isLeader = testMode.active ? simulatedScope.isLeader : props.isLeader;
+  // While test mode is active, the simulated role is the SOLE authority for
   // admin scope -- the real signed-in user's own `props.isAdminScope` must not
-  // leak through, or a real admin simulating "member"/"non-member"/"leader"
+  // leak through, or a real admin simulating "member"/"new"/"connect-leader"
   // would still see admin-only surfaces (the Leader tab, the test-mode entry
-  // point, the profile editor's admin section) no matter which viewer they
+  // point, the profile editor's admin section) no matter which role they
   // picked. Issue #121.
   const isAdminScope = testMode.active
-    ? testMode.state.viewer === "admin"
+    ? simulatedScope.isAdminScope
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
   const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
@@ -551,19 +584,20 @@ function AppShellInner(props: AppShellProps) {
   const testModePanel = testMode.active ? (
     <TestModePanel
       state={testMode.state}
-      onChange={testMode.setState}
+      onChange={setTestModeState}
       realActiveGroup={
         props.activeGroup
           ? { groupId: props.activeGroup.groupId, groupName: props.activeGroup.groupName }
           : null
       }
       campusGroups={props.campusGroups}
+      campusGroupsPromise={props.campusGroupsPromise}
       writableGroupId={props.testWritableGroupId}
       error={currentSnapshotError}
     />
   ) : null;
 
-  if (testMode.active && testMode.state.viewer === "non-member") {
+  if (testMode.active && !simulatedScope.hasGroup) {
     return (
       <div className="app-shell">
         <div className="paper-noise" />
@@ -674,7 +708,7 @@ function AppShellInner(props: AppShellProps) {
           onGetOrCreateJoinCode={testMode.active ? testModeGetJoinCode : guardedGetOrCreateJoinCode}
           onEditProfile={() => setProfileOpen(true)}
           connectSwitcher={connectSwitcher}
-          sectionSlot={props.sectionSlot}
+          sectionSlot={testMode.active && !simulatedScope.isAdminScope ? null : props.sectionSlot}
           // Must follow the SAME group readerGroupId does. Leaving this on the
           // real group meant an admin with no Connect Group of their own could
           // pick a group in the panel and still hit LeaderScreen's no-group early

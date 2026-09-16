@@ -98,11 +98,11 @@ function expandPanel() {
   if (show) fireEvent.click(show);
 }
 
-function openLeaderTabAsLeader() {
+function openLeaderTabAsConnectLeader() {
   expandPanel();
-  const viewerControl = screen.getByRole("group", { name: /viewer/i });
-  fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
-  const navLeader = screen.getAllByRole("button", { name: /^leader$/i }).find((el) => !viewerControl.contains(el));
+  const roleControl = screen.getByRole("group", { name: /role/i });
+  fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
+  const navLeader = screen.getAllByRole("button", { name: /^leader$/i }).find((el) => !roleControl.contains(el));
   fireEvent.click(navLeader!);
 }
 
@@ -124,7 +124,7 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     getJoinCodeForGroup.mockResolvedValue({ ok: true, code: "REALCODE", groupId: REAL_GROUP });
 
     render(React.createElement(AppShell, baseProps()));
-    openLeaderTabAsLeader();
+    openLeaderTabAsConnectLeader();
 
     await waitFor(() => expect(screen.getByText("REALCODE")).toBeTruthy());
     await waitFor(() =>
@@ -140,9 +140,9 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     render(React.createElement(AppShell, baseProps()));
     expandPanel();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
-    const viewerControl = screen.getByRole("group", { name: /viewer/i });
-    fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
-    const navLeader = screen.getAllByRole("button", { name: /^leader$/i }).find((el) => !viewerControl.contains(el));
+    const roleControl = screen.getByRole("group", { name: /role/i });
+    fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
+    const navLeader = screen.getAllByRole("button", { name: /^leader$/i }).find((el) => !roleControl.contains(el));
     fireEvent.click(navLeader!);
 
     await waitFor(() => expect(getJoinCodeForGroup).toHaveBeenCalledWith(OTHER_GROUP));
@@ -157,7 +157,7 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
     getJoinCodeForGroup.mockResolvedValue({ ok: true, code: "SOMECODE", groupId: REAL_GROUP });
 
     render(React.createElement(AppShell, baseProps()));
-    openLeaderTabAsLeader();
+    openLeaderTabAsConnectLeader();
 
     await waitFor(() => expect(screen.getByText("SOMECODE")).toBeTruthy());
 
@@ -171,11 +171,11 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
   });
 
   // Review finding: `readerGroupId` was made simulated while its sibling
-  // `hasGroupView` was left on the real group. An admin with no Connect Group
+  // `hasGroupView` was left on the real group. A department-scoped user with no Connect Group
   // of their own -- exactly the population the test-mode entry point is gated
   // to -- then hit LeaderScreen's no-group early return, so the tile never
   // rendered and the fetch never fired.
-  it("renders the code tile for a groupless admin who picks a group in the panel", async () => {
+  it("renders the code tile for a groupless connect-leader role who picks a group in the panel", async () => {
     getJoinCodeForGroup.mockResolvedValue({ ok: true, code: "PICKEDCODE", groupId: OTHER_GROUP });
 
     const props: AppShellProps = { ...baseProps(), activeGroup: null, isAdminScope: true };
@@ -183,11 +183,11 @@ describe("#122: Leader tab GROUP CODE tile in test mode", () => {
 
     expandPanel();
     fireEvent.change(screen.getByRole("combobox"), { target: { value: String(OTHER_GROUP) } });
-    const viewerControl = screen.getByRole("group", { name: /viewer/i });
-    fireEvent.click(within(viewerControl).getByRole("button", { name: /^leader$/i }));
+    const roleControl = screen.getByRole("group", { name: /role/i });
+    fireEvent.click(within(roleControl).getByRole("button", { name: /^connect leader$/i }));
     const navLeader = screen
       .getAllByRole("button", { name: /^leader$/i })
-      .find((el) => !viewerControl.contains(el));
+      .find((el) => !roleControl.contains(el));
     fireEvent.click(navLeader!);
 
     await waitFor(() => expect(screen.getByText("PICKEDCODE")).toBeTruthy());

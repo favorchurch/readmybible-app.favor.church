@@ -1,15 +1,18 @@
-.test-mode-panel { position: fixed; z-index: 90; top: calc(env(safe-area-inset-top, 0px) + var(--screen-pad-top) + var(--topbar-h) + 12px); right: 12px; width: 220px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: 0 8px 30px rgba(23,41,67,.18); font-size: 12px; color: var(--ink); }
-.test-mode-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; }
+/* z-index 150 keeps test controls above the Open Home sheet (100) and below toast notifications (200). */
+.test-mode-panel { position: fixed; z-index: 150; top: calc(env(safe-area-inset-top, 0px) + var(--screen-pad-top) + var(--topbar-h) + 12px); right: 12px; width: 220px; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--screen-pad-top) - var(--topbar-h) - 24px); display: flex; flex-direction: column; overflow: hidden; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-lg); box-shadow: 0 8px 30px rgba(23,41,67,.18); font-size: 12px; color: var(--ink); }
+.test-mode-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; flex: 0 0 auto; }
 .test-mode-badge { font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--coral-deep); background: var(--coral-soft); border-radius: var(--radius-sm); padding: 3px 7px; font-size: 11px; } /* decorative */
 .test-mode-header button { min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); cursor: pointer; font-weight: 700; color: var(--ink); }
 .test-mode-header button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.test-mode-body { padding: 0 10px 12px; display: grid; gap: 10px; }
+.test-mode-body { padding: 0 10px 12px; display: grid; gap: 10px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .test-mode-note { margin: 0; color: var(--ink-muted); line-height: 1.4; }
 .test-mode-note-sandbox { color: var(--coral-deep); background: var(--coral-soft); border: 1px solid var(--coral-deep); border-radius: var(--radius-sm); padding: 6px 8px; font-weight: 800; }
 .test-mode-note-error { color: var(--coral-deep); background: var(--coral-soft); border: 1px solid var(--coral-deep); border-radius: var(--radius-sm); padding: 6px 8px; font-weight: 700; }
 .test-mode-field { display: grid; gap: 4px; }
 .test-mode-field > span { font-weight: 700; color: var(--ink-2); }
 .test-mode-field input[type="range"] { width: 100%; min-height: 44px; }
+.test-mode-field input[type="search"] { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
+.test-mode-skeleton { height: 44px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--line); opacity: .6; } /* decorative placeholder while the group list streams in */
 .test-mode-field select { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
 .test-mode-phase-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .test-mode-phase-row button { min-height: 44px; min-width: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
@@ -24,6 +27,8 @@
 .test-mode-entry { position: fixed; z-index: 90; bottom: max(12px, env(safe-area-inset-bottom)); right: 12px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink); font-weight: 800; cursor: pointer; box-shadow: 0 8px 30px rgba(23,41,67,.18); }
 .test-mode-entry:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
+.test-mode-fab { display: none; }
+
 @media (hover: hover) and (pointer: fine) {
   .test-mode-entry:hover { border-color: var(--coral-deep); }
 }
@@ -32,4 +37,10 @@
   .test-mode-header button:hover { border-color: var(--line-strong); }
   .test-mode-phase-row button:not(.selected):hover { border-color: var(--line-strong); }
   .test-mode-field select:hover { border-color: var(--line-strong); }
+}
+
+@media (max-width: 759px) {
+  .test-mode-panel { top: auto; right: 0; bottom: var(--nav-clearance); width: 100%; max-height: calc(100dvh - var(--nav-clearance)); border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: none; }
+  .test-mode-panel--open { display: flex; }
+  .test-mode-fab { position: fixed; z-index: 151; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(var(--nav-clearance) + 12px); display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--coral); color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 8px 30px rgba(23,41,67,.18); }
 }
