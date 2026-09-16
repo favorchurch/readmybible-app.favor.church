@@ -79,6 +79,15 @@ export type AppShellProps = {
   appBaseUrl: string;
   devMockToday: string | null;
   campusGroups: { groupId: number; groupName: string }[];
+  /**
+   * The same list, unresolved. When present the panel renders its picker behind
+   * a Suspense boundary and `use()`s this instead, so the org-wide Rock call no
+   * longer blocks the shell from painting in test mode -- the rest of the app
+   * is interactive while the several-hundred-group list is still in flight.
+   * `campusGroups` stays the resolved fallback for every non-streaming caller
+   * (all the tests construct props directly).
+   */
+  campusGroupsPromise?: Promise<{ groupId: number; groupName: string }[]>;
   testWritableGroupId: number | null;
   isAdminScope?: boolean;
   sectionSlot: React.ReactNode | null;
@@ -564,6 +573,7 @@ function AppShellInner(props: AppShellProps) {
           : null
       }
       campusGroups={props.campusGroups}
+      campusGroupsPromise={props.campusGroupsPromise}
       writableGroupId={props.testWritableGroupId}
       error={currentSnapshotError}
     />
