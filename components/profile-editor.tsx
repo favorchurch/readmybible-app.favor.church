@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type UserProfile } from "@/components/avatar";
+import { FeedbackSheet } from "@/components/feedback-sheet";
 import { Sheet } from "@/components/sheet";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
@@ -76,12 +77,14 @@ export function ProfileEditor({
   onSave: (profile: UserProfile) => void;
 }) {
   const [draft, setDraft] = useState(profile);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
   return (
-    <Sheet open onClose={onClose} labelledBy="profile-title" className="profile-sheet">
+    <>
+      <Sheet open onClose={onClose} labelledBy="profile-title" className="profile-sheet">
       <div className="profile-sticky-header">
         <div className="profile-sticky-identity">
           <Avatar
@@ -324,8 +327,14 @@ export function ProfileEditor({
           </p>
         </details>
         <div className="profile-account-actions">
+          <button type="button" className="profile-feedback-trigger" onClick={() => setFeedbackOpen(true)}>
+            <span>Add your Feedback</span>
+            <span aria-hidden="true">→</span>
+          </button>
           <a href="/auth/logout">Log out</a>
         </div>
       </Sheet>
-    );
-  }
+      {feedbackOpen && <FeedbackSheet open onClose={() => setFeedbackOpen(false)} />}
+    </>
+  );
+}
