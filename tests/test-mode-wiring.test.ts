@@ -226,8 +226,8 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
     // are unblocked at this point.
     expect(await screen.findByText(/writes are REAL/i)).toBeTruthy();
 
-    // Non-member renders SoloScreen, the only surface that submits a join code.
-    fireEvent.click(screen.getByRole("button", { name: /non-member/i }));
+    // New renders SoloScreen, the only surface that submits a join code.
+    fireEvent.click(screen.getByRole("button", { name: /^new$/i }));
 
     // SoloScreen keeps the form behind a button until you opt in.
     fireEvent.click(screen.getByRole("button", { name: /enter a group code/i }));
@@ -267,62 +267,62 @@ describe("AppShell wiring: a simulated group never falls back to the real group"
 });
 
 /**
- * #121: in test mode, the simulated viewer must be the SOLE authority for the
- * Leader tab -- a real signed-in admin (`props.isAdminScope === true`)
+ * #121: in test mode, the simulated role must be the SOLE authority for the
+ * Leader tab -- a real signed-in user with admin scope (`props.isAdminScope === true`)
  * simulating a plain member must not still see it. Before the fix,
- * `isAdminScope` OR'd in `props.isAdminScope` regardless of which viewer was
- * being simulated, so `canSeeLeaderTab` stayed true no matter what.
+ * `isAdminScope` OR'd in `props.isAdminScope` regardless of which role was
+ * being simulated, so `canSeeLeaderTab` stayed true no matter what role was selected.
  */
-describe("AppShell wiring: the Leader tab follows the simulated viewer, not the real user's scope (#121)", () => {
+describe("AppShell wiring: the Leader tab follows the simulated role, not the real user's scope (#121)", () => {
   function mainNav() {
     return screen.getByRole("navigation", { name: "Main navigation" });
   }
 
-  function pickViewer(label: "Member" | "Leader" | "Admin" | "Non-member") {
+  function pickRole(label: "Member" | "Connect Leader" | "Department" | "New") {
     // The panel is expanded by default (#127); click Show only if some
     // future default leaves it collapsed. Asserts nothing either way.
     const show = screen.queryByRole("button", { name: /^show$/i });
     if (show) fireEvent.click(show);
-    const viewerGroup = screen.getByRole("group", { name: "Viewer" });
-    fireEvent.click(within(viewerGroup).getByRole("button", { name: label }));
+    const roleGroup = screen.getByRole("group", { name: "Role" });
+    fireEvent.click(within(roleGroup).getByRole("button", { name: label }));
   }
 
   it("REGRESSION: hides the Leader tab for a simulated member even though the real user has admin scope", () => {
     const props: AppShellProps = { ...baseProps(), isAdminScope: true };
     render(React.createElement(AppShell, props));
 
-    // The panel already defaults to viewer "member"; select it explicitly so
+    // The panel already defaults to role "member"; select it explicitly so
     // the test does not depend on that default silently changing later.
-    pickViewer("Member");
+    pickRole("Member");
 
     expect(within(mainNav()).queryByRole("button", { name: "Leader" })).toBeNull();
   });
 
-  it("hides the Leader tab for a simulated non-member", () => {
+  it("hides the Leader tab for a simulated new role", () => {
     const props: AppShellProps = { ...baseProps(), isAdminScope: true };
     render(React.createElement(AppShell, props));
 
-    pickViewer("Non-member");
+    pickRole("New");
 
-    // Viewer "non-member" renders SoloScreen instead of the shell -- there is
+    // Role "new" renders SoloScreen instead of the shell -- there is
     // no bottom nav to find the Leader tab in at all.
     expect(screen.queryByRole("navigation", { name: "Main navigation" })).toBeNull();
   });
 
-  it("shows the Leader tab for a simulated leader", () => {
+  it("shows the Leader tab for a simulated connect leader", () => {
     const props = baseProps();
     render(React.createElement(AppShell, props));
 
-    pickViewer("Leader");
+    pickRole("Connect Leader");
 
     expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
   });
 
-  it("shows the Leader tab for a simulated admin", () => {
+  it("shows the Leader tab for a simulated department role", () => {
     const props = baseProps();
     render(React.createElement(AppShell, props));
 
-    pickViewer("Admin");
+    pickRole("Department");
 
     expect(within(mainNav()).getByRole("button", { name: "Leader" })).toBeTruthy();
   });
