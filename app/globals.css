@@ -19,7 +19,7 @@
 :root {
   --font-sans: "Favor Sans", Arial, Helvetica, sans-serif;
   --font-display: "Agharti", "Favor Sans", Arial, Helvetica, sans-serif;
-  --cream: #f7f0df;
+  --cream: #fffcf5;
   --paper: #fffaf0;
   --navy: #172943;
   --coral: #d96c57;
@@ -96,5 +96,5 @@
 @import "./styles/typography.css";
 @import "./styles/full-home.css";
 @import "./styles/leader.css";
-@import "./styles/welcome.css";
+@import "./styles/login-entry.css";
 @import "./styles/splash.css";

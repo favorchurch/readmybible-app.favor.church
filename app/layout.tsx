@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ReactDOM from "react-dom";
 
+import { FontReadyGate } from "@/components/font-ready-gate";
+
 const title = "Read My Bible";
 const description = "Read anywhere. Grow together.";
 
@@ -44,7 +46,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><FontReadyGate>{children}</FontReadyGate></body>
     </html>
   );
 }

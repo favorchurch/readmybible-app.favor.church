@@ -22,6 +22,7 @@ import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
+import { longDate, PLAN_START } from "@/lib/plan";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -281,6 +282,33 @@ describe("ConnectScreen roster cards", () => {
 });
 
 describe("TodayScreen tent people toggle", () => {
+  it("derives every pre-launch start date from PLAN_START", () => {
+    const startLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
+    const html = renderToStaticMarkup(
+      React.createElement(TodayScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-09-20", displayPhase: "pre-launch", phase: "pre-launch", dayLabel: 0, entry: null },
+        chapters: [],
+        chaptersRead: 0,
+        catchUpChapter: null,
+        streakDays: 0,
+        groupName: null,
+        groupStats: null,
+        roster: [],
+        profile: testProfile,
+        avatarCustomized: false,
+        onStart: () => {},
+        onEditProfile: () => {},
+        onViewConnect: () => {},
+        onViewProgress: () => {},
+      }),
+    );
+
+    expect(html).toContain(`Matthew starts on ${startLabel}.`);
+    expect(html).toContain(`Set up before ${startLabel}`);
+    expect(html).toContain(`Your home starts as a Tent on ${startLabel}.`);
+    expect(html).toContain(`One Matthew chapter a day, starting ${startLabel}.`);
+  });
+
   it("renders the tent toggle button with aria-pressed attribute", () => {
     const html = renderToStaticMarkup(
       React.createElement(TodayScreen, {

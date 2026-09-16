@@ -12,10 +12,6 @@ const mocks = vi.hoisted(() => ({
   // AppShell is a "use client" component with a heavy tree of its own; the
   // branching test only needs to know Page() reached it, not how it renders.
   AppShellMarker: vi.fn(() => null),
-  // WelcomeLanding's own markup (anchor target, sample-content labelling,
-  // image dimensions) is covered separately in welcome-landing.test.ts; this
-  // file only asserts Page() selects it for the logged-out branch.
-  WelcomeLandingMarker: () => null,
 }));
 
 vi.mock("@/lib/session", () => ({ getSessionContext: mocks.getSessionContext }));
@@ -42,7 +38,6 @@ vi.mock("@/components/avatar", () => ({
   resolveAvatar: () => ({}),
 }));
 vi.mock("@/components/app-shell", () => ({ AppShell: mocks.AppShellMarker }));
-vi.mock("@/components/welcome", () => ({ WelcomeLanding: mocks.WelcomeLandingMarker }));
 
 import Page from "@/app/page";
 import { AppBrandSplash } from "@/components/app-splash";
@@ -60,13 +55,22 @@ beforeEach(() => {
 });
 
 describe("Page() session branching", () => {
-  it("renders WelcomeLanding for a logged-out visitor instead of redirecting", async () => {
+  it("redirects a logged-out visitor to the branded login entry", async () => {
     mocks.getSessionContext.mockResolvedValue({ status: "logged-out" });
 
-    const result = await Page();
+    await expect(Page()).rejects.toThrow("REDIRECT:/login");
 
-    expect(mocks.redirect).not.toHaveBeenCalled();
-    expect((result as { type: unknown }).type).toBe(mocks.WelcomeLandingMarker);
+    expect(mocks.redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("preserves an internal return destination while sending guests to login", async () => {
+    mocks.getSessionContext.mockResolvedValue({ status: "logged-out" });
+
+    await expect(Page({ searchParams: Promise.resolve({ returnTo: "/join/ABC123" }) })).rejects.toThrow(
+      "REDIRECT:/login?returnTo=%2Fjoin%2FABC123",
+    );
+
+    expect(mocks.redirect).toHaveBeenCalledWith("/login?returnTo=%2Fjoin%2FABC123");
   });
 
   it("still redirects to /not-found-in-rock when the person has no Rock record", async () => {
@@ -76,7 +80,7 @@ describe("Page() session branching", () => {
     expect(mocks.redirect).toHaveBeenCalledWith("/not-found-in-rock");
   });
 
-  it("renders Suspense with HomeData, not WelcomeLanding, for an authenticated session", async () => {
+  it("renders Suspense with HomeData for an authenticated session", async () => {
     mocks.getSessionContext.mockResolvedValue({
       status: "ok",
       rockPersonId: 13358,
@@ -100,7 +104,6 @@ describe("Page() session branching", () => {
 
     const child = (result as { props: { children: { type: unknown } } }).props.children;
     expect(child.type).toBe(HomeData);
-    expect(child.type).not.toBe(mocks.WelcomeLandingMarker);
   });
 
   it("passes all connect groups across all campuses to AppShell even in production, when test mode is requested", async () => {

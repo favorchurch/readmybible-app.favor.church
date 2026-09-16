@@ -5,7 +5,7 @@ description: Design tokens and deep modular architecture specification for Read 
 colors:
   primary: "#172943"
   paper: "#fffaf0"
-  cream: "#f7f0df"
+  cream: "#fffcf5"
   coral: "#d96c57"
   coral-deep: "#9c4e3f"
   coral-soft: "#f4d6d0"
@@ -181,7 +181,7 @@ The palette is rooted in tactile paper neutrals balanced by deep maritime ink an
 
 - **Primary (`#172943`):** Deep Navy ink. Serves as the primary anchor for headlines, base text, high-emphasis buttons, and brand iconography. Contrast on Paper is 14.07:1, providing peerless readability.
 - **Paper (`#fffaf0`):** Warm stationery white. The foundation for elevated content cards, bottom sheets, reading panes, and interactive selections.
-- **Cream (`#f7f0df`):** Limestone parchment neutral. The ambient backdrop of the entire app shell, providing an organic, non-glare canvas.
+- **Cream (`#fffcf5`):** Limestone parchment neutral. The ambient backdrop of the entire app shell, providing an organic, non-glare canvas.
 - **Coral (`#d96c57`):** Passionate terracotta accent. Signals active daily reading cards, primary navigation indicators, and energetic points of engagement.
 - **Coral Deep (`#9c4e3f`):** Dense earthy terracotta. Used for high-contrast text labels (5.65:1 on Paper) where standard coral would fall below WCAG thresholds.
 - **Coral Soft (`#f4d6d0`):** Gentle terracotta wash. Applied as a background fill for notification badges, step counters, and category pills.
@@ -222,7 +222,7 @@ Read My Bible uses **tonal layering and tactile texture** rather than aggressive
 
 - **Subtle Radial Noise (`.paper-noise`):** A fixed, pointer-events-none noise layer at 16% opacity blended with multiply mode (`radial-gradient(rgba(23,41,67,.35) .45px, transparent .55px)`), giving surfaces the natural texture of physical print.
 - **Three-Layer Surface Stacking:**
-  1. Ambient base: `--cream` (`--surface-1`, `#f7f0df`)
+  1. Ambient base: `--cream` (`--surface-1`, `#fffcf5`)
   2. Elevated modules: `--paper` (`--surface-2`, `#fffaf0`) with 1px `--line` hairline borders
   3. Interactive inset surfaces: `--surface-3` (`#eae4d6`) for recessed chips, streaks, and counter tracks
 - **Elevation Shadows:**

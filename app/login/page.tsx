@@ -1,32 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { LoginEntry } from "@/components/login-entry";
+import { safeReturnTo } from "@/lib/auth-return";
+import { getSessionContext } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Read My Bible: Log in",
 };
 
-/**
- * A quiet handoff screen between the public landing page and Auth0. Joining a
- * Connect Group happens only after a successful sign-in, so it is never
- * mistaken for a login requirement.
- */
-export default function LoginPage() {
-  return (
-    <main className="screen login-screen">
-      <section className="hero-copy">
-        <p className="eyebrow">WELCOME BACK</p>
-        <h1>Log in to keep reading.</h1>
-        <p>Use the Favor account connected to your Rock profile.</p>
-      </section>
-      <div className="login-actions">
-        <a className="primary-button" href="/auth/login">
-          <span>Log in with Favor</span>
-          <span aria-hidden="true">→</span>
-        </a>
-        <Link className="secondary-link" href="/">
-          Back to landing page
-        </Link>
-      </div>
-    </main>
-  );
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const returnTo = safeReturnTo(params.returnTo);
+  const session = await getSessionContext();
+
+  if (session.status === "ok") redirect(returnTo);
+  if (session.status === "not-found-in-rock") redirect("/not-found-in-rock");
+
+  return <LoginEntry returnTo={returnTo} />;
 }

@@ -314,7 +314,9 @@ function AppShellInner(props: AppShellProps) {
     ? testMode.state.viewer === "admin"
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
-  const activeTab = canSeeLeaderTab || tab !== "leader" ? tab : "today";
+  const showReaderTabs = today.displayPhase !== "pre-launch" || canSeeLeaderTab;
+  const activeTab =
+    !showReaderTabs && tab !== "today" ? "today" : canSeeLeaderTab || tab !== "leader" ? tab : "today";
 
   const roster = useMemo(() => {
     if (awaitingSnapshot) return [];
@@ -683,7 +685,12 @@ function AppShellInner(props: AppShellProps) {
           hasGroupView={testMode.active ? simulatedGroupId !== null : !!props.activeGroup}
         />
       )}
-      <BottomNav tab={activeTab} onSelect={selectTab} showLeaderTab={canSeeLeaderTab} />
+      <BottomNav
+        tab={activeTab}
+        onSelect={selectTab}
+        showLeaderTab={canSeeLeaderTab}
+        showReaderTabs={showReaderTabs}
+      />
       {readingChapter !== null && (
         <ReadingDialog
           key={readingChapter}
