@@ -164,14 +164,15 @@ describe("Page() session branching", () => {
       const child = (result as { props: { children: { props: unknown } } }).props.children;
       const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
 
-      expect((rendered as { props: unknown }).props).toEqual(
-        expect.objectContaining({
-          campusGroups: [
-            { groupId: 202, groupName: "Group Brisbane — Brisbane" },
-            { groupId: 101, groupName: "Group Manila — Manila" },
-          ],
-        }),
-      );
+      // The list is no longer awaited in HomeData -- it is handed down unresolved
+      // so the shell can paint while the org-wide Rock call is in flight, and the
+      // panel reads it behind a Suspense boundary. The content guarantee under
+      // test is unchanged: every Connect Group across every campus, in production.
+      const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;
+      await expect(props.campusGroupsPromise).resolves.toEqual([
+        { groupId: 202, groupName: "Group Brisbane — Brisbane" },
+        { groupId: 101, groupName: "Group Manila — Manila" },
+      ]);
     } finally {
       vi.unstubAllEnvs();
     }
@@ -205,6 +206,7 @@ describe("Page() session branching", () => {
     const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
 
     expect(getAllConnectGroups).not.toHaveBeenCalled();
-    expect((rendered as { props: { campusGroups: unknown } }).props.campusGroups).toEqual([]);
+    const props = (rendered as { props: { campusGroupsPromise: Promise<unknown> } }).props;
+    await expect(props.campusGroupsPromise).resolves.toEqual([]);
   });
 });

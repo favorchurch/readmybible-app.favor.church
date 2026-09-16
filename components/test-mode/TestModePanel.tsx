@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { Suspense, use, useEffect, useMemo, useState } from "react";
 
 import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { PLAN } from "@/lib/plan";
-import { writesBlocked, type SimulatedPhase, type TestModeState, type TestModeViewer } from "./logic";
+import {
+  STAGE_PRESETS,
+  TEST_MODE_CAMPUSES,
+  writesBlocked,
+  type SimulatedPhase,
+  type TestModeRole,
+  type TestModeState,
+} from "./logic";
 
 const PHASES: { value: SimulatedPhase; label: string }[] = [
   { value: "pre-launch", label: "Pre-launch" },
@@ -13,11 +20,14 @@ const PHASES: { value: SimulatedPhase; label: string }[] = [
   { value: "closed", label: "Closed" },
 ];
 
-const VIEWERS: { value: TestModeViewer; label: string }[] = [
+/** Ordered narrowest-to-widest, so the row reads like the org chart. */
+const ROLES: { value: TestModeRole; label: string }[] = [
+  { value: "new", label: "New" },
   { value: "member", label: "Member" },
-  { value: "leader", label: "Leader" },
-  { value: "admin", label: "Admin" },
-  { value: "non-member", label: "Non-member" },
+  { value: "connect-leader", label: "Connect Leader" },
+  { value: "regional", label: "Regional" },
+  { value: "cluster", label: "Cluster" },
+  { value: "department", label: "Department" },
 ];
 
 export type CampusGroupOption = {
@@ -25,11 +35,153 @@ export type CampusGroupOption = {
   groupName: string;
 };
 
+/**
+ * The group picker, split out so it can sit behind its own Suspense boundary.
+ * Everything above it in the panel (role, campus, phase, the sliders) renders
+ * and is usable while the org-wide group list is still arriving.
+ *
+ * Reads `promise` with `use()` when the server streamed one, and falls back to
+ * the already-resolved `groups` array otherwise -- which is how every test and
+ * every non-streaming caller constructs it.
+ */
+function GroupPicker({
+  groups,
+  promise,
+  realActiveGroup,
+  realActiveGroupId,
+  campus,
+  selectedGroupId,
+  onSelect,
+}: {
+  groups: CampusGroupOption[];
+  promise?: Promise<CampusGroupOption[]>;
+  realActiveGroup?: { groupId: number; groupName: string } | null;
+  realActiveGroupId: number | null;
+  campus: TestModeState["campus"];
+  selectedGroupId: number | null;
+  onSelect: (groupId: number | null) => void;
+}) {
+  const safePromise = useMemo(
+    () => promise?.then((value) => ({ value }), (error: unknown) => ({ error })),
+    [promise],
+  );
+  const result = safePromise ? use(safePromise) : { value: groups };
+  if ("error" in result) throw result.error;
+  const resolved = result.value;
+  const [groupFilter, setGroupFilter] = useState("");
+
+  // The real active group is offered only as the "(my group)" option, so it is
+  // filtered out here to avoid listing it twice. `writesBlocked` depends on that
+  // -- a null groupId is the ONLY way to select it.
+  const selectableGroups = useMemo(
+    () => resolved.filter((g) => g.groupId !== realActiveGroupId),
+    [resolved, realActiveGroupId],
+  );
+
+  const visibleGroups = useMemo(() => {
+    const campusName = TEST_MODE_CAMPUSES.find((c) => c.id === campus)?.name ?? "";
+    // `home-data.tsx` labels each option "Name — Campus" precisely because group
+    // names repeat across campuses. A group whose label carries NO recognised
+    // campus suffix cannot be attributed to a campus, so it is always shown
+    // rather than silently hidden from every campus.
+    const knownCampusNames = TEST_MODE_CAMPUSES.map((c) => c.name);
+    const byCampus = selectableGroups.filter((g) => {
+      const suffix = knownCampusNames.find((name) => g.groupName.endsWith(`— ${name}`));
+      return suffix === undefined || suffix === campusName;
+    });
+    const needle = groupFilter.trim().toLowerCase();
+    if (needle === "") return byCampus;
+    return byCampus.filter((g) => g.groupName.toLowerCase().includes(needle));
+  }, [selectableGroups, campus, groupFilter]);
+
+  return (
+    <label className="test-mode-field">
+      <span>
+        Group
+        {visibleGroups.length !== selectableGroups.length
+          ? ` (${visibleGroups.length} of ${selectableGroups.length})`
+          : selectableGroups.length > 0
+            ? ` (${selectableGroups.length})`
+            : ""}
+      </span>
+      {/*
+        A plain <select> of several hundred Manila groups is unusable, so the
+        list is narrowed twice before it is rendered: by the Campus pills above,
+        and by this free-text filter. The filter is pure client-side over an
+        already-loaded array -- no fetch, so it is instant.
+      */}
+      <input
+        type="search"
+        className="test-mode-group-filter"
+        placeholder="Filter groups…"
+        aria-label="Filter groups"
+        value={groupFilter}
+        onChange={(event) => setGroupFilter(event.target.value)}
+      />
+      <select
+        aria-label="Group"
+        value={selectedGroupId !== null ? String(selectedGroupId) : ""}
+        onChange={(event) => onSelect(event.target.value ? Number(event.target.value) : null)}
+      >
+        <option value="">
+          {realActiveGroup ? `${realActiveGroup.groupName} (my group)` : "(No active group)"}
+        </option>
+        {visibleGroups.map((g) => (
+          <option key={g.groupId} value={String(g.groupId)}>
+            {g.groupName}
+          </option>
+        ))}
+      </select>
+      {selectableGroups.length > 0 && visibleGroups.length === 0 && (
+        <span className="test-mode-note">No group matches that filter.</span>
+      )}
+    </label>
+  );
+}
+
+/** Keeps the panel's layout stable while the group list streams in. */
+function GroupPickerSkeleton() {
+  return (
+    // A div, not a label: there is no control to associate one with yet.
+    <div className="test-mode-field" aria-busy="true">
+      <span>Group</span>
+      <div className="test-mode-skeleton" data-testid="test-mode-group-skeleton" />
+    </div>
+  );
+}
+
+class GroupPickerErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <p className="test-mode-note test-mode-note-error" role="alert">
+          Group list is unavailable right now. You can still use the other test controls.
+        </p>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function GroupPickerFailure({ error }: { error: Error }): never {
+  throw error;
+}
+
 export function TestModePanel({
   state,
   onChange,
   realActiveGroup,
   campusGroups = [],
+  campusGroupsPromise,
   writableGroupId = null,
   error = null,
 }: {
@@ -37,6 +189,7 @@ export function TestModePanel({
   onChange: (next: TestModeState) => void;
   realActiveGroup?: { groupId: number; groupName: string } | null;
   campusGroups?: CampusGroupOption[];
+  campusGroupsPromise?: Promise<CampusGroupOption[]>;
   writableGroupId?: number | null;
   error?: string | null;
 }) {
@@ -44,9 +197,15 @@ export function TestModePanel({
   // already asked for these controls. The Show/Hide toggle stays for
   // getting them out of the way mid-session.
   const [collapsed, setCollapsed] = useState(false);
+  // Separate from `collapsed` on purpose. `collapsed` is the desktop Show/Hide
+  // toggle for the body; `mobileOpen` is whether the mobile sheet is up at all.
+  // Below the 759px breakpoint the CSS hides `.test-mode-panel` unless it also
+  // has `--open`, and hides `.test-mode-fab` above it -- so one state each,
+  // with no `matchMedia` read during render to desync hydration.
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null | undefined>(undefined);
   const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
-
+  const [groupPickerError, setGroupPickerError] = useState<Error | null>(null);
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
   const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
   const isA2Mismatch =
@@ -71,8 +230,46 @@ export function TestModePanel({
     };
   }, [simulatedGroupId]);
 
+  useEffect(() => {
+    if (!campusGroupsPromise) return;
+    let cancelled = false;
+    campusGroupsPromise.catch((error: unknown) => {
+      if (!cancelled) {
+        setGroupPickerError(error instanceof Error ? error : new Error("Group list unavailable"));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [campusGroupsPromise]);
+
   return (
-    <div className="test-mode-panel" data-section="test-mode-panel" role="region" aria-label="Test mode">
+    <>
+      {/*
+        Mobile entry point. A 220px panel docked to the right covers most of a
+        phone screen, so on mobile the panel is hidden until this opens it;
+        `.test-mode-fab` is display:none above the breakpoint. It reuses the
+        same `collapsed` state as the desktop Show/Hide button so there is only
+        one notion of "is the panel open".
+      */}
+      <button
+        type="button"
+        className="test-mode-fab"
+        data-testid="test-mode-fab"
+        aria-expanded={mobileOpen}
+        aria-controls="test-mode-panel"
+        aria-label={mobileOpen ? "Close test mode controls" : "Open test mode controls"}
+        onClick={() => setMobileOpen((value) => !value)}
+      >
+        {mobileOpen ? "Close" : "Test"}
+      </button>
+      <div
+        id="test-mode-panel"
+        className={`test-mode-panel${mobileOpen ? " test-mode-panel--open" : ""}`}
+        data-section="test-mode-panel"
+        role="region"
+        aria-label="Test mode"
+      >
       <div className="test-mode-header">
         <span className="test-mode-badge">Test mode</span>
         <button type="button" onClick={() => setCollapsed((value) => !value)} aria-expanded={!collapsed}>
@@ -94,29 +291,23 @@ export function TestModePanel({
             <p className="test-mode-note">View-only. Writes disabled.</p>
           )}
 
-          <label className="test-mode-field">
-            <span>Group</span>
-            <select
-              value={state.groupId !== null ? String(state.groupId) : ""}
-              onChange={(event) =>
-                onChange({
-                  ...state,
-                  groupId: event.target.value ? Number(event.target.value) : null,
-                })
-              }
-            >
-              <option value="">
-                {realActiveGroup ? `${realActiveGroup.groupName} (my group)` : "(No active group)"}
-              </option>
-              {campusGroups
-                .filter((g) => g.groupId !== realActiveGroup?.groupId)
-                .map((g) => (
-                  <option key={g.groupId} value={String(g.groupId)}>
-                    {g.groupName}
-                  </option>
-                ))}
-            </select>
-          </label>
+          <GroupPickerErrorBoundary key={campusGroupsPromise ? "streamed" : "resolved"}>
+            {groupPickerError ? (
+              <GroupPickerFailure error={groupPickerError} />
+            ) : (
+              <Suspense fallback={<GroupPickerSkeleton />}>
+                <GroupPicker
+                  groups={campusGroups}
+                  promise={campusGroupsPromise}
+                  realActiveGroup={realActiveGroup}
+                  realActiveGroupId={realActiveGroupId}
+                  campus={state.campus}
+                  selectedGroupId={state.groupId}
+                  onSelect={(groupId) => onChange({ ...state, groupId })}
+                />
+              </Suspense>
+            )}
+          </GroupPickerErrorBoundary>
 
           {simulatedGroupId !== null && (
             <p className="test-mode-note test-mode-join-code" data-testid="test-mode-join-code">
@@ -128,17 +319,61 @@ export function TestModePanel({
             </p>
           )}
 
-          <div className="test-mode-field" role="group" aria-label="Viewer">
-            <span>Viewer</span>
+          <div className="test-mode-field" role="group" aria-label="Campus">
+            <span>Campus</span>
             <div className="test-mode-phase-row">
-              {VIEWERS.map((v) => (
+              {TEST_MODE_CAMPUSES.map((campus) => (
                 <button
-                  key={v.value}
+                  key={campus.id}
                   type="button"
-                  className={state.viewer === v.value ? "selected" : ""}
-                  onClick={() => onChange({ ...state, viewer: v.value })}
+                  title={campus.name}
+                  aria-pressed={state.campus === campus.id}
+                  className={state.campus === campus.id ? "selected" : ""}
+                  // Changing campus clears the simulated group: a group from the
+                  // old campus is not in the new campus's list, and leaving it
+                  // selected would show a Manila group under a Seoul scope.
+                  onClick={() => onChange({ ...state, campus: campus.id, groupId: null })}
                 >
-                  {v.label}
+                  {campus.code}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="test-mode-field" role="group" aria-label="Role">
+            <span>Role</span>
+            <div className="test-mode-phase-row">
+              {ROLES.map((role) => (
+                <button
+                  key={role.value}
+                  type="button"
+                  aria-pressed={state.role === role.value}
+                  className={state.role === role.value ? "selected" : ""}
+                  onClick={() => onChange({ ...state, role: role.value })}
+                >
+                  {role.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="test-mode-field" role="group" aria-label="House stage">
+            <span>House</span>
+            <div className="test-mode-phase-row">
+              {STAGE_PRESETS.map((preset) => (
+                <button
+                  key={preset.stage}
+                  type="button"
+                  // Plain click lands mid-band; alt/option-click sits exactly on
+                  // the threshold, which is where `stageTransition` fires.
+                  title={`${preset.pct}% — alt-click for the ${preset.threshold}% threshold`}
+                  aria-pressed={state.groupPct === preset.pct}
+                  className={state.groupPct === preset.pct ? "selected" : ""}
+                  onClick={(event) =>
+                    onChange({ ...state, groupPct: event.altKey ? preset.threshold : preset.pct })
+                  }
+                >
+                  {preset.stage}
                 </button>
               ))}
             </div>
@@ -199,6 +434,7 @@ export function TestModePanel({
           </label>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

@@ -16,7 +16,11 @@ import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, g
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
-import { isTestModeRequestedFromQuery } from "@/components/test-mode/logic";
+import {
+  isTestModeRequestedFromQuery,
+  simulatedScopeFromQuery,
+  type TestModeCampus,
+} from "@/components/test-mode/logic";
 import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import SectionDashboard, { SectionDashboardSkeleton } from "@/components/sections/section-dashboard";
@@ -24,6 +28,19 @@ import SectionDashboard, { SectionDashboardSkeleton } from "@/components/section
 /** Next hands repeated query keys through as an array; every caller here wants the first value. */
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function testModeCampusForId(campusId: number | null): TestModeCampus {
+  return campusId === 2 || campusId === 3 ? campusId : 1;
+}
+
+function testModeQuery(query: Record<string, string | string[] | undefined>): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    const first = firstParam(value);
+    if (first !== undefined) params.set(key, first);
+  }
+  return params;
 }
 
 export async function HomeData({
@@ -74,7 +91,12 @@ export async function HomeData({
     return list;
   })();
 
-  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap, campusGroups] =
+  // `campusGroupsP` is deliberately absent from this Promise.all. It is handed
+  // to AppShell UNRESOLVED and read behind a Suspense boundary in the panel, so
+  // the shell paints and every other control (role, campus, phase, sliders) is
+  // usable while the org-wide Rock call is still in flight. Awaiting it here is
+  // what made test mode feel slow even after the fetch was gated.
+  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap] =
     await Promise.all([
       db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
       getPersonReadingState(session.rockPersonId),
@@ -85,7 +107,6 @@ export async function HomeData({
       session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
       session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
       memberReadingMapP,
-      campusGroupsP,
     ]);
 
   const profileRow = profileRows[0];
@@ -98,7 +119,8 @@ export async function HomeData({
   const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
   let scope = resolveAdminScope(session);
-  let simulatedScope: "global" | "cluster" | "region" | undefined;
+  let simulatedScope: "global" | "cluster" | "region" | "department" | undefined;
+  let simulatedCampus: TestModeCampus | undefined;
 
   // Dev-only simulation of global/cluster/region scopes, re-homed verbatim
   // from the original app/admin/page.tsx (see ef393bd). In production, the
@@ -109,26 +131,43 @@ export async function HomeData({
   const isDev = process.env.NODE_ENV !== "production";
   const testParam = firstParam(searchParams.test);
   const scopeParam = firstParam(searchParams.scope);
+  const roleParam = firstParam(searchParams.role) ?? firstParam(searchParams.viewer);
+  const campusParam = firstParam(searchParams.campus);
   const isProdAdminTest = !isDev && scope !== null && testParam === "1";
   const isTest = (isDev && (testParam === "1" || scopeParam !== undefined)) || isProdAdminTest;
   if (isTest || (!scope && isDev)) {
-    const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
-    if (requestedScope === "cluster") {
-      scope = { kind: "sections", rootIds: [23869] }; // Cluster // Cielo Pabalan & Peejay Pabalan
-      simulatedScope = "cluster";
-    } else if (requestedScope === "region") {
-      scope = { kind: "sections", rootIds: [23870] }; // Region // Arnel Guiron & Belle Guiron
-      simulatedScope = "region";
-    } else if (requestedScope === "global" || !scope) {
-      scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
-      simulatedScope = "global";
+    const hasSimulationQuery =
+      roleParam !== undefined || campusParam !== undefined || scopeParam !== undefined || testParam === "1";
+    if (hasSimulationQuery) {
+      const simulated = simulatedScopeFromQuery(testModeQuery(searchParams), testModeCampusForId(session.campusId));
+      if (simulated) {
+        scope = simulated.kind === "global"
+          ? { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] }
+          : { kind: "sections", rootIds: simulated.rootIds };
+        simulatedScope = simulated.simulatedScope;
+        simulatedCampus = simulated.campus;
+      } else {
+        scope = null;
+        simulatedScope = undefined;
+        simulatedCampus = undefined;
+      }
+    } else {
+      const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
+      if (requestedScope === "global" || !scope) {
+        scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
+        simulatedScope = "global";
+      }
     }
   }
 
   const sectionSlot = scope
     ? (
       <Suspense fallback={<SectionDashboardSkeleton />}>
-        <SectionDashboard scope={scope as AdminScope} simulatedScope={simulatedScope} />
+        <SectionDashboard
+          scope={scope as AdminScope}
+          simulatedScope={simulatedScope}
+          simulatedCampus={simulatedCampus}
+        />
       </Suspense>
     )
     : null;
@@ -163,8 +202,11 @@ export async function HomeData({
     campusBoard,
     appBaseUrl: process.env.APP_BASE_URL ?? "",
     devMockToday: devMockToday(),
-    campusGroups,
+    // Empty resolved fallback; the panel reads `campusGroupsPromise` instead.
+    campusGroups: [],
+    campusGroupsPromise: campusGroupsP,
     testWritableGroupId: writableGroupId,
+    campusId: session.campusId,
     sectionSlot,
   };
 

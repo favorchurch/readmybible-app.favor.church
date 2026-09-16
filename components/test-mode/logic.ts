@@ -1,5 +1,6 @@
 import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, planPhase, todaysEntry } from "@/lib/plan";
 import type { TodayState } from "@/components/use-today";
+import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 
 /** `?test=1` opens the panel directly; `?day=N` is an alias that also seeds the day. */
 export const TEST_MODE_PARAM = "test";
@@ -9,7 +10,44 @@ export const TEST_MODE_BLOCKED_MESSAGE = "Test mode: writes are disabled.";
 
 export type SimulatedPhase = "pre-launch" | "active" | "grace" | "closed";
 
-export type TestModeViewer = "member" | "leader" | "admin" | "non-member";
+/**
+ * The roles the panel can simulate, widest scope first among the admin tiers.
+ *
+ * - `new`            -- no Connect Group at all; the first-run/solo experience.
+ * - `member`         -- an ordinary GT25 member.
+ * - `connect-leader` -- a GT25 leader; gets the Leader tab for their own group.
+ * - `department`     -- admin scope over a whole campus subtree (widest).
+ * - `cluster`        -- admin scope over a cluster, which contains regions.
+ * - `regional`       -- admin scope over a single region (narrowest).
+ *
+ * `new` replaces the old `non-member`; `connect-leader` replaces `leader`; the
+ * single `admin` value is split into the three real admin tiers, because an
+ * undifferentiated "admin" could not reproduce what a regional head actually
+ * sees.
+ *
+ * ORDERING NOTE: cluster is placed ABOVE regional here on the codebase's own
+ * evidence -- `resolveScopeRole` (lib/admin/access.ts) classifies a section as
+ * "Cluster Head" precisely when it HAS child sections (regions), and
+ * "Regional Leader" when its children are leaf Connect Groups. If Favor's org
+ * language actually puts region above cluster, swap the two ids in
+ * `SIMULATED_SECTION_ROOTS` -- nothing else depends on the order.
+ */
+export type TestModeRole =
+  | "new"
+  | "member"
+  | "connect-leader"
+  | "department"
+  | "cluster"
+  | "regional";
+
+/** Rock CampusIds: 1 = Manila (MNL), 2 = Brisbane (BNE), 3 = Seoul (SEL). */
+export type TestModeCampus = 1 | 2 | 3;
+
+export const TEST_MODE_CAMPUSES: ReadonlyArray<{ id: TestModeCampus; code: string; name: string }> = [
+  { id: 1, code: "MNL", name: "Manila" },
+  { id: 2, code: "BNE", name: "Brisbane" },
+  { id: 3, code: "SEL", name: "Seoul" },
+];
 
 export type TestModeState = {
   day: number;
@@ -17,8 +55,74 @@ export type TestModeState = {
   completionPct: number;
   groupPct: number;
   groupId: number | null;
-  viewer: TestModeViewer;
+  role: TestModeRole;
+  campus: TestModeCampus;
 };
+
+/**
+ * Section subtree roots the admin tiers simulate.
+ *
+ * `cluster` and `regional` reuse the exact ids the pre-existing dev scope
+ * simulation already used (`components/home-data.tsx`, `?scope=cluster` /
+ * `?scope=region`), so the panel and that older switch cannot disagree about
+ * what "a cluster" means. `department` is campus-wide and so resolves per
+ * campus instead -- see `departmentRootForCampus`.
+ */
+export const SIMULATED_SECTION_ROOTS = {
+  cluster: 23869, // Cluster // Cielo Pabalan & Peejay Pabalan
+  regional: 23870, // Region // Arnel Guiron & Belle Guiron
+} as const;
+
+/**
+ * What a simulated role means for the shell's gating, in one place so
+ * `app-shell.tsx` never re-derives it.
+ *
+ * `rootIds === null` means "not an admin tier" -- the caller leaves the
+ * section dashboard out entirely rather than showing an empty one.
+ */
+export type SimulatedRoleScope = {
+  isLeader: boolean;
+  isAdminScope: boolean;
+  hasGroup: boolean;
+  rootIds: number[] | null;
+};
+
+export function scopeForRole(role: TestModeRole, campus: TestModeCampus): SimulatedRoleScope {
+  switch (role) {
+    case "new":
+      return { isLeader: false, isAdminScope: false, hasGroup: false, rootIds: null };
+    case "member":
+      return { isLeader: false, isAdminScope: false, hasGroup: true, rootIds: null };
+    case "connect-leader":
+      return { isLeader: true, isAdminScope: false, hasGroup: true, rootIds: null };
+    case "department":
+      return {
+        isLeader: true,
+        isAdminScope: true,
+        hasGroup: true,
+        rootIds: [departmentRootForCampus(campus)],
+      };
+    case "cluster":
+      return {
+        isLeader: true,
+        isAdminScope: true,
+        hasGroup: true,
+        rootIds: [SIMULATED_SECTION_ROOTS.cluster],
+      };
+    case "regional":
+      return {
+        isLeader: true,
+        isAdminScope: true,
+        hasGroup: true,
+        rootIds: [SIMULATED_SECTION_ROOTS.regional],
+      };
+  }
+}
+
+/** True for the three tiers that simulate an admin-scope viewer. */
+export function isAdminRole(role: TestModeRole): boolean {
+  return scopeForRole(role, 1).isAdminScope;
+}
 
 /**
  * The single trigger list both the client and the server read. `isTestModeRequested`
@@ -62,28 +166,154 @@ function dayFromParams(searchParams: URLSearchParams): number {
   return 1;
 }
 
-/** The panel's starting values: `?day=N` seeds the day, `?leader=1` seeds leader viewer, `?admin=1` seeds admin viewer. */
-export function initialTestModeState(searchParams: URLSearchParams): TestModeState {
-  const viewerParam = searchParams.get("viewer");
+/**
+ * The GT24 campus-root section each campus's `department` tier simulates.
+ * `CAMPUS_ROOT_SECTION_IDS` is documented as the three campus-level sections
+ * directly under the global root, in campus order.
+ */
+export function departmentRootForCampus(campus: TestModeCampus): number {
+  return CAMPUS_ROOT_SECTION_IDS[campus - 1] ?? CAMPUS_ROOT_SECTION_IDS[0];
+}
+
+/**
+ * Accepts the role names the panel writes into the URL, and still accepts the
+ * pre-rename values (`non-member`, `leader`, `admin`) so an old bookmarked or
+ * shared test link keeps working instead of silently falling back to `member`.
+ */
+function roleFromParam(raw: string | null): TestModeRole | null {
+  switch (raw) {
+    case "new":
+    case "member":
+    case "connect-leader":
+    case "department":
+    case "cluster":
+    case "regional":
+      return raw;
+    // Legacy aliases, kept so existing links do not change meaning.
+    case "non-member":
+      return "new";
+    case "leader":
+      return "connect-leader";
+    case "admin":
+      return "department";
+    default:
+      return null;
+  }
+}
+
+function roleFromScopeParam(raw: string | null): TestModeRole | null {
+  switch (raw) {
+    // `department` never appeared in a page URL, but the CSV export has always
+    // accepted it, so a shared export link carries it.
+    case "global":
+    case "sections":
+    case "department":
+      return "department";
+    case "cluster":
+      return "cluster";
+    case "region":
+      return "regional";
+    default:
+      return null;
+  }
+}
+
+function campusFromParams(searchParams: URLSearchParams, fallback: TestModeCampus): TestModeCampus {
+  const raw = (searchParams.get("campus") ?? "").trim().toUpperCase();
+  if (raw === "") return fallback;
+  const byCode = TEST_MODE_CAMPUSES.find((c) => c.code === raw);
+  if (byCode) return byCode.id;
+  const asId = Number(raw);
+  const byId = TEST_MODE_CAMPUSES.find((c) => c.id === asId);
+  return byId ? byId.id : fallback;
+}
+
+/**
+ * The panel's starting values: `?day=N` seeds the day, `?role=` seeds the role
+ * (`?viewer=` is still read as its alias), `?campus=MNL|BNE|SEL` (or the numeric
+ * id) seeds the campus, and `?leader=1` / `?admin=1` / `?tab=admin` seed the
+ * role the way they always did.
+ *
+ * `sessionCampus` is the viewer's real campus, used as the campus default so a
+ * Brisbane tester does not open the panel scoped to Manila.
+ */
+export function initialTestModeState(
+  searchParams: URLSearchParams,
+  sessionCampus: TestModeCampus = 1,
+): TestModeState {
+  const explicit = roleFromParam(searchParams.get("role") ?? searchParams.get("viewer"));
+  const legacyScopeRole = roleFromScopeParam(searchParams.get("scope"));
   const isLeaderParam = searchParams.get("leader") === "1" || searchParams.get("tab") === "leader";
   const isAdminParam = searchParams.get("admin") === "1" || searchParams.get("tab") === "admin";
-  const viewer: TestModeViewer =
-    viewerParam === "admin" || isAdminParam
-      ? "admin"
-      : viewerParam === "leader" || isLeaderParam
-        ? "leader"
-        : viewerParam === "non-member"
-          ? "non-member"
-          : "member";
+  const role: TestModeRole =
+    explicit ?? legacyScopeRole ?? (isAdminParam ? "department" : isLeaderParam ? "connect-leader" : "member");
   return {
     day: dayFromParams(searchParams),
     phase: "active",
     completionPct: 0,
     groupPct: 0,
     groupId: null,
-    viewer,
+    role,
+    campus: campusFromParams(searchParams, sessionCampus),
   };
 }
+
+export type SimulatedScopeSelection = {
+  kind: "global" | "sections";
+  rootIds: number[];
+  simulatedScope: "global" | "cluster" | "region" | "department";
+  campus?: TestModeCampus;
+};
+
+function selectionForRole(role: TestModeRole, campus: TestModeCampus): SimulatedScopeSelection | null {
+  const simulated = scopeForRole(role, campus);
+  if (!simulated.isAdminScope || simulated.rootIds === null) return null;
+  return {
+    kind: "sections",
+    rootIds: simulated.rootIds,
+    simulatedScope: role === "cluster" ? "cluster" : role === "regional" ? "region" : "department",
+    campus: role === "department" ? campus : undefined,
+  };
+}
+
+/** Resolves the simulated scope shared by HomeData and the CSV route. */
+export function simulatedScopeFromQuery(
+  searchParams: URLSearchParams,
+  sessionCampus: TestModeCampus = 1,
+): SimulatedScopeSelection | null {
+  const roleParam = searchParams.get("role") ?? searchParams.get("viewer");
+  const campusParam = searchParams.get("campus");
+  const scopeParam = searchParams.get("scope");
+
+  if (roleParam !== null || campusParam !== null) {
+    const state = initialTestModeState(searchParams, sessionCampus);
+    return selectionForRole(state.role, state.campus);
+  }
+
+  if (scopeParam === "cluster") {
+    return selectionForRole("cluster", 1);
+  }
+  if (scopeParam === "region") {
+    return selectionForRole("regional", 1);
+  }
+  if (scopeParam === "global" || scopeParam === "sections") {
+    return { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID], simulatedScope: "global" };
+  }
+
+  // A bare test-mode URL starts as the simulated member role, which has no
+  // admin scope. Do not let the endpoint fall back to the real admin scope.
+  return null;
+}
+
+/** Group completion percentages that land mid-band for each house stage (`stageFor`, lib/game.ts). */
+export const STAGE_PRESETS: ReadonlyArray<{ stage: string; pct: number; threshold: number }> = [
+  { stage: "Tent", pct: 0, threshold: 0 },
+  { stage: "Trailer", pct: 15, threshold: 10 },
+  { stage: "Cabin", pct: 35, threshold: 25 },
+  { stage: "Apartment", pct: 55, threshold: 45 },
+  { stage: "House", pct: 75, threshold: 65 },
+  { stage: "Mansion", pct: 95, threshold: 85 },
+];
 
 /**
  * The plan date a simulated day/phase maps to, reusing the real plan

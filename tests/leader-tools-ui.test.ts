@@ -277,7 +277,7 @@ describe("AppShell leader role guard and paper noise", () => {
     if (show) fireEvent.click(show);
   }
     const testMode = screen.getByRole("region", { name: "Test mode" });
-    fireEvent.click(within(testMode).getByRole("button", { name: /^Leader$/ }));
+    fireEvent.click(within(testMode).getByRole("button", { name: /^Connect Leader$/ }));
     fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
 
     await waitFor(() => expect(container.querySelector(".leader-screen")).not.toBeNull());
