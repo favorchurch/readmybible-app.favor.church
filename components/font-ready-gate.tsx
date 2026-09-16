@@ -92,14 +92,26 @@ export function FontReadyGate({ children }: { children: React.ReactNode }) {
   if (state === "ready") return <>{children}</>;
   if (state === "failed") {
     return (
-      <FontReadyFallback
-        onRetry={() => {
-          setState("loading");
-          setAttempt((current) => current + 1);
-        }}
-        onContinue={() => setState("ready")}
-      />
+      <>
+        {children}
+        <div className="font-ready-failure-overlay">
+          <FontReadyFallback
+            onRetry={() => {
+              setState("loading");
+              setAttempt((current) => current + 1);
+            }}
+            onContinue={() => setState("ready")}
+          />
+        </div>
+      </>
     );
   }
-  return <AppBrandSplash />;
+  return (
+    <>
+      {children}
+      <div className="font-ready-overlay">
+        <AppBrandSplash />
+      </div>
+    </>
+  );
 }

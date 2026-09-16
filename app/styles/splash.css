@@ -47,6 +47,36 @@
   color: var(--coral);
 }
 
+.font-ready-overlay,
+.font-ready-failure-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--cream);
+}
+
+.font-ready-overlay {
+  animation: fontReadyAutoReveal 4.2s linear forwards;
+}
+
+.font-ready-failure-overlay {
+  z-index: 110;
+  overflow: auto;
+}
+
+@keyframes fontReadyAutoReveal {
+  0%, 96% {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 .font-ready-fallback {
   min-height: 100dvh;
   display: grid;
@@ -73,6 +103,12 @@
   background: transparent;
   cursor: pointer;
   font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .font-ready-overlay {
+    animation-duration: .01ms;
+  }
 }
 
 /* Box size is prop-driven (see SplashCompanion's `size`, applied inline) so

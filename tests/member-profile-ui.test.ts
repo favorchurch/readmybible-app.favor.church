@@ -309,6 +309,34 @@ describe("TodayScreen tent people toggle", () => {
     expect(html).toContain(`One Matthew chapter a day, starting ${startLabel}.`);
   });
 
+  it("does not expose dead pre-launch navigation controls to ordinary readers", () => {
+    const { container } = render(
+      React.createElement(TodayScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-09-20", displayPhase: "pre-launch", phase: "pre-launch", dayLabel: 0, entry: null },
+        chapters: [],
+        chaptersRead: 0,
+        catchUpChapter: null,
+        streakDays: 0,
+        groupName: "Manila Central",
+        groupStats: sampleStats,
+        roster: sampleRoster,
+        profile: testProfile,
+        avatarCustomized: false,
+        onStart: () => {},
+        onEditProfile: () => {},
+        onViewConnect: () => {},
+        onViewProgress: () => {},
+        allowPreLaunchNavigation: false,
+      }),
+    );
+
+    expect(screen.queryByRole("button", { name: /connect group/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /see the full roadmap/i })).toBeNull();
+    expect(container.querySelector(".readiness-row-static")).not.toBeNull();
+    expect(container.querySelector('[data-section="roadmap-link"]')).toBeNull();
+    cleanup();
+  });
+
   it("renders the tent toggle button with aria-pressed attribute", () => {
     const html = renderToStaticMarkup(
       React.createElement(TodayScreen, {

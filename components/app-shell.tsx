@@ -657,6 +657,7 @@ function AppShellInner(props: AppShellProps) {
           connectSwitcher={connectSwitcher}
           onViewConnect={() => selectTab("connect")}
           onViewProgress={() => selectTab("progress")}
+          allowPreLaunchNavigation={showReaderTabs}
         />
       )}
       {activeTab === "connect" && (

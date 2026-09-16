@@ -6,7 +6,7 @@
  */
 export function safeReturnTo(value: unknown): string {
   const candidate = Array.isArray(value) ? value[0] : value;
-  if (typeof candidate !== "string" || !candidate.startsWith("/") || candidate.startsWith("//")) {
+  if (typeof candidate !== "string" || !/^\/[^/\\]/.test(candidate)) {
     return "/";
   }
   return candidate;

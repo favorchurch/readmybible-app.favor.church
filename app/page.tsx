@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { AppBrandSplash } from "@/components/app-splash";
+import { FontReadyGate } from "@/components/font-ready-gate";
 import { HomeData } from "@/components/home-data";
 import { loginPathFor } from "@/lib/auth-return";
 import { getSessionContext } from "@/lib/session";
@@ -23,8 +24,10 @@ export default async function Page(props?: {
   }
 
   return (
-    <Suspense fallback={<AppBrandSplash />}>
-      <HomeData session={session} searchParams={searchParams} />
-    </Suspense>
+    <FontReadyGate>
+      <Suspense fallback={<AppBrandSplash />}>
+        <HomeData session={session} searchParams={searchParams} />
+      </Suspense>
+    </FontReadyGate>
   );
 }

@@ -539,6 +539,7 @@
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out);
 }
+.readiness-row-static { cursor: default; }
 .readiness-row:first-of-type { border-top: 0; }
 .readiness-label {
   font-size: 14px;

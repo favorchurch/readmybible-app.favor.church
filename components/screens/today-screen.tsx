@@ -204,6 +204,7 @@ export function TodayScreen({
   onViewConnect,
   onViewProgress,
   connectSwitcher,
+  allowPreLaunchNavigation = true,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -220,6 +221,7 @@ export function TodayScreen({
   onViewConnect: () => void;
   onViewProgress: () => void;
   connectSwitcher?: ConnectSwitcherContext;
+  allowPreLaunchNavigation?: boolean;
 }) {
   const entry = today.entry;
   const readingVariant = useSyncExternalStore(
@@ -281,13 +283,22 @@ export function TodayScreen({
                   <span className="readiness-arrow" aria-hidden="true">→</span>
                 </span>
               </button>
-              <button type="button" className="readiness-row" onClick={onViewConnect}>
-                <span className="readiness-label">Connect Group</span>
-                <span className="readiness-value">
-                  <strong>{groupName ?? "Join with a leader code"}</strong>
-                  <span className="readiness-arrow" aria-hidden="true">→</span>
-                </span>
-              </button>
+              {allowPreLaunchNavigation ? (
+                <button type="button" className="readiness-row" onClick={onViewConnect}>
+                  <span className="readiness-label">Connect Group</span>
+                  <span className="readiness-value">
+                    <strong>{groupName ?? "Join with a leader code"}</strong>
+                    <span className="readiness-arrow" aria-hidden="true">→</span>
+                  </span>
+                </button>
+              ) : (
+                <div className="readiness-row readiness-row-static" aria-disabled="true">
+                  <span className="readiness-label">Connect Group</span>
+                  <span className="readiness-value">
+                    <strong>{groupName ?? "Join with a leader code"}</strong>
+                  </span>
+                </div>
+              )}
               <button type="button" className="readiness-row" onClick={onEditProfile}>
                 <span className="readiness-label">Bible translation</span>
                 <span className="readiness-value">
@@ -364,11 +375,13 @@ export function TodayScreen({
               </ol>
             </section>
 
-            <section className="roadmap-link-row" data-section="roadmap-link">
-              <button type="button" className="secondary-link" onClick={onViewProgress}>
-                See the full roadmap <span aria-hidden="true">→</span>
-              </button>
-            </section>
+            {allowPreLaunchNavigation && (
+              <section className="roadmap-link-row" data-section="roadmap-link">
+                <button type="button" className="secondary-link" onClick={onViewProgress}>
+                  See the full roadmap <span aria-hidden="true">→</span>
+                </button>
+              </section>
+            )}
           </div>
         </div>
         <HomeGrowthSheet

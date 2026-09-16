@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { FontReadyGate } from "@/components/font-ready-gate";
 import { LoginEntry } from "@/components/login-entry";
 import { safeReturnTo } from "@/lib/auth-return";
 import { getSessionContext } from "@/lib/session";
@@ -21,5 +22,9 @@ export default async function LoginPage({
   if (session.status === "ok") redirect(returnTo);
   if (session.status === "not-found-in-rock") redirect("/not-found-in-rock");
 
-  return <LoginEntry returnTo={returnTo} />;
+  return (
+    <FontReadyGate>
+      <LoginEntry returnTo={returnTo} />
+    </FontReadyGate>
+  );
 }

@@ -5,7 +5,7 @@
   src: url("/fonts/FavorSans-Bold.otf") format("opentype");
   font-style: normal;
   font-weight: 400 900;
-  font-display: optional;
+  font-display: block;
 }
 
 @font-face {
@@ -13,7 +13,7 @@
   src: url("/fonts/Agharti-Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
-  font-display: optional;
+  font-display: block;
 }
 
 :root {
