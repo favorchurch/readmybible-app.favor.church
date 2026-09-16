@@ -7,6 +7,7 @@ import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { loadAdminStats } from "@/lib/admin/stats";
 import { HierarchyChart } from "@/components/sections/HierarchyChart";
 import { SectionTree } from "@/components/sections/SectionTree";
+import { TEST_MODE_CAMPUSES, type TestModeCampus } from "@/components/test-mode/logic";
 import "@/components/sections/admin.css";
 
 /** Oxford-comma-joined list: "A", "A and B", "A, B, and C". */
@@ -19,20 +20,23 @@ function formatNameList(names: string[]): string {
 
 export type SectionDashboardProps = {
   scope: AdminScope;
-  simulatedScope?: "global" | "cluster" | "region";
+  simulatedScope?: "global" | "cluster" | "region" | "department";
+  simulatedCampus?: TestModeCampus;
 };
 
 export default async function SectionDashboard({
   scope,
   simulatedScope,
+  simulatedCampus,
 }: SectionDashboardProps) {
   const sections = await loadSectionSubtree(scope.rootIds);
   const { sections: statsSections, series } = await loadAdminStats(sections);
   const scopeRole = resolveScopeRole(scope, statsSections);
-  const csvUrl =
-    simulatedScope !== undefined
-      ? `/admin/export.csv?scope=${encodeURIComponent(simulatedScope)}`
-      : "/admin/export.csv";
+  const csvParams = new URLSearchParams({ scope: simulatedScope ?? "", test: "1" });
+  if (simulatedScope === "department" && simulatedCampus !== undefined) {
+    csvParams.set("campus", TEST_MODE_CAMPUSES.find((campus) => campus.id === simulatedCampus)?.code ?? "MNL");
+  }
+  const csvUrl = simulatedScope !== undefined ? `/admin/export.csv?${csvParams.toString()}` : "/admin/export.csv";
 
   return (
     <>

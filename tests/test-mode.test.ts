@@ -48,10 +48,14 @@ describe("initialTestModeState", () => {
     expect(initialTestModeState(new URLSearchParams("day=nope")).day).toBe(1);
   });
 
-  it("seeds admin viewer from ?admin=1 or ?viewer=admin", () => {
-    expect(initialTestModeState(new URLSearchParams("admin=1")).viewer).toBe("admin");
-    expect(initialTestModeState(new URLSearchParams("viewer=admin")).viewer).toBe("admin");
-    expect(initialTestModeState(new URLSearchParams("tab=admin")).viewer).toBe("admin");
+  // `viewer` was renamed to `role` and the single "admin" value split into the
+  // three real admin tiers; "admin" now resolves to the widest of them so the
+  // old links keep meaning "show me the admin view". See
+  // tests/test-mode-roles-campus.test.ts for the full role/campus contract.
+  it("seeds an admin-scope role from ?admin=1 or ?viewer=admin", () => {
+    expect(initialTestModeState(new URLSearchParams("admin=1")).role).toBe("department");
+    expect(initialTestModeState(new URLSearchParams("viewer=admin")).role).toBe("department");
+    expect(initialTestModeState(new URLSearchParams("tab=admin")).role).toBe("department");
   });
 
   it("starts with nothing else simulated", () => {
@@ -60,8 +64,9 @@ describe("initialTestModeState", () => {
     expect(state.completionPct).toBe(0);
     expect(state.groupPct).toBe(0);
     expect(state.groupId).toBeNull();
-    expect(state.viewer).toBe("member");
-    expect(state).not.toHaveProperty("role");
+    expect(state.role).toBe("member");
+    expect(state.campus).toBe(1);
+    expect(state).not.toHaveProperty("viewer");
   });
 });
 

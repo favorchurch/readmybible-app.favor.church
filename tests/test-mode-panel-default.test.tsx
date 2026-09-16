@@ -10,7 +10,7 @@
  */
 
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TestModePanel } from "@/components/test-mode/TestModePanel";
@@ -22,7 +22,8 @@ vi.mock("@/app/actions/getJoinCodeForGroup", () => ({
 
 const state: TestModeState = {
   groupId: null,
-  viewer: "member",
+  role: "member",
+  campus: 1,
   phase: "active",
   day: 1,
   completionPct: 0,
@@ -34,23 +35,50 @@ afterEach(cleanup);
 describe("TestModePanel default collapsed state (#127)", () => {
   it("renders its body expanded on first mount", () => {
     render(<TestModePanel state={state} onChange={() => {}} />);
-    // The Viewer control lives in the body, so its presence is the body's presence.
-    expect(screen.queryByRole("group", { name: "Viewer" })).not.toBeNull();
+    // The Role control lives in the body, so its presence is the body's presence.
+    expect(screen.queryByRole("group", { name: "Role" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Hide" })).toBeTruthy();
   });
 
   it("still collapses and re-expands via the toggle", () => {
     render(<TestModePanel state={state} onChange={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "Hide" }));
-    expect(screen.queryByRole("group", { name: "Viewer" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Role" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
-    expect(screen.queryByRole("group", { name: "Viewer" })).not.toBeNull();
+    expect(screen.queryByRole("group", { name: "Role" })).not.toBeNull();
   });
 
-  it("does not render a deprecated Admin dashboard link for an admin viewer", () => {
-    render(<TestModePanel state={{ ...state, viewer: "admin" }} onChange={() => {}} />);
+  it("does not render a deprecated Admin dashboard link for an admin-scope role", () => {
+    render(<TestModePanel state={{ ...state, role: "department" }} onChange={() => {}} />);
 
     expect(screen.queryByRole("link", { name: /Admin Dashboard/i })).toBeNull();
     expect(screen.queryByText("Open Admin Dashboard →")).toBeNull();
+  });
+
+  it("keeps the panel recoverable when the streamed group list fails", async () => {
+    let rejectGroups!: (error: Error) => void;
+    const campusGroupsPromise = new Promise<never>((_, reject) => {
+      rejectGroups = reject;
+    });
+    const view = render(
+      <TestModePanel
+        state={state}
+        onChange={() => {}}
+        campusGroupsPromise={campusGroupsPromise}
+      />,
+    );
+
+    await act(async () => {
+      rejectGroups(new Error("group service unavailable"));
+    });
+    view.rerender(
+      <TestModePanel
+        state={state}
+        onChange={() => {}}
+        campusGroupsPromise={campusGroupsPromise}
+      />,
+    );
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/group list is unavailable/i));
+    expect(screen.getByRole("group", { name: "Role" })).toBeTruthy();
   });
 });
