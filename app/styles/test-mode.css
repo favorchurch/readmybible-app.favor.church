@@ -11,6 +11,8 @@
 .test-mode-field { display: grid; gap: 4px; }
 .test-mode-field > span { font-weight: 700; color: var(--ink-2); }
 .test-mode-field input[type="range"] { width: 100%; min-height: 44px; }
+.test-mode-field input[type="search"] { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
+.test-mode-skeleton { height: 44px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--line); opacity: .6; } /* decorative placeholder while the group list streams in */
 .test-mode-field select { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
 .test-mode-phase-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .test-mode-phase-row button { min-height: 44px; min-width: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }

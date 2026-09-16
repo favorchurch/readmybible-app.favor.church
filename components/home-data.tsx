@@ -74,7 +74,12 @@ export async function HomeData({
     return list;
   })();
 
-  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap, campusGroups] =
+  // `campusGroupsP` is deliberately absent from this Promise.all. It is handed
+  // to AppShell UNRESOLVED and read behind a Suspense boundary in the panel, so
+  // the shell paints and every other control (role, campus, phase, sliders) is
+  // usable while the org-wide Rock call is still in flight. Awaiting it here is
+  // what made test mode feel slow even after the fetch was gated.
+  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap] =
     await Promise.all([
       db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
       getPersonReadingState(session.rockPersonId),
@@ -85,7 +90,6 @@ export async function HomeData({
       session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
       session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
       memberReadingMapP,
-      campusGroupsP,
     ]);
 
   const profileRow = profileRows[0];
@@ -163,7 +167,9 @@ export async function HomeData({
     campusBoard,
     appBaseUrl: process.env.APP_BASE_URL ?? "",
     devMockToday: devMockToday(),
-    campusGroups,
+    // Empty resolved fallback; the panel reads `campusGroupsPromise` instead.
+    campusGroups: [],
+    campusGroupsPromise: campusGroupsP,
     testWritableGroupId: writableGroupId,
     sectionSlot,
   };

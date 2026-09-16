@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, use, useEffect, useMemo, useState } from "react";
 
 import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { PLAN } from "@/lib/plan";
@@ -35,11 +35,121 @@ export type CampusGroupOption = {
   groupName: string;
 };
 
+/**
+ * The group picker, split out so it can sit behind its own Suspense boundary.
+ * Everything above it in the panel (role, campus, phase, the sliders) renders
+ * and is usable while the org-wide group list is still arriving.
+ *
+ * Reads `promise` with `use()` when the server streamed one, and falls back to
+ * the already-resolved `groups` array otherwise -- which is how every test and
+ * every non-streaming caller constructs it.
+ */
+function GroupPicker({
+  groups,
+  promise,
+  realActiveGroup,
+  realActiveGroupId,
+  campus,
+  selectedGroupId,
+  onSelect,
+}: {
+  groups: CampusGroupOption[];
+  promise?: Promise<CampusGroupOption[]>;
+  realActiveGroup?: { groupId: number; groupName: string } | null;
+  realActiveGroupId: number | null;
+  campus: TestModeState["campus"];
+  selectedGroupId: number | null;
+  onSelect: (groupId: number | null) => void;
+}) {
+  const resolved = promise ? use(promise) : groups;
+  const [groupFilter, setGroupFilter] = useState("");
+
+  // The real active group is offered only as the "(my group)" option, so it is
+  // filtered out here to avoid listing it twice. `writesBlocked` depends on that
+  // -- a null groupId is the ONLY way to select it.
+  const selectableGroups = useMemo(
+    () => resolved.filter((g) => g.groupId !== realActiveGroupId),
+    [resolved, realActiveGroupId],
+  );
+
+  const visibleGroups = useMemo(() => {
+    const campusName = TEST_MODE_CAMPUSES.find((c) => c.id === campus)?.name ?? "";
+    // `home-data.tsx` labels each option "Name — Campus" precisely because group
+    // names repeat across campuses. A group whose label carries NO recognised
+    // campus suffix cannot be attributed to a campus, so it is always shown
+    // rather than silently hidden from every campus.
+    const knownCampusNames = TEST_MODE_CAMPUSES.map((c) => c.name);
+    const byCampus = selectableGroups.filter((g) => {
+      const suffix = knownCampusNames.find((name) => g.groupName.endsWith(`— ${name}`));
+      return suffix === undefined || suffix === campusName;
+    });
+    const needle = groupFilter.trim().toLowerCase();
+    if (needle === "") return byCampus;
+    return byCampus.filter((g) => g.groupName.toLowerCase().includes(needle));
+  }, [selectableGroups, campus, groupFilter]);
+
+  return (
+    <label className="test-mode-field">
+      <span>
+        Group
+        {visibleGroups.length !== selectableGroups.length
+          ? ` (${visibleGroups.length} of ${selectableGroups.length})`
+          : selectableGroups.length > 0
+            ? ` (${selectableGroups.length})`
+            : ""}
+      </span>
+      {/*
+        A plain <select> of several hundred Manila groups is unusable, so the
+        list is narrowed twice before it is rendered: by the Campus pills above,
+        and by this free-text filter. The filter is pure client-side over an
+        already-loaded array -- no fetch, so it is instant.
+      */}
+      <input
+        type="search"
+        className="test-mode-group-filter"
+        placeholder="Filter groups…"
+        aria-label="Filter groups"
+        value={groupFilter}
+        onChange={(event) => setGroupFilter(event.target.value)}
+      />
+      <select
+        aria-label="Group"
+        value={selectedGroupId !== null ? String(selectedGroupId) : ""}
+        onChange={(event) => onSelect(event.target.value ? Number(event.target.value) : null)}
+      >
+        <option value="">
+          {realActiveGroup ? `${realActiveGroup.groupName} (my group)` : "(No active group)"}
+        </option>
+        {visibleGroups.map((g) => (
+          <option key={g.groupId} value={String(g.groupId)}>
+            {g.groupName}
+          </option>
+        ))}
+      </select>
+      {selectableGroups.length > 0 && visibleGroups.length === 0 && (
+        <span className="test-mode-note">No group matches that filter.</span>
+      )}
+    </label>
+  );
+}
+
+/** Keeps the panel's layout stable while the group list streams in. */
+function GroupPickerSkeleton() {
+  return (
+    // A div, not a label: there is no control to associate one with yet.
+    <div className="test-mode-field" aria-busy="true">
+      <span>Group</span>
+      <div className="test-mode-skeleton" data-testid="test-mode-group-skeleton" />
+    </div>
+  );
+}
+
 export function TestModePanel({
   state,
   onChange,
   realActiveGroup,
   campusGroups = [],
+  campusGroupsPromise,
   writableGroupId = null,
   error = null,
 }: {
@@ -47,6 +157,7 @@ export function TestModePanel({
   onChange: (next: TestModeState) => void;
   realActiveGroup?: { groupId: number; groupName: string } | null;
   campusGroups?: CampusGroupOption[];
+  campusGroupsPromise?: Promise<CampusGroupOption[]>;
   writableGroupId?: number | null;
   error?: string | null;
 }) {
@@ -62,33 +173,7 @@ export function TestModePanel({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null | undefined>(undefined);
   const [joinCodeError, setJoinCodeError] = useState<string | null>(null);
-  const [groupFilter, setGroupFilter] = useState("");
-
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
-
-  // The real active group is offered only as the "(my group)" option, so it is
-  // filtered out here to avoid listing it twice. `writesBlocked` depends on that
-  // -- a null groupId is the ONLY way to select it.
-  const selectableGroups = useMemo(
-    () => campusGroups.filter((g) => g.groupId !== realActiveGroupId),
-    [campusGroups, realActiveGroupId],
-  );
-
-  const visibleGroups = useMemo(() => {
-    const campusName = TEST_MODE_CAMPUSES.find((c) => c.id === state.campus)?.name ?? "";
-    // `home-data.tsx` labels each option "Name — Campus" precisely because group
-    // names repeat across campuses. A group whose label carries NO recognised
-    // campus suffix cannot be attributed to a campus, so it is always shown
-    // rather than silently hidden from every campus.
-    const knownCampusNames = TEST_MODE_CAMPUSES.map((c) => c.name);
-    const byCampus = selectableGroups.filter((g) => {
-      const suffix = knownCampusNames.find((name) => g.groupName.endsWith(`— ${name}`));
-      return suffix === undefined || suffix === campusName;
-    });
-    const needle = groupFilter.trim().toLowerCase();
-    if (needle === "") return byCampus;
-    return byCampus.filter((g) => g.groupName.toLowerCase().includes(needle));
-  }, [selectableGroups, state.campus, groupFilter]);
   const isBlocked = writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
   const isA2Mismatch =
     writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
@@ -160,52 +245,17 @@ export function TestModePanel({
             <p className="test-mode-note">View-only. Writes disabled.</p>
           )}
 
-          <label className="test-mode-field">
-            <span>
-              Group
-              {visibleGroups.length !== selectableGroups.length
-                ? ` (${visibleGroups.length} of ${selectableGroups.length})`
-                : selectableGroups.length > 0
-                  ? ` (${selectableGroups.length})`
-                  : ""}
-            </span>
-            {/*
-              A plain <select> of several hundred Manila groups is unusable, so the
-              list is narrowed twice before it is rendered: by the Campus pills
-              above, and by this free-text filter. The filter is pure client-side
-              over an already-loaded array -- no fetch, so it is instant.
-            */}
-            <input
-              type="search"
-              className="test-mode-group-filter"
-              placeholder="Filter groups…"
-              aria-label="Filter groups"
-              value={groupFilter}
-              onChange={(event) => setGroupFilter(event.target.value)}
+          <Suspense fallback={<GroupPickerSkeleton />}>
+            <GroupPicker
+              groups={campusGroups}
+              promise={campusGroupsPromise}
+              realActiveGroup={realActiveGroup}
+              realActiveGroupId={realActiveGroupId}
+              campus={state.campus}
+              selectedGroupId={state.groupId}
+              onSelect={(groupId) => onChange({ ...state, groupId })}
             />
-            <select
-              aria-label="Group"
-              value={state.groupId !== null ? String(state.groupId) : ""}
-              onChange={(event) =>
-                onChange({
-                  ...state,
-                  groupId: event.target.value ? Number(event.target.value) : null,
-                })
-              }
-            >
-              <option value="">
-                {realActiveGroup ? `${realActiveGroup.groupName} (my group)` : "(No active group)"}
-              </option>
-              {visibleGroups.map((g) => (
-                <option key={g.groupId} value={String(g.groupId)}>
-                  {g.groupName}
-                </option>
-              ))}
-            </select>
-            {selectableGroups.length > 0 && visibleGroups.length === 0 && (
-              <span className="test-mode-note">No group matches that filter.</span>
-            )}
-          </label>
+          </Suspense>
 
           {simulatedGroupId !== null && (
             <p className="test-mode-note test-mode-join-code" data-testid="test-mode-join-code">
