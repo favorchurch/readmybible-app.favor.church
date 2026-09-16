@@ -20,15 +20,40 @@ export type TestModeState = {
   viewer: TestModeViewer;
 };
 
+/**
+ * The single trigger list both the client and the server read. `isTestModeRequested`
+ * and `isTestModeRequestedFromQuery` delegate here so the set of URLs that opens the
+ * panel can never drift from the set the server loads panel data for -- a drift that
+ * would show up as `?day=5` opening the panel over an empty group picker.
+ */
+function requestsTestMode(get: (key: string) => string | undefined): boolean {
+  return (
+    get(TEST_MODE_PARAM) !== undefined ||
+    get(DAY_PARAM) !== undefined ||
+    get("leader") !== undefined ||
+    get("admin") !== undefined ||
+    get("tab") === "admin"
+  );
+}
+
 /** True when the URL asks for test mode -- `?test=1` or the `?day=N` alias, or leader inspection `?leader=1`, or admin inspection `?admin=1` / `?tab=admin`. `?tab=leader` alone is the primary nav landing on the Leader tab and must NOT activate test mode. */
 export function isTestModeRequested(searchParams: URLSearchParams): boolean {
-  return (
-    searchParams.has(TEST_MODE_PARAM) ||
-    searchParams.has(DAY_PARAM) ||
-    searchParams.has("leader") ||
-    searchParams.has("admin") ||
-    searchParams.get("tab") === "admin"
-  );
+  return requestsTestMode((key) => searchParams.get(key) ?? undefined);
+}
+
+/**
+ * Server-side twin of `isTestModeRequested`, for Next's plain `searchParams`
+ * object. Used by `HomeData` to decide whether the org-wide Connect Group list
+ * (a several-hundred-group Rock call) is worth fetching at all -- it feeds the
+ * test panel and nothing else, so ordinary page loads must skip it.
+ */
+export function isTestModeRequestedFromQuery(
+  query: Record<string, string | string[] | undefined>,
+): boolean {
+  return requestsTestMode((key) => {
+    const value = query[key];
+    return Array.isArray(value) ? value[0] : value;
+  });
 }
 
 function dayFromParams(searchParams: URLSearchParams): number {

@@ -103,7 +103,7 @@ describe("Page() session branching", () => {
     expect(child.type).not.toBe(mocks.WelcomeLandingMarker);
   });
 
-  it("passes all connect groups across all campuses to AppShell even in production", async () => {
+  it("passes all connect groups across all campuses to AppShell even in production, when test mode is requested", async () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
       mocks.getSessionContext.mockResolvedValue({
@@ -153,9 +153,11 @@ describe("Page() session branching", () => {
 
       // Page() now returns a Suspense boundary, so the campus list is built one
       // level down, in HomeData. Render that child to reach the AppShell props.
-      // The guarantee under test is unchanged: in production the list is still
-      // every Connect Group across every campus.
-      const result = await Page();
+      // The guarantee under test is unchanged: when the list IS built, it is still
+      // every Connect Group across every campus, in production too. What changed is
+      // that building it now requires the URL to ask for test mode -- see the
+      // companion test below for the ordinary-load half of that contract.
+      const result = await Page({ searchParams: Promise.resolve({ test: "1" }) });
       const child = (result as { props: { children: { props: unknown } } }).props.children;
       const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
 
@@ -170,5 +172,36 @@ describe("Page() session branching", () => {
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  it("does not fetch the org-wide connect group list on an ordinary page load", async () => {
+    mocks.getSessionContext.mockResolvedValue({
+      status: "ok",
+      rockPersonId: 13358,
+      rockGender: 1,
+      displayName: "Alex",
+      memberships: [],
+      sectionMemberships: [],
+      activeGroup: null,
+      needsGroupChoice: false,
+      campusId: null,
+      isLeader: false,
+      isAdminScope: false,
+      defaultTranslation: "NIV",
+    });
+
+    const { getAllConnectGroups, getAllCampusNames } = await import("@/lib/rock/client");
+    vi.mocked(getAllConnectGroups).mockClear();
+    vi.mocked(getAllCampusNames).mockClear();
+
+    // No test-mode param. The group list feeds the test panel and nothing else,
+    // so a several-hundred-group Rock call must not block the shell render for
+    // an ordinary member.
+    const result = await Page();
+    const child = (result as { props: { children: { props: unknown } } }).props.children;
+    const rendered = await HomeData(child.props as Parameters<typeof HomeData>[0]);
+
+    expect(getAllConnectGroups).not.toHaveBeenCalled();
+    expect((rendered as { props: { campusGroups: unknown } }).props.campusGroups).toEqual([]);
   });
 });

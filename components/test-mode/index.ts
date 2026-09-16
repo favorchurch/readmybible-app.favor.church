@@ -6,6 +6,7 @@ export {
   guardWrite,
   initialTestModeState,
   isTestModeRequested,
+  isTestModeRequestedFromQuery,
   simulatedChapters,
   simulatedGroupRatio,
   simulatedMemberHistory,
