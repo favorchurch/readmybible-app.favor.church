@@ -91,12 +91,18 @@ describe("simulated admin CSV scope", () => {
     expect(mocks.loadSectionSubtree).toHaveBeenCalled();
   });
 
+  // These deliberately omit `test=1`. They pin the fail-closed guard, not the
+  // export links the page generates -- those always carry `test=1`, and
+  // `?scope=cluster&test=1` exports normally (covered above). Without the
+  // marker the endpoint must refuse rather than fall back to the real scope,
+  // including for `scope=global&role=member`, where the role is what makes it
+  // non-exportable.
   it.each([
     "scope=cluster",
     "scope=region",
     "scope=department&campus=BNE",
     "scope=global&role=member",
-  ])("returns 403 for a non-exportable simulated URL: %s", async (query) => {
+  ])("refuses to export a simulation URL with no test=1 marker: %s", async (query) => {
     const response = await GET(new Request(`https://example.test/admin/export.csv?${query}`));
 
     expect(response.status).toBe(403);
