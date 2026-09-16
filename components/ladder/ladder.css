@@ -1,0 +1,240 @@
+/* Home-ladder prototype styles. Deliberately plain: the decisions under test
+   are layout and movement, not chrome. */
+
+.ladder-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.ladder-eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.ladder-header h1 {
+  margin: 4px 0 2px;
+}
+
+.ladder-lede {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.75;
+}
+
+.ladder-stage {
+  position: relative;
+  margin-top: 20px;
+  padding: 18px;
+  border: 2px solid currentColor;
+  border-radius: 18px;
+  /* Tall enough that toggling between the single home and the row does not
+     resize the frame under the pointer. */
+  min-height: 420px;
+}
+
+/* #116: the scope chooser is an overlay on the scene itself, top-left, and
+   it renders on every home rather than only the landing one. */
+.ladder-scope-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #121411;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ladder-scope-overlay select,
+.ladder-controls select {
+  min-height: 44px;
+  font-weight: 700;
+}
+
+/* The scope overlay is absolutely positioned, so the breadcrumb has to make
+   room for it or the two collide on a multi-scope viewer. */
+.ladder-stage.has-scope-overlay .ladder-breadcrumb {
+  margin-top: 52px;
+}
+
+.ladder-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 18px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ladder-crumb-current {
+  opacity: 1;
+}
+
+.ladder-crumb {
+  opacity: 0.7;
+}
+
+.ladder-single {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 0;
+}
+
+/* #114: the shallow row. One primary home, siblings perceptible either side. */
+.ladder-row {
+  --ladder-slot: 220px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 54px;
+  gap: 10px;
+  align-items: center;
+}
+
+.ladder-track-window {
+  overflow: hidden;
+  /* Half the window minus half a slot: this is what actually centres the
+     active slot. Padding of a fixed slot-width put the centre item hard
+     against the left edge instead, which read as a broken alignment rather
+     than a deliberate one. */
+  padding: 12px calc(50% - var(--ladder-slot) / 2);
+}
+
+/* #115: lateral movement is a slide. The row is the slide. */
+.ladder-track {
+  display: flex;
+  transition: transform 260ms ease;
+  will-change: transform;
+}
+
+.ladder-slot {
+  flex: 0 0 var(--ladder-slot);
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: 4px;
+  opacity: 0.5;
+  transition: opacity 260ms ease;
+  text-align: center;
+}
+
+.ladder-slot.is-centre {
+  opacity: 1;
+}
+
+/* Every home renders at one size and shares a ground line; the active one
+   grows upward from that line rather than being drawn larger, so the row
+   still reads as a street rather than as floating models. */
+.ladder-home-art {
+  display: block;
+  transform: scale(0.8);
+  transform-origin: bottom center;
+  transition: transform 260ms ease;
+}
+
+.ladder-slot.is-centre .ladder-home-art {
+  transform: scale(1.06);
+}
+
+.ladder-step {
+  min-height: 54px;
+  border: 2px solid currentColor;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* An absent step keeps the grid from reflowing, without drawing a control
+   that looks broken (#115: absent, not disabled). */
+.ladder-step-gap {
+  display: block;
+  min-height: 54px;
+}
+
+.ladder-home-label {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ladder-meta {
+  font-size: 12px;
+  opacity: 0.75;
+  margin: 0;
+}
+
+/* #112: the occupant badge -- emoji dot plus fraction. The fraction is always
+   present, so the badge never depends on colour alone. */
+.ladder-badge {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.ladder-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.ladder-toggle {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ladder-toggle[aria-pressed="true"] {
+  background: currentColor;
+}
+
+.ladder-toggle[aria-pressed="true"] {
+  color: #fff;
+  background: #121411;
+}
+
+.ladder-empty {
+  text-align: center;
+  opacity: 0.7;
+  padding: 48px 0;
+}
+
+/* #115: reduced motion gets a cut, not a slower slide. */
+@media (prefers-reduced-motion: reduce) {
+  .ladder-track,
+  .ladder-slot,
+  .ladder-home-art {
+    transition: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .ladder-row {
+    --ladder-slot: 150px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+}
