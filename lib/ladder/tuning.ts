@@ -21,6 +21,10 @@ const STAGE_MIDPOINTS = [0.04, 0.18, 0.35, 0.55, 0.75, 0.92] as const;
  * what the branch is *for* rather than who leads it.
  */
 export const LADDER_VIEWERS = {
+  /** Prototype viewer for the Connect-owned home legend default. */
+  connectLeader: { label: "Connect leader · own home", rootIds: [23856] },
+  /** Prototype viewer for the Connect-owned home legend default. */
+  connectMember: { label: "Connect member · own home", rootIds: [23856] },
   /** 4 regions -- the everyday cluster-head case. */
   clusterHead: { label: "Cluster head · 4 regions", rootIds: [23864] },
   /** 4 connects spanning Tent..Mansion once tuned. */
@@ -117,4 +121,3 @@ export function attachTunedStats(
   }
   return sections.map(attach);
 }
-

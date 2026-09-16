@@ -11,7 +11,7 @@
  */
 import { notFound } from "next/navigation";
 
-import { LadderPrototype } from "@/components/ladder/ladder-prototype";
+import { LadderPrototype, type LadderVariant } from "@/components/ladder/ladder-prototype";
 import { isLadderPrototypeEnabled } from "@/lib/ladder/dev-gate";
 import { loadLadderTreeAs } from "@/lib/ladder/tree";
 import { LADDER_VIEWERS, type LadderViewerKey } from "@/lib/ladder/tuning";
@@ -22,13 +22,22 @@ function viewerFrom(value: string | undefined): LadderViewerKey {
   return value && value in LADDER_VIEWERS ? (value as LadderViewerKey) : "regionalLeader";
 }
 
+function variantFrom(value: string | undefined): LadderVariant {
+  return value === "states" || value === "stream" ? value : "navigator";
+}
+
+function visitKeyFrom(value: string | undefined): `group:${number}` | null {
+  return value && /^group:\d+$/.test(value) ? (value as `group:${number}`) : null;
+}
+
 export default async function LadderPage(props: {
-  searchParams?: Promise<{ viewer?: string }>;
+  searchParams?: Promise<{ viewer?: string; variant?: string; home?: string }>;
 }) {
   if (!isLadderPrototypeEnabled()) notFound();
 
   const searchParams = props.searchParams ? await props.searchParams : {};
   const viewer = viewerFrom(searchParams.viewer);
+  const variant = variantFrom(searchParams.variant);
   const { sections, unavailableGroupIds } = await loadLadderTreeAs(viewer);
 
   return (
@@ -37,6 +46,8 @@ export default async function LadderPage(props: {
       unavailableGroupIds={unavailableGroupIds}
       viewer={viewer}
       viewers={Object.entries(LADDER_VIEWERS).map(([key, value]) => ({ key, label: value.label }))}
+      initialVisitedKey={visitKeyFrom(searchParams.home)}
+      initialVariant={variant}
     />
   );
 }
