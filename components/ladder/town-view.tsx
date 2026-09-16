@@ -23,16 +23,21 @@
 import { useState } from "react";
 
 import { StageMini } from "@/components/stage-mini";
-import { OccupantBadge, aggregateRatio, occupantStateFor } from "@/components/ladder/occupant-badge";
+import {
+  OccupantBadge,
+  aggregateRatio,
+  aggregateRatioOrZero,
+  occupantStateFor,
+} from "@/components/ladder/occupant-badge";
 import type { SectionWithStats } from "@/lib/admin/stats";
 import { stageFor } from "@/lib/game";
 
 type Surface = "region" | "town";
 
 /**
- * Two roots can carry the same leader name -- the real multi-scope viewer in
- * the fixture heads identically-named clusters under MNL Adults and MNL
- * Seasoned. Labelling by name alone shows the same word twice, so the chooser
+ * Two roots can carry the same name in Rock: the real multi-scope viewer
+ * heads identically-named clusters under two different departments.
+ * Labelling by name alone shows the same word twice, so the chooser
  * disambiguates by position.
  */
 function scopeLabel(section: SectionWithStats, index: number, all: SectionWithStats[]): string {
@@ -57,8 +62,23 @@ export function LadderTownView({
   const [surface, setSurface] = useState<Surface>("region");
   const [cursor, setCursor] = useState(0);
 
-  const root = roots[rootIndex];
-  if (!root) return <p className="ladder-empty">This viewer has no visible scope.</p>;
+  // Clamped, not trusted: a viewer change replaces `roots` from the server
+  // while this component keeps its state, so a rootIndex of 1 carried into a
+  // one-root viewer would blank the screen -- and the early return below
+  // removes the viewer control, leaving no way back.
+  const safeRootIndex = Math.min(rootIndex, Math.max(0, roots.length - 1));
+  const root = roots[safeRootIndex];
+
+  if (!root) {
+    // Rendered with the viewer control intact, so an empty scope is a state
+    // the user can leave rather than a dead end.
+    return (
+      <div className="ladder-stage">
+        <p className="ladder-empty">This viewer has no visible scope.</p>
+        <ViewerPicker viewer={viewer} viewers={viewers} onChangeViewer={onChangeViewer} />
+      </div>
+    );
+  }
 
   // A section's steppable siblings are its sub-sections when it has them,
   // otherwise its connects -- one rung down either way.
@@ -78,7 +98,7 @@ export function LadderTownView({
           <label htmlFor="ladder-scope">Scope</label>
           <select
             id="ladder-scope"
-            value={rootIndex}
+            value={safeRootIndex}
             onChange={(event) => {
               setRootIndex(Number(event.target.value));
               setCursor(0);
@@ -125,19 +145,29 @@ export function LadderTownView({
           {surface === "region" ? "Show town view" : "Show single home"}
         </button>
 
-        <select
-          aria-label="Viewer"
-          value={viewer}
-          onChange={(event) => onChangeViewer(event.target.value)}
-        >
-          {viewers.map((item) => (
-            <option key={item.key} value={item.key}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+        <ViewerPicker viewer={viewer} viewers={viewers} onChangeViewer={onChangeViewer} />
       </div>
     </div>
+  );
+}
+
+function ViewerPicker({
+  viewer,
+  viewers,
+  onChangeViewer,
+}: {
+  viewer: string;
+  viewers: Array<{ key: string; label: string }>;
+  onChangeViewer: (next: string) => void;
+}) {
+  return (
+    <select aria-label="Viewer" value={viewer} onChange={(event) => onChangeViewer(event.target.value)}>
+      {viewers.map((item) => (
+        <option key={item.key} value={item.key}>
+          {item.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -151,7 +181,7 @@ function RegionHome({
   connects: SectionWithStats["groups"];
   unavailableGroupIds: number[];
 }) {
-  const ratio = aggregateRatio(section, unavailableGroupIds);
+  const ratio = aggregateRatioOrZero(section, unavailableGroupIds);
   const stage = stageFor(ratio);
 
   return (
@@ -193,7 +223,13 @@ function ShallowRow({
   const entries = items.length
     ? items.map((section) => {
         const ratio = aggregateRatio(section, unavailableGroupIds);
-        return { key: section.id, name: section.name, ratio, stage: stageFor(ratio), section };
+        return {
+          key: section.id,
+          name: section.name,
+          ratio,
+          stage: stageFor(ratio ?? 0),
+          section,
+        };
       })
     : connects.map((group) => ({
         key: group.id,

@@ -46,11 +46,20 @@ export function occupantStateFor(
   return { kind: "scope", onTrack, total: known.length, ratio };
 }
 
-/** Mean ratio of every connect beneath a section, used to judge "on track". */
+/**
+ * Mean ratio of every connect beneath a section, or **null** when nothing
+ * beneath it is known -- an empty scope, or one whose only groups are
+ * unavailable.
+ *
+ * The null matters: an earlier version returned 0 for "nothing known", which
+ * a caller could not tell apart from a real zero, and the badge rendered
+ * `0/1` for a scope it had no data for. That is precisely the distinction
+ * #112 exists to preserve.
+ */
 export function aggregateRatio(
   section: SectionWithStats,
   unavailableGroupIds: readonly number[] = [],
-): number {
+): number | null {
   const ratios: number[] = [];
   function walk(node: SectionWithStats) {
     for (const group of node.groups) {
@@ -60,8 +69,16 @@ export function aggregateRatio(
     node.children.forEach(walk);
   }
   walk(section);
-  if (ratios.length === 0) return 0;
+  if (ratios.length === 0) return null;
   return ratios.reduce((sum, r) => sum + r, 0) / ratios.length;
+}
+
+/** `aggregateRatio` with unknown collapsed to 0, for rendering a home's own stage. */
+export function aggregateRatioOrZero(
+  section: SectionWithStats,
+  unavailableGroupIds: readonly number[] = [],
+): number {
+  return aggregateRatio(section, unavailableGroupIds) ?? 0;
 }
 
 export function OccupantBadge({ state }: { state: OccupantState }) {
