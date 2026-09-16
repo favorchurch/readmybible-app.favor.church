@@ -1,6 +1,6 @@
 import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, planPhase, todaysEntry } from "@/lib/plan";
 import type { TodayState } from "@/components/use-today";
-import { CAMPUS_ROOT_SECTION_IDS } from "@/lib/rock/hierarchy-constants";
+import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 
 /** `?test=1` opens the panel directly; `?day=N` is an alias that also seeds the day. */
 export const TEST_MODE_PARAM = "test";
@@ -201,6 +201,23 @@ function roleFromParam(raw: string | null): TestModeRole | null {
   }
 }
 
+function roleFromScopeParam(raw: string | null): TestModeRole | null {
+  switch (raw) {
+    // `department` never appeared in a page URL, but the CSV export has always
+    // accepted it, so a shared export link carries it.
+    case "global":
+    case "sections":
+    case "department":
+      return "department";
+    case "cluster":
+      return "cluster";
+    case "region":
+      return "regional";
+    default:
+      return null;
+  }
+}
+
 function campusFromParams(searchParams: URLSearchParams, fallback: TestModeCampus): TestModeCampus {
   const raw = (searchParams.get("campus") ?? "").trim().toUpperCase();
   if (raw === "") return fallback;
@@ -225,10 +242,11 @@ export function initialTestModeState(
   sessionCampus: TestModeCampus = 1,
 ): TestModeState {
   const explicit = roleFromParam(searchParams.get("role") ?? searchParams.get("viewer"));
+  const legacyScopeRole = roleFromScopeParam(searchParams.get("scope"));
   const isLeaderParam = searchParams.get("leader") === "1" || searchParams.get("tab") === "leader";
   const isAdminParam = searchParams.get("admin") === "1" || searchParams.get("tab") === "admin";
   const role: TestModeRole =
-    explicit ?? (isAdminParam ? "department" : isLeaderParam ? "connect-leader" : "member");
+    explicit ?? legacyScopeRole ?? (isAdminParam ? "department" : isLeaderParam ? "connect-leader" : "member");
   return {
     day: dayFromParams(searchParams),
     phase: "active",
@@ -238,6 +256,53 @@ export function initialTestModeState(
     role,
     campus: campusFromParams(searchParams, sessionCampus),
   };
+}
+
+export type SimulatedScopeSelection = {
+  kind: "global" | "sections";
+  rootIds: number[];
+  simulatedScope: "global" | "cluster" | "region" | "department";
+  campus?: TestModeCampus;
+};
+
+function selectionForRole(role: TestModeRole, campus: TestModeCampus): SimulatedScopeSelection | null {
+  const simulated = scopeForRole(role, campus);
+  if (!simulated.isAdminScope || simulated.rootIds === null) return null;
+  return {
+    kind: "sections",
+    rootIds: simulated.rootIds,
+    simulatedScope: role === "cluster" ? "cluster" : role === "regional" ? "region" : "department",
+    campus: role === "department" ? campus : undefined,
+  };
+}
+
+/** Resolves the simulated scope shared by HomeData and the CSV route. */
+export function simulatedScopeFromQuery(
+  searchParams: URLSearchParams,
+  sessionCampus: TestModeCampus = 1,
+): SimulatedScopeSelection | null {
+  const roleParam = searchParams.get("role") ?? searchParams.get("viewer");
+  const campusParam = searchParams.get("campus");
+  const scopeParam = searchParams.get("scope");
+
+  if (roleParam !== null || campusParam !== null) {
+    const state = initialTestModeState(searchParams, sessionCampus);
+    return selectionForRole(state.role, state.campus);
+  }
+
+  if (scopeParam === "cluster") {
+    return selectionForRole("cluster", 1);
+  }
+  if (scopeParam === "region") {
+    return selectionForRole("regional", 1);
+  }
+  if (scopeParam === "global" || scopeParam === "sections") {
+    return { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID], simulatedScope: "global" };
+  }
+
+  // A bare test-mode URL starts as the simulated member role, which has no
+  // admin scope. Do not let the endpoint fall back to the real admin scope.
+  return null;
 }
 
 /** Group completion percentages that land mid-band for each house stage (`stageFor`, lib/game.ts). */

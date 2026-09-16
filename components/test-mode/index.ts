@@ -10,6 +10,7 @@ export {
   isTestModeRequested,
   isTestModeRequestedFromQuery,
   scopeForRole,
+  simulatedScopeFromQuery,
   simulatedChapters,
   simulatedGroupRatio,
   simulatedMemberHistory,
@@ -24,4 +25,5 @@ export {
   type TestModeCampus,
   type TestModeRole,
   type TestModeState,
+  type SimulatedScopeSelection,
 } from "./logic";
