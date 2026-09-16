@@ -1,0 +1,1353 @@
+[
+  {
+    "id": 23864,
+    "name": "Cluster // Jz Olivar",
+    "campusId": 1,
+    "children": [
+      {
+        "id": 23865,
+        "name": "Region // Eula Cheng",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23928,
+            "name": "Adults // Amy Liamzon",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Amy"
+            ]
+          },
+          {
+            "id": 23986,
+            "name": "Adults // Rina Medina",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Rina"
+            ]
+          },
+          {
+            "id": 24118,
+            "name": "Adults // Louie Regala & Pae Yao",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Pae",
+              "Louie"
+            ]
+          },
+          {
+            "id": 68799,
+            "name": "Adults // Beatrice Lauren Go",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Beatrice Lauren"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23867,
+        "name": "Region // Arlene Gavile",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23868,
+            "name": "Adults // Phoebe Fructuoso",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Phoebe"
+            ]
+          },
+          {
+            "id": 23950,
+            "name": "Adults // Eden Divinaflor",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Eden"
+            ]
+          },
+          {
+            "id": 23956,
+            "name": "Adults // Miera Sitaldas",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Miera"
+            ]
+          },
+          {
+            "id": 24119,
+            "name": "Adults // Grace Bautista & Gritz Dalay",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Mary Grace",
+              "Griziebel"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23993,
+        "name": "Region // Gen Bajaro",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23994,
+            "name": "Adults // Dannalyn Alexis De Leon",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Dannalyn Alexis"
+            ]
+          },
+          {
+            "id": 24112,
+            "name": "Adults // Mela Gozum & Veronica Barachina",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Veronica",
+              "Carmela"
+            ]
+          },
+          {
+            "id": 24113,
+            "name": "Adults // Gen Bajaro",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Gen"
+            ]
+          },
+          {
+            "id": 24126,
+            "name": "Adults // Lei Santos",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Lee Ann"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24097,
+        "name": "Region // Monika De Vera",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24098,
+            "name": "Adults // Jezreel Balantin & Ian De Guzman",
+            "campusId": 1,
+            "memberCount": 15,
+            "leaders": [
+              "Ian",
+              "Jezreel"
+            ]
+          },
+          {
+            "id": 24105,
+            "name": "Adults // Kim Cang",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Kim"
+            ]
+          },
+          {
+            "id": 24125,
+            "name": "Adults // Jet Dimaguila-Ayala",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Jet"
+            ]
+          }
+        ]
+      }
+    ],
+    "groups": []
+  },
+  {
+    "id": 23835,
+    "name": "Cluster // Chap De Guzman & Lyn De Guzman",
+    "campusId": 1,
+    "children": [
+      {
+        "id": 23836,
+        "name": "Region // Gene B. Manaois & Yolly Manaois",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23837,
+            "name": "Adults // Edward & Me-Anne Gonzales",
+            "campusId": 1,
+            "memberCount": 4,
+            "leaders": [
+              "Edward",
+              "Me-anne"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23856,
+        "name": "Region // Mila Nava",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23857,
+            "name": "Adults // Jed & Lorie Velarde",
+            "campusId": 1,
+            "memberCount": 5,
+            "leaders": [
+              "Lorie",
+              "Jed"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23977,
+        "name": "Region // Lyn De Guzman",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23978,
+            "name": "Adults // CIW // Malou Santero",
+            "campusId": 1,
+            "memberCount": 2,
+            "leaders": [
+              "Malou Lovenia"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 31556,
+        "name": "Region // Joel & Melba Callao",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23969,
+            "name": "Seasoned // Jerry & Marivic Isles",
+            "campusId": 1,
+            "memberCount": 15,
+            "leaders": [
+              "Jerry",
+              "Marivic"
+            ]
+          }
+        ]
+      }
+    ],
+    "groups": []
+  },
+  {
+    "id": 23913,
+    "name": "Cluster // Chap De Guzman & Lyn De Guzman",
+    "campusId": 1,
+    "children": [
+      {
+        "id": 23914,
+        "name": "Region // Gene B. Manaois & Yolly Manaois",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23915,
+            "name": "Seasoned // JP & Jen Castaner",
+            "campusId": 1,
+            "memberCount": 16,
+            "leaders": [
+              "Jp",
+              "Jen"
+            ]
+          },
+          {
+            "id": 23970,
+            "name": "Seasoned // Kriz & Melissa Curaming",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Melissa",
+              "Kris"
+            ]
+          },
+          {
+            "id": 24088,
+            "name": "Seasoned // Sonny & Millet Calingo",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Sonny",
+              "Millet"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23916,
+        "name": "Region // Joel Callao & Melba Callao",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23917,
+            "name": "Seasoned // Dil & Cindy Jacob",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Dil",
+              "Cindy"
+            ]
+          },
+          {
+            "id": 23918,
+            "name": "Seasoned // Jonathan & Evelyn Petalver",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Jonathan",
+              "Evelyn"
+            ]
+          },
+          {
+            "id": 23919,
+            "name": "Seasoned // Keith & Delsey Garner",
+            "campusId": 1,
+            "memberCount": 13,
+            "leaders": [
+              "Delsey",
+              "Keith"
+            ]
+          },
+          {
+            "id": 58860,
+            "name": "Seasoned // Ava Katherine Fernandez",
+            "campusId": 1,
+            "memberCount": 2,
+            "leaders": [
+              "Ava Katherine"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23940,
+        "name": "Region // Rinky Pineda",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 23941,
+            "name": "Seasoned // Claudine San Jose",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Claudine"
+            ]
+          },
+          {
+            "id": 24091,
+            "name": "Seasoned // Rinky Pineda & Aileen Tesoro",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Aileen",
+              "Beatrice"
+            ]
+          },
+          {
+            "id": 24092,
+            "name": "Seasoned // Debbie Abuyabor",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Divina"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24079,
+        "name": "Region // Allan Martinez & Claire Martinez",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24080,
+            "name": "Seasoned // Manuel & Edith Navarro",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Manny",
+              "Edita"
+            ]
+          },
+          {
+            "id": 24085,
+            "name": "Seasoned // Orville & Myra Santos",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Myra",
+              "Orville"
+            ]
+          },
+          {
+            "id": 24090,
+            "name": "Seasoned // Allan & Claire Martinez",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Allan",
+              "Claire"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24081,
+        "name": "Region // Danny Cruz & Gigi Cruz",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24082,
+            "name": "Seasoned // Willy & Dorene De Castro",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Willy",
+              "Dorene"
+            ]
+          },
+          {
+            "id": 24083,
+            "name": "Seasoned // Danny & Gigi Cruz",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Danny",
+              "Regina Stella Ma."
+            ]
+          },
+          {
+            "id": 24084,
+            "name": "Seasoned // Peng & Ana Liza Dalay",
+            "campusId": 1,
+            "memberCount": 17,
+            "leaders": [
+              "Ana Liza",
+              "Peng"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24086,
+        "name": "Region // Mila Nava",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24087,
+            "name": "Seasoned // Weng Ocampo",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Rowena",
+              "Maria Gina"
+            ]
+          },
+          {
+            "id": 24093,
+            "name": "Seasoned // Marlyn Del Rosario",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Dolly",
+              "Marlyn"
+            ]
+          },
+          {
+            "id": 24094,
+            "name": "Seasoned // Chona Baylon",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Maria Margarita",
+              "Chona"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 31559,
+        "name": "Region // Boyet & Julie Batarra",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24078,
+            "name": "Seasoned // Edward & Me-Anne Gonzales",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Edward",
+              "Me-anne"
+            ]
+          },
+          {
+            "id": 24089,
+            "name": "Seasoned // Boyet & Julie Batarra",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Claire",
+              "Boyet",
+              "Julie"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 48952,
+        "name": "Region // Gene B. Manaois & Yolly Manaois",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 48941,
+            "name": "Seasoned // Rachel Orbita",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Rachel"
+            ]
+          }
+        ]
+      }
+    ],
+    "groups": []
+  },
+  {
+    "id": 31557,
+    "name": "Cluster // Pranav Sadhwani",
+    "campusId": 1,
+    "children": [
+      {
+        "id": 23830,
+        "name": "Region // Mieko Palaran",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24020,
+            "name": "Youth // Junior High // Chelsea Heart Toledo & Jasmine Guevarra",
+            "campusId": 1,
+            "memberCount": 15,
+            "leaders": [
+              "Chelsea Heart",
+              "Jasmine"
+            ]
+          },
+          {
+            "id": 24037,
+            "name": "Youth // Junior High // Chili Guerrero & Diane Tutanes",
+            "campusId": 1,
+            "memberCount": 19,
+            "leaders": [
+              "Chili",
+              "Diane"
+            ]
+          },
+          {
+            "id": 55037,
+            "name": "Youth // Happiness Courage",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Happiness"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 23909,
+        "name": "Region // Pranav Sadhwani",
+        "campusId": 1,
+        "children": [],
+        "groups": []
+      },
+      {
+        "id": 24013,
+        "name": "Region // Niko Del Mundo",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24014,
+            "name": "Youth // Junior High // Echo Abrilla",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Echo"
+            ]
+          },
+          {
+            "id": 24029,
+            "name": "Youth // Junior High // Ethan Lopez & Isak Petalver",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Ethan",
+              "Isak"
+            ]
+          },
+          {
+            "id": 24030,
+            "name": "Youth // Junior High // Aiden Sebastian",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Aiden"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24015,
+        "name": "Region // Kylee Sadhwani",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24016,
+            "name": "Youth // Senior High // Marga Esquillo",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Marga"
+            ]
+          },
+          {
+            "id": 24017,
+            "name": "Youth // Senior High // Malia Gervacio",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Malia Andrea"
+            ]
+          },
+          {
+            "id": 24063,
+            "name": "Youth // Senior High // Bea Barleta",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Bea"
+            ]
+          },
+          {
+            "id": 24069,
+            "name": "Youth // Junior High // Nhea Mabilangan",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Nhea"
+            ]
+          },
+          {
+            "id": 31183,
+            "name": "Youth // Junior High // Nelly Leuterio",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Nelly"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24019,
+        "name": "Region // Dannah Ruperez",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24050,
+            "name": "Youth // Junior High // Kai Bejasa",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Kai"
+            ]
+          },
+          {
+            "id": 24051,
+            "name": "Youth // Junior High // Serene Lamis",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Serene"
+            ]
+          },
+          {
+            "id": 24065,
+            "name": "Youth // Junior High // Hana Martinez",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Hana"
+            ]
+          },
+          {
+            "id": 24067,
+            "name": "Youth // Junior High // Nicole Borlaza",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Nicole"
+            ]
+          },
+          {
+            "id": 32710,
+            "name": "Youth // Abby Pense",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Abby"
+            ]
+          },
+          {
+            "id": 65464,
+            "name": "Youth // Julia Legasto",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Julia"
+            ]
+          },
+          {
+            "id": 65465,
+            "name": "Youth // Angela Antolin",
+            "campusId": 1,
+            "memberCount": 5,
+            "leaders": [
+              "Angela"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24021,
+        "name": "Region // Charles Romey",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24034,
+            "name": "Youth // Junior High // Christopher Borja & Vince Harry Puno",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Christopher",
+              "Vince Harry"
+            ]
+          },
+          {
+            "id": 24036,
+            "name": "Youth // Junior High // Reech Divinagracia & Matty Recalde",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Reech",
+              "Matty"
+            ]
+          },
+          {
+            "id": 31192,
+            "name": "Youth // Junior High // Elyjhay Borja & Maddox Pulgado",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Elyjhay",
+              "Maddox"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24024,
+        "name": "Region // Mariane Juinio",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24025,
+            "name": "Youth // Junior High // Mitchie Dejano",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Mitchie"
+            ]
+          },
+          {
+            "id": 24026,
+            "name": "Youth // Junior High // Iree Nicolas",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Iree"
+            ]
+          },
+          {
+            "id": 24027,
+            "name": "Youth // Junior High // Kristine Reables",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Kristine"
+            ]
+          },
+          {
+            "id": 24031,
+            "name": "Youth // Junior High // Paula Parcon",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Katrina Paula"
+            ]
+          },
+          {
+            "id": 24033,
+            "name": "Youth // Junior High // Andi Moran",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Andi"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24038,
+        "name": "Region // Fiona Jacob",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24045,
+            "name": "Youth // Senior High // Jem Varquez",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Eva Jemimah Deborah"
+            ]
+          },
+          {
+            "id": 24052,
+            "name": "Youth // Senior High // Andi Valencia",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Andi"
+            ]
+          },
+          {
+            "id": 24062,
+            "name": "Youth // Junior High // Marla Ong",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Marla"
+            ]
+          },
+          {
+            "id": 24066,
+            "name": "Youth // Senior High // Mariane Juinio",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Mariane"
+            ]
+          },
+          {
+            "id": 24073,
+            "name": "Youth // Senior High // Ciena Gaddi",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Ciena"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24040,
+        "name": "Region // Reign Jaramilla",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24044,
+            "name": "Youth // Junior High // Jasmine Casuyon",
+            "campusId": 1,
+            "memberCount": 19,
+            "leaders": [
+              "Jasmine"
+            ]
+          },
+          {
+            "id": 24053,
+            "name": "Youth // Junior High // Sherlyn Rodriguez",
+            "campusId": 1,
+            "memberCount": 11,
+            "leaders": [
+              "Sherlyn"
+            ]
+          },
+          {
+            "id": 31191,
+            "name": "Youth // Junior High // Robyn Alexandra Villamater & Kaiya Estioco",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Robyn Alexandra",
+              "Kaiya"
+            ]
+          },
+          {
+            "id": 55035,
+            "name": "Youth // Shara Estrella & Nicole Lambino",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Shara",
+              "Nicole"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24042,
+        "name": "Region // Gelo Gordovez",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24043,
+            "name": "Youth // Junior High // Andre King & Nico Dairo",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Andre",
+              "Nico"
+            ]
+          },
+          {
+            "id": 24049,
+            "name": "Youth // Junior High // Cj Romey",
+            "campusId": 1,
+            "memberCount": 7,
+            "leaders": [
+              "Charles Jacob"
+            ]
+          },
+          {
+            "id": 24064,
+            "name": "Youth // Junior High // Randolph Solomon Galenzoga & Marcus Servillon",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Randolph Solomon",
+              "Marcus"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24047,
+        "name": "Region // Athaiah Jacob",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24046,
+            "name": "Youth // Junior High // Sammy Castaner",
+            "campusId": 1,
+            "memberCount": 5,
+            "leaders": [
+              "Samuel"
+            ]
+          },
+          {
+            "id": 24054,
+            "name": "Youth // Senior High // Nikolai Del Mundo",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Nikolai"
+            ]
+          },
+          {
+            "id": 24056,
+            "name": "Youth // Senior High // Emman Isles",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Emman"
+            ]
+          },
+          {
+            "id": 24057,
+            "name": "Youth // Junior High // Charles Matthew Romey",
+            "campusId": 1,
+            "memberCount": 14,
+            "leaders": [
+              "Charles Matthew"
+            ]
+          },
+          {
+            "id": 24058,
+            "name": "Youth // Senior High // Michael Silvestre",
+            "campusId": 1,
+            "memberCount": 12,
+            "leaders": [
+              "Michael"
+            ]
+          },
+          {
+            "id": 24061,
+            "name": "Youth // Junior High // Kross Curaming",
+            "campusId": 1,
+            "memberCount": 9,
+            "leaders": [
+              "Kross"
+            ]
+          },
+          {
+            "id": 42336,
+            "name": "Youth // Senior High // Levi Mark Dalagonan",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Levi"
+            ]
+          },
+          {
+            "id": 55036,
+            "name": "Youth // Jethro Azores",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Jethro"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 31558,
+        "name": "Region // Myles Capareda",
+        "campusId": 1,
+        "children": [],
+        "groups": [
+          {
+            "id": 24048,
+            "name": "Youth // Junior High // Mark Go",
+            "campusId": 1,
+            "memberCount": 10,
+            "leaders": [
+              "Mark"
+            ]
+          },
+          {
+            "id": 24059,
+            "name": "Youth // Junior High // Paulo Morcillo",
+            "campusId": 1,
+            "memberCount": 3,
+            "leaders": [
+              "Paulo"
+            ]
+          },
+          {
+            "id": 31173,
+            "name": "Youth // Senior High // Runir Timones",
+            "campusId": 1,
+            "memberCount": 6,
+            "leaders": [
+              "Runir"
+            ]
+          },
+          {
+            "id": 34235,
+            "name": "Youth // Ken Tiangco",
+            "campusId": 1,
+            "memberCount": 8,
+            "leaders": [
+              "Ken"
+            ]
+          }
+        ]
+      }
+    ],
+    "groups": []
+  },
+  {
+    "id": 24173,
+    "name": "BNE Adults",
+    "campusId": 2,
+    "children": [
+      {
+        "id": 24190,
+        "name": "Region // Dennis & Ercelle Celis",
+        "campusId": 2,
+        "children": [],
+        "groups": [
+          {
+            "id": 24191,
+            "name": "Adults // Dennis & Ercelle Celis",
+            "campusId": 2,
+            "memberCount": 19,
+            "leaders": [
+              "Dennis",
+              "Ercelle"
+            ]
+          },
+          {
+            "id": 24205,
+            "name": "Adults // Jojo & Imelda Arayata",
+            "campusId": 2,
+            "memberCount": 16,
+            "leaders": [
+              "Jojo",
+              "Imelda"
+            ]
+          },
+          {
+            "id": 24206,
+            "name": "Adults // Joseph Thomas",
+            "campusId": 2,
+            "memberCount": 9,
+            "leaders": [
+              "Joseph"
+            ]
+          },
+          {
+            "id": 24211,
+            "name": "Adults // Alan & Lexter",
+            "campusId": 2,
+            "memberCount": 16,
+            "leaders": [
+              "Lexter",
+              "Alan"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24196,
+        "name": "Region // Melissa Beattie",
+        "campusId": 2,
+        "children": [],
+        "groups": [
+          {
+            "id": 24197,
+            "name": "Adults // Julie Nussey",
+            "campusId": 2,
+            "memberCount": 13,
+            "leaders": [
+              "Julie"
+            ]
+          },
+          {
+            "id": 24220,
+            "name": "Adults // Juliet Foo",
+            "campusId": 2,
+            "memberCount": 6,
+            "leaders": [
+              "Juliet"
+            ]
+          },
+          {
+            "id": 24225,
+            "name": "Adults // Amin & Joy Bahmanpour",
+            "campusId": 2,
+            "memberCount": 12,
+            "leaders": [
+              "Amin",
+              "Mary Joy"
+            ]
+          },
+          {
+            "id": 24226,
+            "name": "Adults // Melissa Beattie",
+            "campusId": 2,
+            "memberCount": 18,
+            "leaders": [
+              "Melissa"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24200,
+        "name": "Region // Gezekiel Perez & Hannah Borja-Perez",
+        "campusId": 2,
+        "children": [],
+        "groups": [
+          {
+            "id": 24201,
+            "name": "Adults // Alex & Joh Samson",
+            "campusId": 2,
+            "memberCount": 13,
+            "leaders": [
+              "Alex",
+              "Jocelyn"
+            ]
+          },
+          {
+            "id": 24202,
+            "name": "Adults // Patrick & Pilar Mendoza",
+            "campusId": 2,
+            "memberCount": 7,
+            "leaders": [
+              "Patrick",
+              "Pilar"
+            ]
+          },
+          {
+            "id": 24207,
+            "name": "Adults // Gez & Hannah Perez",
+            "campusId": 2,
+            "memberCount": 9,
+            "leaders": [
+              "Gezekiel",
+              "Hannah"
+            ]
+          },
+          {
+            "id": 24221,
+            "name": "Adults // Rachel & Victor Lim",
+            "campusId": 2,
+            "memberCount": 12,
+            "leaders": [
+              "Victor",
+              "Rachel"
+            ]
+          },
+          {
+            "id": 24224,
+            "name": "Adults // Fiona & Raphael Laurel",
+            "campusId": 2,
+            "memberCount": 12,
+            "leaders": [
+              "Raphael",
+              "Fiona"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24203,
+        "name": "Region // Cyber & Jennyvelle Balmadres",
+        "campusId": 2,
+        "children": [],
+        "groups": [
+          {
+            "id": 24204,
+            "name": "Adults // Nelsons & Coluccios",
+            "campusId": 2,
+            "memberCount": 15,
+            "leaders": [
+              "Gino",
+              "Karen",
+              "Graeme",
+              "Natalie"
+            ]
+          },
+          {
+            "id": 24212,
+            "name": "Adults // Jeff & Bev Duthie",
+            "campusId": 2,
+            "memberCount": 19,
+            "leaders": [
+              "Beverley",
+              "Jeff"
+            ]
+          },
+          {
+            "id": 24214,
+            "name": "Adults // Jenn & Cyber",
+            "campusId": 2,
+            "memberCount": 13,
+            "leaders": [
+              "Jenn",
+              "Cyber"
+            ]
+          },
+          {
+            "id": 24227,
+            "name": "Adults // Ian & Anna Crozier",
+            "campusId": 2,
+            "memberCount": 9,
+            "leaders": [
+              "Ian",
+              "Anna"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 24213,
+        "name": "Region // Jennyvelle & Cyber Balmadres",
+        "campusId": 2,
+        "children": [],
+        "groups": []
+      }
+    ],
+    "groups": []
+  },
+  {
+    "id": 24174,
+    "name": "BNE Seasoned",
+    "campusId": 2,
+    "children": [
+      {
+        "id": 24194,
+        "name": "Region // Dennis & Ercelle Celis",
+        "campusId": 2,
+        "children": [],
+        "groups": [
+          {
+            "id": 24195,
+            "name": "Seasoned // Graeme & Marlene Wright",
+            "campusId": 2,
+            "memberCount": 14,
+            "leaders": [
+              "Graeme",
+              "Marlene"
+            ]
+          }
+        ]
+      }
+    ],
+    "groups": []
+  }
+]
