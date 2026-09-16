@@ -197,13 +197,13 @@ describe("LeaderScreen", () => {
 });
 
 describe("BottomNav leader visibility", () => {
-  it("shows five items for a leader and four for a member", () => {
+  it("shows four items for a leader and three for a member", () => {
     const { container, rerender } = render(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, showLeaderTab: true }));
-    expect(container.querySelectorAll("button")).toHaveLength(5);
+    expect(container.querySelectorAll("button")).toHaveLength(4);
     expect(container.querySelector('[data-tab="leader"]')).not.toBeNull();
 
     rerender(React.createElement(BottomNav, { tab: "today", onSelect: () => {}, showLeaderTab: false }));
-    expect(container.querySelectorAll("button")).toHaveLength(4);
+    expect(container.querySelectorAll("button")).toHaveLength(3);
     expect(container.querySelector('[data-tab="leader"]')).toBeNull();
   });
 });
