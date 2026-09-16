@@ -30,6 +30,87 @@
   gap: var(--space-3);
 }
 
+.font-ready-fallback-brand {
+  display: grid;
+  justify-items: center;
+}
+
+.font-ready-fallback-brand .brand {
+  color: var(--navy);
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: .84;
+  text-transform: lowercase;
+}
+
+.font-ready-fallback-brand .brand span {
+  color: var(--coral);
+}
+
+.font-ready-overlay,
+.font-ready-failure-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--cream);
+}
+
+.font-ready-overlay {
+  animation: fontReadyAutoReveal 4.2s linear forwards;
+}
+
+.font-ready-failure-overlay {
+  z-index: 110;
+  overflow: auto;
+}
+
+@keyframes fontReadyAutoReveal {
+  0%, 96% {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.font-ready-fallback {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding-bottom: calc(44px + env(safe-area-inset-bottom));
+}
+
+.font-ready-fallback-content {
+  width: min(100%, 560px);
+  text-align: center;
+}
+
+.font-ready-fallback-content .hero-copy {
+  margin-top: 34px;
+}
+
+.font-ready-fallback-content .login-actions {
+  margin-top: 22px;
+}
+
+.font-ready-continue {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .font-ready-overlay {
+    animation-duration: .01ms;
+  }
+}
+
 /* Box size is prop-driven (see SplashCompanion's `size`, applied inline) so
    this works at any size, in or out of the splash -- no fixed px here. */
 .splash-companion {

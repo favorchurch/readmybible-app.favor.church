@@ -20,10 +20,13 @@ import {
   GRACE_DATES,
   isChapterRead,
   longDate,
+  PLAN_START,
   planEntryForChapter,
   syncViewedChapter,
 } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
+
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 // PROTOTYPE QUESTION: which single reading entrypoint makes the full chapter
 // feel discoverable without presenting Quick Verse as a competing destination?
@@ -201,6 +204,7 @@ export function TodayScreen({
   onViewConnect,
   onViewProgress,
   connectSwitcher,
+  allowPreLaunchNavigation = true,
 }: {
   today: ReturnType<typeof useToday>;
   chapters: number[];
@@ -217,6 +221,7 @@ export function TodayScreen({
   onViewConnect: () => void;
   onViewProgress: () => void;
   connectSwitcher?: ConnectSwitcherContext;
+  allowPreLaunchNavigation?: boolean;
 }) {
   const entry = today.entry;
   const readingVariant = useSyncExternalStore(
@@ -261,7 +266,7 @@ export function TodayScreen({
         <div className="frame--rail">
           <div className="frame__main">
             <section className="hero-copy" data-section="prelaunch-hero">
-              <h1>Matthew starts October 1.</h1>
+              <h1>Matthew starts on {campaignStartLabel}.</h1>
               <p>
                 One chapter a day. 28 chapters. Your Connect Group grows a shared home as you read
                 together.
@@ -270,7 +275,7 @@ export function TodayScreen({
 
             <section className="readiness-card" data-section="readiness">
               <p className="eyebrow">GET READY</p>
-              <h2>Set up before October 1</h2>
+              <h2>Set up before {campaignStartLabel}</h2>
               <button type="button" className="readiness-row" onClick={onEditProfile}>
                 <span className="readiness-label">Avatar</span>
                 <span className="readiness-value">
@@ -278,13 +283,22 @@ export function TodayScreen({
                   <span className="readiness-arrow" aria-hidden="true">→</span>
                 </span>
               </button>
-              <button type="button" className="readiness-row" onClick={onViewConnect}>
-                <span className="readiness-label">Connect Group</span>
-                <span className="readiness-value">
-                  <strong>{groupName ?? "Join with a leader code"}</strong>
-                  <span className="readiness-arrow" aria-hidden="true">→</span>
-                </span>
-              </button>
+              {allowPreLaunchNavigation ? (
+                <button type="button" className="readiness-row" onClick={onViewConnect}>
+                  <span className="readiness-label">Connect Group</span>
+                  <span className="readiness-value">
+                    <strong>{groupName ?? "Join with a leader code"}</strong>
+                    <span className="readiness-arrow" aria-hidden="true">→</span>
+                  </span>
+                </button>
+              ) : (
+                <div className="readiness-row readiness-row-static" aria-disabled="true">
+                  <span className="readiness-label">Connect Group</span>
+                  <span className="readiness-value">
+                    <strong>{groupName ?? "Join with a leader code"}</strong>
+                  </span>
+                </div>
+              )}
               <button type="button" className="readiness-row" onClick={onEditProfile}>
                 <span className="readiness-label">Bible translation</span>
                 <span className="readiness-value">
@@ -320,7 +334,7 @@ export function TodayScreen({
           <div className="frame__rail">
               <section className="home-preview-card" data-section="home-preview">
                 <HomeIllustration stage={stageIndex("Tent")} />
-                <p>Your home starts as a Tent on October 1.</p>
+                <p>Your home starts as a Tent on {campaignStartLabel}.</p>
                 <div className="home-preview-actions">
                   {groupName && (
                     <button
@@ -349,7 +363,7 @@ export function TodayScreen({
               <p className="eyebrow">HOW THIS WORKS</p>
               <ol>
                 <li>
-                  <strong>Read.</strong> One Matthew chapter a day, starting October 1.
+                  <strong>Read.</strong> One Matthew chapter a day, starting {campaignStartLabel}.
                 </li>
                 <li>
                   <strong>Check in.</strong> A quick, honor-based tap once you&apos;ve read.
@@ -361,11 +375,13 @@ export function TodayScreen({
               </ol>
             </section>
 
-            <section className="roadmap-link-row" data-section="roadmap-link">
-              <button type="button" className="secondary-link" onClick={onViewProgress}>
-                See the full roadmap <span aria-hidden="true">→</span>
-              </button>
-            </section>
+            {allowPreLaunchNavigation && (
+              <section className="roadmap-link-row" data-section="roadmap-link">
+                <button type="button" className="secondary-link" onClick={onViewProgress}>
+                  See the full roadmap <span aria-hidden="true">→</span>
+                </button>
+              </section>
+            )}
           </div>
         </div>
         <HomeGrowthSheet

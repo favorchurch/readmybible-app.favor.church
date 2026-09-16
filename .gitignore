@@ -41,6 +41,7 @@ tsconfig.tsbuildinfo
 
 # office run scratch and generated graphs
 /.office/
+.artifacts/
 /graphify-out/
 /.worktrees/
 /graft/
