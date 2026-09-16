@@ -5,7 +5,12 @@ import { resolveAdminScope } from "@/lib/admin/access";
 import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { loadAdminStats } from "@/lib/admin/stats";
 import { flattenStatsRows, rowsToCsv } from "@/lib/admin/rows";
-import { initialTestModeState, scopeForRole } from "@/components/test-mode/logic";
+import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
+import { simulatedScopeFromQuery, type TestModeCampus } from "@/components/test-mode/logic";
+
+function testModeCampusForId(campusId: number | null): TestModeCampus {
+  return campusId === 2 || campusId === 3 ? campusId : 1;
+}
 
 export async function GET(request: Request) {
   const session = await getSessionContext();
@@ -13,22 +18,29 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const isDev = process.env.NODE_ENV !== "production";
-  const testScope = url.searchParams.get("scope");
-  const roleParam = url.searchParams.get("role") ?? url.searchParams.get("viewer");
-  const campusParam = url.searchParams.get("campus");
-  const allowsSimulation = isDev || (url.searchParams.get("test") === "1" && scope !== null);
-  // Resolve exactly the way HomeData does (components/home-data.tsx), and in the
-  // same order: an explicit role wins over `?scope=`, and a role with no admin
-  // scope exports nothing. Reading `?scope=` on its own here meant
-  // `?test=1&scope=global&role=member` rendered a member page while this
-  // endpoint handed back the whole global subtree.
-  if (allowsSimulation && (roleParam !== null || campusParam !== null || testScope !== null)) {
-    // Pass the whole query, not a rebuilt subset: `initialTestModeState` already
-    // encodes the precedence (`?role=` beats `?scope=`), so dropping `scope`
-    // here would silently resolve a legacy export link to "member".
-    const state = initialTestModeState(url.searchParams);
-    const simulated = scopeForRole(state.role, state.campus);
-    scope = simulated.isAdminScope && simulated.rootIds ? { kind: "sections", rootIds: simulated.rootIds } : null;
+  const hasSimulationQuery =
+    url.searchParams.get("role") !== null ||
+    url.searchParams.get("viewer") !== null ||
+    url.searchParams.get("campus") !== null ||
+    url.searchParams.get("scope") !== null ||
+    url.searchParams.get("test") === "1";
+  if (hasSimulationQuery) {
+    const isAuthorizedProductionSimulation = isDev || (url.searchParams.get("test") === "1" && scope !== null);
+    if (!isAuthorizedProductionSimulation) {
+      scope = null;
+    } else if (url.searchParams.get("test") !== "1") {
+      scope = null;
+    } else {
+      const simulated = simulatedScopeFromQuery(
+        url.searchParams,
+        testModeCampusForId(session.status === "ok" ? session.campusId : null),
+      );
+      scope = simulated
+        ? simulated.kind === "global"
+          ? { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] }
+          : { kind: "sections", rootIds: simulated.rootIds }
+        : null;
+    }
   }
 
   if (!scope) {

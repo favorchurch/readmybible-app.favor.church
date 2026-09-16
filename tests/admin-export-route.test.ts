@@ -19,7 +19,8 @@ vi.mock("@/lib/admin/rows", () => ({
 }));
 
 import { GET } from "@/app/admin/export.csv/route";
-import { CAMPUS_ROOT_SECTION_IDS } from "@/lib/rock/hierarchy-constants";
+import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
+import { simulatedScopeFromQuery } from "@/components/test-mode/logic";
 
 beforeEach(() => {
   // Call history has to be cleared, not just re-stubbed: the "exports nothing"
@@ -36,6 +37,22 @@ beforeEach(() => {
 });
 
 describe("simulated admin CSV scope", () => {
+  it("returns 403 for bare test mode and does not load the real admin subtree", async () => {
+    const response = await GET(new Request("https://example.test/admin/export.csv?test=1"));
+
+    expect(response.status).toBe(403);
+    expect(mocks.loadSectionSubtree).not.toHaveBeenCalled();
+  });
+
+  it.each(["global", "sections"])("matches the page's global root for ?scope=%s", async (scope) => {
+    const response = await GET(new Request(`https://example.test/admin/export.csv?test=1&scope=${scope}`));
+    const pageSelection = simulatedScopeFromQuery(new URLSearchParams(`test=1&scope=${scope}`));
+
+    expect(response.status).toBe(200);
+    expect(pageSelection?.rootIds).toEqual([GLOBAL_ROOT_SECTION_ID]);
+    expect(mocks.loadSectionSubtree).toHaveBeenCalledWith(pageSelection?.rootIds);
+  });
+
   it("exports the selected Department campus subtree", async () => {
     const response = await GET(new Request("https://example.test/admin/export.csv?scope=department&campus=BNE&test=1"));
 
@@ -72,5 +89,17 @@ describe("simulated admin CSV scope", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.loadSectionSubtree).toHaveBeenCalled();
+  });
+
+  it.each([
+    "scope=cluster",
+    "scope=region",
+    "scope=department&campus=BNE",
+    "scope=global&role=member",
+  ])("returns 403 for a non-exportable simulated URL: %s", async (query) => {
+    const response = await GET(new Request(`https://example.test/admin/export.csv?${query}`));
+
+    expect(response.status).toBe(403);
+    expect(mocks.loadSectionSubtree).not.toHaveBeenCalled();
   });
 });

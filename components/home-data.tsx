@@ -17,9 +17,8 @@ import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
 import {
-  initialTestModeState,
   isTestModeRequestedFromQuery,
-  scopeForRole,
+  simulatedScopeFromQuery,
   type TestModeCampus,
 } from "@/components/test-mode/logic";
 import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
@@ -33,6 +32,15 @@ function firstParam(value: string | string[] | undefined): string | undefined {
 
 function testModeCampusForId(campusId: number | null): TestModeCampus {
   return campusId === 2 || campusId === 3 ? campusId : 1;
+}
+
+function testModeQuery(query: Record<string, string | string[] | undefined>): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    const first = firstParam(value);
+    if (first !== undefined) params.set(key, first);
+  }
+  return params;
 }
 
 export async function HomeData({
@@ -128,33 +136,24 @@ export async function HomeData({
   const isProdAdminTest = !isDev && scope !== null && testParam === "1";
   const isTest = (isDev && (testParam === "1" || scopeParam !== undefined)) || isProdAdminTest;
   if (isTest || (!scope && isDev)) {
-    if (roleParam !== undefined || campusParam !== undefined) {
-      const query = new URLSearchParams();
-      if (roleParam !== undefined) query.set("role", roleParam);
-      if (campusParam !== undefined) query.set("campus", campusParam);
-      // `scope` has to come along: a legacy link like `?scope=cluster&campus=BNE`
-      // enters this branch on the campus alone, and without the scope value the
-      // role would resolve to "member" and strip the section surface.
-      if (scopeParam !== undefined) query.set("scope", scopeParam);
-      const state = initialTestModeState(query, testModeCampusForId(session.campusId));
-      const simulated = scopeForRole(state.role, state.campus);
-      if (simulated.isAdminScope && simulated.rootIds) {
-        scope = { kind: "sections", rootIds: simulated.rootIds };
-        simulatedScope = state.role === "cluster" ? "cluster" : state.role === "regional" ? "region" : "department";
-        simulatedCampus = state.role === "department" ? state.campus : undefined;
+    const hasSimulationQuery =
+      roleParam !== undefined || campusParam !== undefined || scopeParam !== undefined || testParam === "1";
+    if (hasSimulationQuery) {
+      const simulated = simulatedScopeFromQuery(testModeQuery(searchParams), testModeCampusForId(session.campusId));
+      if (simulated) {
+        scope = simulated.kind === "global"
+          ? { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] }
+          : { kind: "sections", rootIds: simulated.rootIds };
+        simulatedScope = simulated.simulatedScope;
+        simulatedCampus = simulated.campus;
       } else {
         scope = null;
         simulatedScope = undefined;
+        simulatedCampus = undefined;
       }
     } else {
       const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
-      if (requestedScope === "cluster") {
-        scope = { kind: "sections", rootIds: scopeForRole("cluster", 1).rootIds! };
-        simulatedScope = "cluster";
-      } else if (requestedScope === "region") {
-        scope = { kind: "sections", rootIds: scopeForRole("regional", 1).rootIds! };
-        simulatedScope = "region";
-      } else if (requestedScope === "global" || !scope) {
+      if (requestedScope === "global" || !scope) {
         scope = { kind: "global", rootIds: [GLOBAL_ROOT_SECTION_ID] };
         simulatedScope = "global";
       }
