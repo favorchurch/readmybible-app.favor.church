@@ -112,4 +112,13 @@ describe("feedback actions", () => {
       }],
     });
   });
+
+  it("returns a declared failure when the reviewer query cannot reach the database", async () => {
+    mocks.orderBy.mockRejectedValue(new Error("database unavailable"));
+
+    await expect(getFeedback()).resolves.toEqual({
+      ok: false,
+      error: "We couldn't load submitted feedback. Please try again.",
+    });
+  });
 });

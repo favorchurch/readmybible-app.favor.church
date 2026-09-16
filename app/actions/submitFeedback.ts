@@ -31,6 +31,10 @@ export async function submitFeedback(input: SubmitFeedbackInput): Promise<Submit
     return { ok: false, error: "You need to be logged in to send feedback." };
   }
 
+  // The app has no shared rate-limit primitive, so an in-memory throttle would
+  // not protect across instances. Keep the authenticated session and 5,000-
+  // character bound as the current guardrails; add a shared limiter if abuse
+  // becomes an observed issue.
   try {
     await db.insert(feedback).values({
       rockPersonId: session.rockPersonId,

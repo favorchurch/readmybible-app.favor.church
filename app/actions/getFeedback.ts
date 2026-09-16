@@ -29,32 +29,40 @@ export async function getFeedback(): Promise<GetFeedbackResult> {
     return { ok: false, error: "You don't have access to submitted feedback." };
   }
 
-  const rows = await db
-    .select({
-      id: feedback.id,
-      submittedByPersonId: feedback.rockPersonId,
-      category: feedback.category,
-      textualFeedback: feedback.textualFeedback,
-      submittedAt: feedback.createdAt,
-    })
-    .from(feedback)
-    .orderBy(desc(feedback.createdAt), desc(feedback.id));
+  try {
+    const rows = await db
+      .select({
+        id: feedback.id,
+        submittedByPersonId: feedback.rockPersonId,
+        category: feedback.category,
+        textualFeedback: feedback.textualFeedback,
+        submittedAt: feedback.createdAt,
+      })
+      .from(feedback)
+      .orderBy(desc(feedback.createdAt), desc(feedback.id));
 
-  const items: FeedbackReviewItem[] = [];
-  for (const row of rows) {
-    const category = feedbackCategorySchema.safeParse(row.category);
-    if (!category.success) {
-      console.error("getFeedback skipped a row with an invalid category", { feedbackId: row.id });
-      continue;
+    const items: FeedbackReviewItem[] = [];
+    for (const row of rows) {
+      const category = feedbackCategorySchema.safeParse(row.category);
+      if (!category.success) {
+        console.error("getFeedback skipped a row with an invalid category", { feedbackId: row.id });
+        continue;
+      }
+      items.push({
+        id: row.id,
+        submittedByPersonId: row.submittedByPersonId,
+        category: category.data,
+        textualFeedback: row.textualFeedback,
+        submittedAt: row.submittedAt.toISOString(),
+      });
     }
-    items.push({
-      id: row.id,
-      submittedByPersonId: row.submittedByPersonId,
-      category: category.data,
-      textualFeedback: row.textualFeedback,
-      submittedAt: row.submittedAt.toISOString(),
-    });
-  }
 
-  return { ok: true, items };
+    return { ok: true, items };
+  } catch (error) {
+    console.error("getFeedback failed while loading submitted feedback", {
+      error,
+      rockPersonId: session.rockPersonId,
+    });
+    return { ok: false, error: "We couldn't load submitted feedback. Please try again." };
+  }
 }

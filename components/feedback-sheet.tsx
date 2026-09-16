@@ -33,13 +33,12 @@ export function FeedbackSheet({ open, onClose }: { open: boolean; onClose: () =>
         "Sending your feedback…",
         "Feedback sent. Thanks for helping us improve!",
         () => submitFeedback({ category, textualFeedback }),
+        "We couldn't send your feedback. Please try again.",
       );
       if (result.ok) {
         setCategory("");
         setTextualFeedback("");
         onClose();
-      } else {
-        setError(result.error);
       }
     } catch {
       setError("We couldn't send your feedback. Please try again.");

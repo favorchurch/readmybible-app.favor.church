@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 const { submitFeedback } = vi.hoisted(() => ({
-  submitFeedback: vi.fn(async () => ({ ok: true as const })),
+  submitFeedback: vi.fn(async (): Promise<{ ok: true } | { ok: false; error: string }> => ({ ok: true })),
 }));
 vi.mock("@/app/actions/submitFeedback", () => ({ submitFeedback }));
 
@@ -51,6 +51,28 @@ describe("feedback UI", () => {
       category: "Read My Bible App",
       textualFeedback: "The reading view is great.",
     }));
+  });
+
+  it("uses the toast as the only inline surface for a returned failure", async () => {
+    submitFeedback.mockResolvedValue({ ok: false, error: "Feedback is temporarily unavailable." });
+    renderFeedback();
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "Read My Bible App" } });
+    fireEvent.change(screen.getByLabelText("Textual Feedback"), { target: { value: "The reading view is great." } });
+    fireEvent.click(screen.getByRole("button", { name: "Send feedback" }));
+
+    await vi.waitFor(() => expect(screen.getByRole("status").textContent).toContain("Feedback is temporarily unavailable."));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("uses the same message in the toast and inline error when the action throws", async () => {
+    submitFeedback.mockRejectedValue(new Error("database unavailable"));
+    renderFeedback();
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "Read My Bible App" } });
+    fireEvent.change(screen.getByLabelText("Textual Feedback"), { target: { value: "The reading view is great." } });
+    fireEvent.click(screen.getByRole("button", { name: "Send feedback" }));
+
+    await vi.waitFor(() => expect(screen.getByRole("alert").textContent).toContain("We couldn't send your feedback. Please try again."));
+    expect(screen.getByRole("status").textContent).toContain("We couldn't send your feedback. Please try again.");
   });
 
   it("exposes the entry point from the existing profile editor", () => {
