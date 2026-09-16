@@ -132,6 +132,10 @@ export async function HomeData({
       const query = new URLSearchParams();
       if (roleParam !== undefined) query.set("role", roleParam);
       if (campusParam !== undefined) query.set("campus", campusParam);
+      // `scope` has to come along: a legacy link like `?scope=cluster&campus=BNE`
+      // enters this branch on the campus alone, and without the scope value the
+      // role would resolve to "member" and strip the section surface.
+      if (scopeParam !== undefined) query.set("scope", scopeParam);
       const state = initialTestModeState(query, testModeCampusForId(session.campusId));
       const simulated = scopeForRole(state.role, state.campus);
       if (simulated.isAdminScope && simulated.rootIds) {

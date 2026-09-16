@@ -203,8 +203,11 @@ function roleFromParam(raw: string | null): TestModeRole | null {
 
 function roleFromScopeParam(raw: string | null): TestModeRole | null {
   switch (raw) {
+    // `department` never appeared in a page URL, but the CSV export has always
+    // accepted it, so a shared export link carries it.
     case "global":
     case "sections":
+    case "department":
       return "department";
     case "cluster":
       return "cluster";
