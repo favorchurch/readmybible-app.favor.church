@@ -109,6 +109,19 @@ describe("initial state from the URL", () => {
   });
 
   it.each([
+    ["global", "department"],
+    ["sections", "department"],
+    ["cluster", "cluster"],
+    ["region", "regional"],
+  ])("maps legacy ?scope=%s to %s", (scope, expected) => {
+    expect(parse(`?scope=${scope}`).role).toBe(expected);
+  });
+
+  it("keeps ?role= authoritative over a legacy ?scope= value", () => {
+    expect(parse("?scope=cluster&role=member").role).toBe("member");
+  });
+
+  it.each([
     ["MNL", 1],
     ["bne", 2],
     ["SEL", 3],

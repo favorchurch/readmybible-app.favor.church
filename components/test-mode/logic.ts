@@ -201,6 +201,20 @@ function roleFromParam(raw: string | null): TestModeRole | null {
   }
 }
 
+function roleFromScopeParam(raw: string | null): TestModeRole | null {
+  switch (raw) {
+    case "global":
+    case "sections":
+      return "department";
+    case "cluster":
+      return "cluster";
+    case "region":
+      return "regional";
+    default:
+      return null;
+  }
+}
+
 function campusFromParams(searchParams: URLSearchParams, fallback: TestModeCampus): TestModeCampus {
   const raw = (searchParams.get("campus") ?? "").trim().toUpperCase();
   if (raw === "") return fallback;
@@ -225,10 +239,11 @@ export function initialTestModeState(
   sessionCampus: TestModeCampus = 1,
 ): TestModeState {
   const explicit = roleFromParam(searchParams.get("role") ?? searchParams.get("viewer"));
+  const legacyScopeRole = roleFromScopeParam(searchParams.get("scope"));
   const isLeaderParam = searchParams.get("leader") === "1" || searchParams.get("tab") === "leader";
   const isAdminParam = searchParams.get("admin") === "1" || searchParams.get("tab") === "admin";
   const role: TestModeRole =
-    explicit ?? (isAdminParam ? "department" : isLeaderParam ? "connect-leader" : "member");
+    explicit ?? legacyScopeRole ?? (isAdminParam ? "department" : isLeaderParam ? "connect-leader" : "member");
   return {
     day: dayFromParams(searchParams),
     phase: "active",

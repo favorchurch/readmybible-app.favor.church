@@ -111,7 +111,8 @@ export async function HomeData({
   const translation = (profileRow?.translation as Translation | undefined) ?? session.defaultTranslation;
 
   let scope = resolveAdminScope(session);
-  let simulatedScope: "global" | "cluster" | "region" | undefined;
+  let simulatedScope: "global" | "cluster" | "region" | "department" | undefined;
+  let simulatedCampus: TestModeCampus | undefined;
 
   // Dev-only simulation of global/cluster/region scopes, re-homed verbatim
   // from the original app/admin/page.tsx (see ef393bd). In production, the
@@ -135,7 +136,8 @@ export async function HomeData({
       const simulated = scopeForRole(state.role, state.campus);
       if (simulated.isAdminScope && simulated.rootIds) {
         scope = { kind: "sections", rootIds: simulated.rootIds };
-        simulatedScope = state.role === "cluster" ? "cluster" : state.role === "regional" ? "region" : undefined;
+        simulatedScope = state.role === "cluster" ? "cluster" : state.role === "regional" ? "region" : "department";
+        simulatedCampus = state.role === "department" ? state.campus : undefined;
       } else {
         scope = null;
         simulatedScope = undefined;
@@ -158,7 +160,11 @@ export async function HomeData({
   const sectionSlot = scope
     ? (
       <Suspense fallback={<SectionDashboardSkeleton />}>
-        <SectionDashboard scope={scope as AdminScope} simulatedScope={simulatedScope} />
+        <SectionDashboard
+          scope={scope as AdminScope}
+          simulatedScope={simulatedScope}
+          simulatedCampus={simulatedCampus}
+        />
       </Suspense>
     )
     : null;

@@ -375,6 +375,23 @@ describe("AppShell wiring: the Leader tab follows the simulated role, not the re
     expect(params.get("campus")).toBe("BNE");
   });
 
+  it.each(["global", "sections", "cluster", "region"])(
+    "keeps the legacy ?scope=%s link on the section surface",
+    (scope) => {
+      cleanup();
+      searchParams.value = new URLSearchParams(`test=1&scope=${scope}`);
+      const props: AppShellProps = {
+        ...baseProps(),
+        isAdminScope: true,
+        sectionSlot: React.createElement("div", { "data-testid": "section-surface" }, "Section surface"),
+      };
+      render(React.createElement(AppShell, props));
+
+      fireEvent.click(within(mainNav()).getByRole("button", { name: "Leader" }));
+      expect(screen.getByTestId("section-surface")).toBeTruthy();
+    },
+  );
+
   it("no regression: outside test mode, a real admin-scope user still sees the Leader tab", () => {
     searchParams.value = new URLSearchParams(""); // test mode off entirely
     const props: AppShellProps = { ...baseProps(), isAdminScope: true };
