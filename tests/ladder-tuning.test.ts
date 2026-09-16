@@ -10,8 +10,6 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { aggregateRatio, occupantStateFor } from "@/components/ladder/occupant-badge";
-import type { SectionWithStats } from "@/lib/admin/stats";
 import { stageFor, type Stage } from "@/lib/game";
 import { attachTunedStats, pickStateGroups, tunedRatio } from "@/lib/ladder/tuning";
 import type { HierarchySectionNode } from "@/lib/rock/hierarchy";
@@ -105,35 +103,5 @@ describe("ladder data states", () => {
     expect(zero.checkins).toBe(0);
     expect(unavailable.checkins).toBe(0);
     expect(states.unavailableId).not.toBe(zero.id);
-  });
-});
-
-describe("occupant aggregate", () => {
-  it("reports unknown, not zero, for a scope with nothing beneath it", () => {
-    const parent: SectionWithStats = { id: 1, name: "p", campusId: 1, children: [], groups: [] };
-    expect(aggregateRatio(parent)).toBeNull();
-    expect(occupantStateFor({ ...parent, children: [parent] }).kind).toBe("unavailable");
-  });
-
-  it("reports unknown when a child's only group is unavailable", () => {
-    const group = {
-      id: 99, name: "g", campusId: 1, memberCount: 5, leaders: [],
-      checkins: 0, readersToday: 0, ratio: 0, stage: "Tent" as const,
-    };
-    const child: SectionWithStats = { id: 2, name: "c", campusId: 1, children: [], groups: [group] };
-    const parent: SectionWithStats = { id: 1, name: "p", campusId: 1, children: [child], groups: [] };
-    // Previously rendered "0/1" -- indistinguishable from a real zero, which
-    // is the one distinction #112 exists to make.
-    expect(occupantStateFor(parent, [99]).kind).toBe("unavailable");
-  });
-
-  it("still reports a genuine zero as zero", () => {
-    const group = {
-      id: 7, name: "g", campusId: 1, memberCount: 5, leaders: [],
-      checkins: 0, readersToday: 0, ratio: 0, stage: "Tent" as const,
-    };
-    const child: SectionWithStats = { id: 2, name: "c", campusId: 1, children: [], groups: [group] };
-    const parent: SectionWithStats = { id: 1, name: "p", campusId: 1, children: [child], groups: [] };
-    expect(occupantStateFor(parent, []).kind).toBe("zero");
   });
 });

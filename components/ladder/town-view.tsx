@@ -1,150 +1,267 @@
 "use client";
 
 /**
- * Home-ladder prototype: the region town view, built to the decisions frozen
- * on wayfinder map #110.
+ * Connect-home visiting prototype for wayfinder map #110.
  *
- * - #114 -- the town view is a **shallow row**: one primary home at a time,
- *   siblings perceptible either side, panned across. Not a shared-fire scene,
- *   not a card grid. It is a **toggle** against the single region home, not
- *   the default surface.
- * - #115 -- lateral movement is a **slide**. The row *is* the slide. Enter and
- *   back are a separate axis. `prefers-reduced-motion` falls back to a cut
- *   (handled in CSS). Where lateral is unavailable the control is absent,
- *   never disabled-looking.
- * - #116 -- the multi-scope chooser is a **home overlay**, top-left, present
- *   on every home rather than only the landing one. Hidden entirely for a
- *   single-scope viewer.
- * - #112 -- an occupant's aggregate reads as an emoji-dot fraction.
- *
- * Prototype only. Runs on the frozen fixture (#111); reads no Rock and no
- * database. `lib/ladder/dev-gate.ts` keeps it out of production.
+ * Map #146 is the authority for scope ownership: only Connects own Homes.
+ * Regional leaders land on their region's Connect-home row. Cluster and
+ * Department leaders pick a region first, then enter that region's row.
+ * Nothing here fabricates an upstream-owned home.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { MemberStreakDots } from "@/components/member-streak-dots";
 import { StageMini } from "@/components/stage-mini";
-import {
-  OccupantBadge,
-  aggregateRatio,
-  aggregateRatioOrZero,
-  occupantStateFor,
-} from "@/components/ladder/occupant-badge";
 import type { SectionWithStats } from "@/lib/admin/stats";
-import { stageFor } from "@/lib/game";
+import type { LadderGroupLegend } from "@/lib/ladder/legend-contract";
 
-type Surface = "region" | "town";
+type VisitKey = `group:${number}`;
+type VisitTarget = SectionWithStats["groups"][number];
+type GroupContext = {
+  rootIndex: number;
+  regionIndex: number;
+  region: SectionWithStats;
+  group: VisitTarget;
+};
 
-/**
- * Two roots can carry the same name in Rock: the real multi-scope viewer
- * heads identically-named clusters under two different departments.
- * Labelling by name alone shows the same word twice, so the chooser
- * disambiguates by position.
- */
+const CLUSTER_VIEWERS = new Set(["clusterHead", "bigClusterHead", "departmentAsCluster", "singleRegionDepartment", "multiScope"]);
+
 function scopeLabel(section: SectionWithStats, index: number, all: SectionWithStats[]): string {
-  const duplicate = all.filter((s) => s.name === section.name).length > 1;
+  const duplicate = all.filter((candidate) => candidate.name === section.name).length > 1;
   return duplicate ? `${section.name} (${index + 1} of ${all.length})` : section.name;
+}
+
+function visitKeyFrom(value: string | undefined): VisitKey | null {
+  return value && /^group:\d+$/.test(value) ? (value as VisitKey) : null;
+}
+
+function groupFromKey(groups: SectionWithStats["groups"], key: VisitKey | null): VisitTarget | null {
+  if (!key) return null;
+  const id = Number(key.slice("group:".length));
+  return groups.find((group) => group.id === id) ?? null;
+}
+
+function regionsForRoot(root: SectionWithStats): SectionWithStats[] {
+  if (root.children.length > 0) return root.children;
+  return root.groups.length > 0 ? [root] : [];
+}
+
+function findGroupContext(
+  roots: SectionWithStats[],
+  isClusterViewer: boolean,
+  key: VisitKey | null,
+): GroupContext | null {
+  if (!key) return null;
+  for (const [rootIndex, root] of roots.entries()) {
+    const regions = isClusterViewer ? regionsForRoot(root) : [root];
+    for (const [regionIndex, region] of regions.entries()) {
+      const group = groupFromKey(region.groups, key);
+      if (group) return { rootIndex, regionIndex, region, group };
+    }
+  }
+  return null;
+}
+
+function defaultLegendsOn(viewer: string): boolean {
+  return viewer === "connectMember" || viewer === "connectLeader";
 }
 
 export function LadderTownView({
   roots,
   unavailableGroupIds,
   viewer,
+  ownGroupId,
   viewers,
   onChangeViewer,
+  initialVisitedKey,
 }: {
   roots: SectionWithStats[];
   unavailableGroupIds: number[];
   viewer: string;
+  ownGroupId: number | null;
   viewers: Array<{ key: string; label: string }>;
   onChangeViewer: (next: string) => void;
+  initialVisitedKey?: VisitKey | null;
 }) {
-  const [rootIndex, setRootIndex] = useState(0);
-  const [surface, setSurface] = useState<Surface>("region");
+  const isClusterViewer = CLUSTER_VIEWERS.has(viewer);
+  const isConnectViewer = viewer === "connectMember" || viewer === "connectLeader";
+  const initialContext = findGroupContext(roots, isClusterViewer, initialVisitedKey ?? null);
+  const [rootIndex, setRootIndex] = useState(initialContext?.rootIndex ?? 0);
+  const [regionIndex, setRegionIndex] = useState(initialContext?.regionIndex ?? 0);
   const [cursor, setCursor] = useState(0);
+  const [visitedKey, setVisitedKey] = useState<VisitKey | null>(initialVisitedKey ?? null);
+  const [visitEntryActive, setVisitEntryActive] = useState(false);
+  const [bonusesResolved, setBonusesResolved] = useState(false);
+  const [showLegends, setShowLegends] = useState(() => defaultLegendsOn(viewer));
 
-  // Clamped, not trusted: a viewer change replaces `roots` from the server
-  // while this component keeps its state, so a rootIndex of 1 carried into a
-  // one-root viewer would blank the screen -- and the early return below
-  // removes the viewer control, leaving no way back.
+  useEffect(() => {
+    const onPopState = () => {
+      const next = visitKeyFrom(new URL(window.location.href).searchParams.get("home") ?? undefined);
+      const context = findGroupContext(roots, isClusterViewer, next);
+      if (context) {
+        setRootIndex(context.rootIndex);
+        setRegionIndex(context.regionIndex);
+        setCursor(0);
+      }
+      setVisitedKey(next);
+      setVisitEntryActive(false);
+      setBonusesResolved(Boolean(next));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [isClusterViewer, roots]);
+
   const safeRootIndex = Math.min(rootIndex, Math.max(0, roots.length - 1));
   const root = roots[safeRootIndex];
+  const regions = root ? regionsForRoot(root) : [];
+  const safeRegionIndex = Math.min(regionIndex, Math.max(0, regions.length - 1));
+  const currentRegion = isClusterViewer ? regions[safeRegionIndex] : root;
+  const visitContext = findGroupContext(roots, isClusterViewer, visitedKey);
+  const region = visitContext?.region ?? currentRegion;
+  const groups = region?.groups ?? [];
+  const safeCursor = Math.min(cursor, Math.max(0, groups.length - 1));
+  const visitedGroup = visitContext?.group ?? null;
+  const ownGroup = isConnectViewer && !visitedKey ? groupFromKey(groups, ownGroupId === null ? null : `group:${ownGroupId}`) : null;
+  const activeGroup = visitedGroup ?? ownGroup;
+
+  // #118's amendment: a local Connect view paints first. This timer is only a
+  // prototype stand-in for the streamed scope bonus; it performs no walk and
+  // cannot downgrade the base view.
+  useEffect(() => {
+    if (visitedKey || region?.id === undefined) return;
+    const timer = window.setTimeout(() => setBonusesResolved(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [region?.id, visitedKey]);
+
+  function updateVisited(next: VisitKey | null, historyMode: "push" | "replace") {
+    const url = new URL(window.location.href);
+    if (next) url.searchParams.set("home", next);
+    else url.searchParams.delete("home");
+    const method = historyMode === "push" ? "pushState" : "replaceState";
+    window.history[method]({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setVisitedKey(next);
+    setVisitEntryActive(historyMode === "push" && next !== null);
+    setBonusesResolved(Boolean(next));
+  }
+
+  function returnFromVisit() {
+    if (visitEntryActive) {
+      window.history.back();
+      return;
+    }
+    updateVisited(null, "replace");
+  }
 
   if (!root) {
-    // Rendered with the viewer control intact, so an empty scope is a state
-    // the user can leave rather than a dead end.
     return (
       <div className="ladder-stage">
-        <p className="ladder-empty">This viewer has no visible scope.</p>
+        <p className="ladder-empty">This viewer has no visible Connect homes.</p>
+        <p className="ladder-empty-detail">Section-only viewers stay on the Leader surface.</p>
         <ViewerPicker viewer={viewer} viewers={viewers} onChangeViewer={onChangeViewer} />
       </div>
     );
   }
 
-  // A section's steppable siblings are its sub-sections when it has them,
-  // otherwise its connects -- one rung down either way.
-  const children = root.children.length > 0 ? root.children : [];
-  const connects = root.groups;
-  const townItems = children.length > 0 ? children : null;
-
   const multiScope = roots.length > 1;
-  const index = Math.min(cursor, Math.max(0, (townItems?.length ?? connects.length) - 1));
 
   return (
     <div className={`ladder-stage ${multiScope ? "has-scope-overlay" : ""}`}>
-      {/* #116: the scope overlay sits on the scene itself and renders on every
-          home, not only the landing one. Single-scope viewers get nothing. */}
       {multiScope && (
         <div className="ladder-scope-overlay">
-          <label htmlFor="ladder-scope">Scope</label>
+          <label htmlFor="ladder-scope">Jurisdiction</label>
           <select
             id="ladder-scope"
             value={safeRootIndex}
             onChange={(event) => {
               setRootIndex(Number(event.target.value));
+              setRegionIndex(0);
               setCursor(0);
+              updateVisited(null, "replace");
             }}
           >
-            {roots.map((candidate, i) => (
-              <option key={candidate.id} value={i}>
-                {scopeLabel(candidate, i, roots)}
+            {roots.map((candidate, index) => (
+              <option key={candidate.id} value={index}>
+                {scopeLabel(candidate, index, roots)}
               </option>
             ))}
           </select>
         </div>
       )}
 
-      <nav className="ladder-breadcrumb" aria-label="Scope">
-        <span className="ladder-crumb ladder-crumb-current">{root.name}</span>
-        {surface === "town" && townItems && (
+      <nav className="ladder-breadcrumb" aria-label="Ladder location">
+        <span className="ladder-crumb ladder-crumb-current">Jurisdiction · {root.name}</span>
+        {isClusterViewer && region && (
           <>
             <span aria-hidden="true">›</span>
-            <span className="ladder-crumb">{townItems[index]?.name}</span>
+            <span className="ladder-crumb">Region · {region.name}</span>
+          </>
+        )}
+        {activeGroup && (
+          <>
+            <span aria-hidden="true">›</span>
+            <span className="ladder-crumb ladder-crumb-visited">{activeGroup.name}</span>
           </>
         )}
       </nav>
 
-      {surface === "region" ? (
-        <RegionHome section={root} connects={connects} unavailableGroupIds={unavailableGroupIds} />
-      ) : (
-        <ShallowRow
-          items={townItems ?? []}
-          connects={connects}
-          index={index}
-          onStep={setCursor}
-          unavailableGroupIds={unavailableGroupIds}
+      {isClusterViewer && (
+        <RegionPicker
+          regions={regions}
+          index={safeRegionIndex}
+          onChange={(next) => {
+            setRegionIndex(next);
+            setCursor(0);
+            updateVisited(null, "replace");
+          }}
         />
       )}
 
-      <div className="ladder-controls">
-        <button
-          type="button"
-          className="ladder-toggle"
-          aria-pressed={surface === "town"}
-          onClick={() => setSurface(surface === "region" ? "town" : "region")}
-        >
-          {surface === "region" ? "Show town view" : "Show single home"}
-        </button>
+      {activeGroup ? (
+        <VisitedConnectHome
+          group={activeGroup}
+          unavailable={unavailableGroupIds.includes(activeGroup.id)}
+          showLegends={showLegends}
+          isOwnHome={ownGroup !== null}
+          onToggleLegends={() => setShowLegends((visible) => !visible)}
+          onReturn={returnFromVisit}
+        />
+      ) : region ? (
+        <>
+          <RegionTownHeading
+            region={region}
+            groupCount={groups.length}
+            isClusterViewer={isClusterViewer}
+            bonusesResolved={bonusesResolved}
+          />
+          <ShallowRow
+            groups={groups}
+            index={safeCursor}
+            onStep={setCursor}
+            unavailableGroupIds={unavailableGroupIds}
+            onVisit={(key) => updateVisited(key, "push")}
+          />
+        </>
+      ) : (
+        <p className="ladder-empty">No regions to visit in this jurisdiction yet.</p>
+      )}
 
+      <p className="ladder-deep-link-note">
+        {ownGroup
+          ? "This is your Connect home. Member legends are on by default."
+          : activeGroup
+            ? "This Connect home is in the URL. Browser Back returns to the region town."
+          : "Choose Visit home to test a shareable Connect-home URL and browser Back."}
+      </p>
+
+      <div className="ladder-controls">
+        <details className="ladder-settings">
+          <summary>View settings</summary>
+          <label>
+            <input type="checkbox" checked={showLegends} onChange={(event) => setShowLegends(event.target.checked)} />
+            Show member legends
+          </label>
+          <small>{showLegends ? "Names and recent five-day streaks are visible to authorized viewers." : "Member legends are hidden."}</small>
+        </details>
         <ViewerPicker viewer={viewer} viewers={viewers} onChangeViewer={onChangeViewer} />
       </div>
     </div>
@@ -171,82 +288,188 @@ function ViewerPicker({
   );
 }
 
-/** The single aggregate home -- the default surface the town view toggles against. */
-function RegionHome({
-  section,
-  connects,
-  unavailableGroupIds,
+function RegionPicker({
+  regions,
+  index,
+  onChange,
 }: {
-  section: SectionWithStats;
-  connects: SectionWithStats["groups"];
-  unavailableGroupIds: number[];
+  regions: SectionWithStats[];
+  index: number;
+  onChange: (next: number) => void;
 }) {
-  const ratio = aggregateRatioOrZero(section, unavailableGroupIds);
-  const stage = stageFor(ratio);
-
+  if (regions.length === 0) return null;
   return (
-    <div className="ladder-single">
-      <StageMini name={stage} size={200} />
-      <p className="ladder-home-label">
-        {section.name} · {stage} · {Math.round(ratio * 100)}%
-      </p>
-      <OccupantBadge state={occupantStateFor(section, unavailableGroupIds)} />
-      <p className="ladder-meta">
-        {section.children.length > 0
-          ? `${section.children.length} region${section.children.length === 1 ? "" : "s"}`
-          : `${connects.length} connect${connects.length === 1 ? "" : "s"}`}
-      </p>
-    </div>
+    <section className="ladder-region-picker" aria-labelledby="ladder-region-picker-title">
+      <div>
+        <p className="ladder-eyebrow">Navigate, don&apos;t render</p>
+        <h2 id="ladder-region-picker-title">Choose a region</h2>
+        <p>Picking one opens its Connect-home town view.</p>
+      </div>
+      <label>
+        <span className="ladder-sr-only">Region</span>
+        <select aria-label="Region" value={index} onChange={(event) => onChange(Number(event.target.value))}>
+          {regions.map((region, regionIndex) => (
+            <option key={region.id} value={regionIndex}>
+              {region.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="ladder-region-list" aria-label="Regions in this jurisdiction">
+        {regions.map((region, regionIndex) => (
+          <button type="button" className={regionIndex === index ? "is-selected" : ""} key={region.id} onClick={() => onChange(regionIndex)}>
+            <span>{region.name}</span>
+            <small>{region.groups.length} Connect homes →</small>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
-/**
- * #114's shallow row. Three slots are rendered -- previous, centre, next --
- * and stepping slides the strip by one. The prev/next controls are **absent**
- * at the ends rather than disabled (#115): a greyed arrow reads as broken, a
- * missing one reads as "not a thing here".
- */
+function RegionTownHeading({
+  region,
+  groupCount,
+  isClusterViewer,
+  bonusesResolved,
+}: {
+  region: SectionWithStats;
+  groupCount: number;
+  isClusterViewer: boolean;
+  bonusesResolved: boolean;
+}) {
+  return (
+    <section className="ladder-jurisdiction" data-bonus-state={bonusesResolved ? "resolved" : "provisional"}>
+      <div className="ladder-jurisdiction-copy">
+        <p className="ladder-eyebrow">{isClusterViewer ? "Region town" : "Regional leader landing"}</p>
+        <h2>{region.name}</h2>
+        <p>{groupCount === 1 ? "1 Connect home" : `${groupCount} Connect homes`} available to visit.</p>
+      </div>
+      <div className="ladder-bonus-status">
+        <span className="ladder-provisional-badge">{bonusesResolved ? "Resolved" : "Provisional"}</span>
+        <strong>{bonusesResolved ? "Scope contributions landed" : "Base painted · scope contributions resolving"}</strong>
+      </div>
+    </section>
+  );
+}
+
+function VisitedConnectHome({
+  group,
+  unavailable,
+  showLegends,
+  isOwnHome,
+  onToggleLegends,
+  onReturn,
+}: {
+  group: VisitTarget;
+  unavailable: boolean;
+  showLegends: boolean;
+  isOwnHome: boolean;
+  onToggleLegends: () => void;
+  onReturn: () => void;
+}) {
+  const [legend, setLegend] = useState<LadderGroupLegend | null>(null);
+  const [legendLoading, setLegendLoading] = useState(false);
+  const [legendError, setLegendError] = useState<"forbidden" | "unavailable" | null>(null);
+
+  useEffect(() => {
+    if (!showLegends) return;
+    let cancelled = false;
+    const start = window.setTimeout(() => {
+      if (cancelled) return;
+      setLegendLoading(true);
+      setLegendError(null);
+      fetch(`/ladder/legend?groupId=${group.id}`, { cache: "no-store" })
+        .then((response) => response.json().then((result) => ({ result: result as LadderGroupLegend, status: response.status })))
+        .then(({ result, status }) => {
+          if (cancelled) return;
+          setLegendLoading(false);
+          if (result.ok) setLegend(result);
+          else setLegendError(status === 401 || status === 403 ? "forbidden" : "unavailable");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setLegendLoading(false);
+          setLegendError("unavailable");
+        });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(start);
+    };
+  }, [group.id, showLegends]);
+
+  return (
+    <section className="ladder-visited-home">
+      <p className="ladder-visited-eyebrow">{isOwnHome ? "Your Connect home" : "Read-only visited Connect home"}</p>
+      <StageMini name={group.stage} size={200} />
+      <p className="ladder-home-label">
+        {group.name} · {unavailable ? "—" : `${group.stage} · ${Math.round(group.ratio * 100)}%`}
+      </p>
+      <p className="ladder-meta">No interior actions. Member legend is a view setting.</p>
+
+      <div className="ladder-member-legend" aria-live="polite">
+        <div className="ladder-member-legend-heading">
+          <div>
+            <p className="ladder-eyebrow">Connect legend</p>
+            <h3>Members + recent five-day streak</h3>
+          </div>
+          <button type="button" className="ladder-visit" onClick={onToggleLegends}>
+            {showLegends ? "Hide legend" : "Show legend"}
+          </button>
+        </div>
+        {!showLegends ? (
+          <p>Hidden by settings. Authorized Connect viewers can turn it on.</p>
+        ) : legendLoading ? (
+          <p>Loading the authorized Connect legend…</p>
+        ) : legendError === "forbidden" ? (
+          <p>Only authorized leaders or members of this Connect can view the legend.</p>
+        ) : legendError === "unavailable" ? (
+          <p>The legend is temporarily unavailable. Try again shortly.</p>
+        ) : legend?.ok && legend.members.length ? (
+          <div className="ladder-member-list">
+            {legend.members.map((member) => (
+              <div className="ladder-member-row" key={member.personId}>
+                <span>{member.name}</span>
+                <MemberStreakDots dates={member.readingDates} todayLocal={legend.todayLocal} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No members in this Connect yet.</p>
+        )}
+      </div>
+
+      {!isOwnHome && (
+        <button type="button" className="ladder-return" onClick={onReturn}>
+          ← Return to Connect homes
+        </button>
+      )}
+    </section>
+  );
+}
+
 function ShallowRow({
-  items,
-  connects,
+  groups,
   index,
   onStep,
   unavailableGroupIds,
+  onVisit,
 }: {
-  items: SectionWithStats[];
-  connects: SectionWithStats["groups"];
+  groups: SectionWithStats["groups"];
   index: number;
   onStep: (next: number) => void;
-  unavailableGroupIds: number[];
+  unavailableGroupIds: readonly number[];
+  onVisit: (key: VisitKey) => void;
 }) {
-  // A leaf region steps between its connects; a cluster steps between regions.
-  const entries = items.length
-    ? items.map((section) => {
-        const ratio = aggregateRatio(section, unavailableGroupIds);
-        return {
-          key: section.id,
-          name: section.name,
-          ratio,
-          stage: stageFor(ratio ?? 0),
-          section,
-        };
-      })
-    : connects.map((group) => ({
-        key: group.id,
-        name: group.name,
-        ratio: unavailableGroupIds.includes(group.id) ? null : group.ratio,
-        stage: group.stage,
-        section: null,
-      }));
-
-  if (entries.length === 0) {
-    return <p className="ladder-empty">This scope has nothing beneath it yet.</p>;
+  if (groups.length === 0) {
+    return <p className="ladder-empty">This region has no Connect homes yet.</p>;
   }
 
   return (
     <div className="ladder-row">
       {index > 0 ? (
-        <button type="button" className="ladder-step" onClick={() => onStep(index - 1)} aria-label="Previous">
+        <button type="button" className="ladder-step" onClick={() => onStep(index - 1)} aria-label="Previous Connect home">
           ‹
         </button>
       ) : (
@@ -254,32 +477,29 @@ function ShallowRow({
       )}
 
       <div className="ladder-track-window">
-        <div
-          className="ladder-track"
-          style={{ transform: `translateX(calc(${-index} * var(--ladder-slot)))` }}
-        >
-          {entries.map((entry, i) => (
-            <div key={entry.key} className={`ladder-slot ${i === index ? "is-centre" : ""}`}>
-              {/* One size for every slot, emphasised by a bottom-anchored
-                  scale in CSS -- sizing each StageMini differently floats the
-                  models at different heights, because each centres inside its
-                  own square box. A shared ground line is what makes the row
-                  read as a street. */}
-              <span className="ladder-home-art">
-                <StageMini name={entry.stage} size={130} />
-              </span>
-              <strong className="ladder-home-label">{entry.name}</strong>
-              <span className="ladder-meta">
-                {entry.ratio === null ? "— data unavailable" : `${entry.stage} · ${Math.round(entry.ratio * 100)}%`}
-              </span>
-              {entry.section && <OccupantBadge state={occupantStateFor(entry.section, unavailableGroupIds)} />}
-            </div>
-          ))}
+        <div className="ladder-track" style={{ transform: `translateX(calc(${-index} * var(--ladder-slot)))` }}>
+          {groups.map((group, groupIndex) => {
+            const unavailable = unavailableGroupIds.includes(group.id);
+            return (
+              <div key={group.id} className={`ladder-slot ${groupIndex === index ? "is-centre" : ""}`}>
+                <span className="ladder-home-art">
+                  <StageMini name={group.stage} size={130} />
+                </span>
+                <strong className="ladder-home-label">{group.name}</strong>
+                <span className="ladder-meta">
+                  {unavailable ? "— data unavailable" : `${group.stage} · ${Math.round(group.ratio * 100)}%`}
+                </span>
+                <button type="button" className="ladder-visit" onClick={() => onVisit(`group:${group.id}`)}>
+                  Visit home
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {index < entries.length - 1 ? (
-        <button type="button" className="ladder-step" onClick={() => onStep(index + 1)} aria-label="Next">
+      {index < groups.length - 1 ? (
+        <button type="button" className="ladder-step" onClick={() => onStep(index + 1)} aria-label="Next Connect home">
           ›
         </button>
       ) : (
