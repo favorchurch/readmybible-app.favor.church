@@ -60,3 +60,26 @@ export const joinEvents = readmybible.table("join_events", {
   outcome: text("outcome"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const feedback = readmybible.table(
+  "feedback",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    rockPersonId: integer("rock_person_id").notNull(),
+    category: text("category").notNull(),
+    textualFeedback: text("textual_feedback").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "feedback_category_check",
+      sql`${table.category} in ('Read My Bible App', 'Experience with Favor Connects')`,
+    ),
+    check(
+      "feedback_textual_feedback_check",
+      sql`char_length(trim(${table.textualFeedback})) between 1 and 5000`,
+    ),
+    index("feedback_created_at_idx").on(table.createdAt),
+    index("feedback_rock_person_id_idx").on(table.rockPersonId),
+  ],
+);
