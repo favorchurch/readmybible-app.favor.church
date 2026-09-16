@@ -16,16 +16,22 @@ import { getAllCampusNames, getAllConnectGroups, getCampusName, getGroupBasic, g
 import { GROUP_TYPE_CONNECT_GROUP } from "@/lib/rock/constants";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
+import { isTestModeRequestedFromQuery } from "@/components/test-mode/logic";
 import { resolveAdminScope, type AdminScope } from "@/lib/admin/access";
 import { GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import SectionDashboard, { SectionDashboardSkeleton } from "@/components/sections/section-dashboard";
+
+/** Next hands repeated query keys through as an array; every caller here wants the first value. */
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export async function HomeData({
   session,
   searchParams = {},
 }: {
   session: Extract<SessionContext, { status: "ok" }>;
-  searchParams?: { test?: string; scope?: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const activeGroupId = session.activeGroup?.groupId;
   const rosterP = activeGroupId ? getRoster(activeGroupId) : Promise.resolve([]);
@@ -39,7 +45,15 @@ export async function HomeData({
   // The sandbox is still fetched by id and appended if missing, because it is
   // the one group test mode can write to and it would drop off the list if it
   // were ever archived or deactivated.
-  const campusGroupsP = (async () => {
+  //
+  // Gated on the URL actually asking for test mode: this is a several-hundred-group
+  // Rock call that only the test panel reads, and it used to block the shell render
+  // for every logged-in user on every page load. `isTestModeRequestedFromQuery` is
+  // the same trigger list the client panel activates on, so the list is present
+  // whenever the panel can appear and skipped otherwise.
+  const wantsTestMode = isTestModeRequestedFromQuery(searchParams);
+  type CampusGroupRow = { groupId: number; groupName: string };
+  const campusGroupsP: Promise<CampusGroupRow[]> = !wantsTestMode ? Promise.resolve([]) : (async () => {
     const [allGroups, campusNames, sandbox] = await Promise.all([
       getAllConnectGroups(),
       getAllCampusNames(),
@@ -93,10 +107,12 @@ export async function HomeData({
   // behavior of `params.test === "1" && session.status === "ok"`, narrowed to
   // require a genuine admin scope rather than any logged-in session.
   const isDev = process.env.NODE_ENV !== "production";
-  const isProdAdminTest = !isDev && scope !== null && searchParams.test === "1";
-  const isTest = (isDev && (searchParams.test === "1" || searchParams.scope !== undefined)) || isProdAdminTest;
+  const testParam = firstParam(searchParams.test);
+  const scopeParam = firstParam(searchParams.scope);
+  const isProdAdminTest = !isDev && scope !== null && testParam === "1";
+  const isTest = (isDev && (testParam === "1" || scopeParam !== undefined)) || isProdAdminTest;
   if (isTest || (!scope && isDev)) {
-    const requestedScope = searchParams.scope ?? (scope?.kind === "sections" ? "sections" : "global");
+    const requestedScope = scopeParam ?? (scope?.kind === "sections" ? "sections" : "global");
     if (requestedScope === "cluster") {
       scope = { kind: "sections", rootIds: [23869] }; // Cluster // Cielo Pabalan & Peejay Pabalan
       simulatedScope = "cluster";

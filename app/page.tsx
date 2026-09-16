@@ -7,7 +7,10 @@ import { getSessionContext } from "@/lib/session";
 import { WelcomeLanding } from "@/components/welcome";
 
 export default async function Page(props?: {
-  searchParams?: Promise<{ test?: string; scope?: string }>;
+  // Widened from `{test, scope}` so the other test-mode triggers the panel
+  // activates on (`day`, `leader`, `admin`, `tab=admin`) reach HomeData's
+  // server-side gate rather than being typed away.
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await getSessionContext();
 
