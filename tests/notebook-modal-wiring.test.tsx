@@ -8,8 +8,8 @@
  * "saved" tick for a write Test Mode actually blocked.
  */
 
-import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -46,7 +46,22 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(search.value),
 }));
 
-import { NotebookModal } from "@/components/notes/notebook-modal";
+import { NotebookModal, type NotebookModalProps } from "@/components/notes/notebook-modal";
+
+/**
+ * The real app always has a QueryProvider from the root layout, so a fresh
+ * client per render mirrors production. Without this, every render in this
+ * file shares components/providers/query-provider.tsx's module-level
+ * fallback client, and one test's cached note payload leaks into the next.
+ */
+function renderModal(props: NotebookModalProps) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <NotebookModal {...props} />
+    </QueryClientProvider>,
+  );
+}
 
 beforeEach(() => {
   search.value = "";
@@ -61,7 +76,7 @@ afterEach(() => {
 describe("known-bad #1: Test Mode blocks note autosave", () => {
   it("performs no write and never shows a saved checkmark while Test Mode is active", async () => {
     search.value = "test=1";
-    render(React.createElement(NotebookModal, { open: true, onClose: vi.fn() }));
+    renderModal({ open: true, onClose: vi.fn() });
 
     await waitFor(() => expect(getNote).toHaveBeenCalled());
     const textarea = await screen.findByPlaceholderText(/write in your personal revelations/i);
@@ -77,7 +92,7 @@ describe("known-bad #1: Test Mode blocks note autosave", () => {
   });
 
   it("saves normally and shows the saved checkmark when Test Mode is inactive", async () => {
-    render(React.createElement(NotebookModal, { open: true, onClose: vi.fn() }));
+    renderModal({ open: true, onClose: vi.fn() });
 
     await waitFor(() => expect(getNote).toHaveBeenCalled());
     const textarea = await screen.findByPlaceholderText(/write in your personal revelations/i);
