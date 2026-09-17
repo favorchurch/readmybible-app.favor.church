@@ -1,24 +1,24 @@
 /**
- * The scroll-to-bottom check-in (D4-D10 of docs/reading-dialog-tick.md).
+ * The qualified check-in rules (issue #147).
  *
- * Reaching the bottom of the reading dialog is what records the day, not a
- * button press. That moves a write onto a gesture users make casually, so the
- * decision of whether a given sentinel entry may write lives here as a pure
- * function rather than inside the component -- `tests/reading-tick.test.ts`
- * covers it directly, which is the only way the "fires exactly once" and
- * "never writes in test mode" rules are actually guarded (see issue #58 for
- * why component wiring alone is not a guarantee we can test).
+ * A reading check-in qualifies only when BOTH are true:
+ * 1. at least 15 seconds have elapsed since the reading content finished loading, and
+ * 2. the reader has reached the bottom of the pane -- and bottom tracking is only
+ *    eligible starting 3 seconds after content load (a scroll-to-bottom at t=2s
+ *    must not arm the check-in, even if the reader is still there at t=16s;
+ *    re-reaching the bottom after the 3s mark is what counts).
  *
- * This module imports no server action. The caller passes an already-guarded
- * check-in, exactly as `app-shell.tsx` does for every other write.
+ * Qualification is per assignment, not per chapter.
  */
 import type { CheckInGroupState, CheckInResult } from "@/app/actions/checkIn";
 import { TOTAL_CHAPTERS, groupStateFor, stageFor } from "@/lib/game";
 
+export const MIN_READING_TIME_MS = 15_000;
+export const BOTTOM_ELIGIBLE_DELAY_MS = 3_000;
+export const NO_SCROLL_DWELL_MS = 5000;
+
 /**
- * The dialog's tick state. A discriminated union rather than a phase string
- * plus sibling fields, so "ticked but no group to celebrate with" and
- * "failed but no error to show" are not representable.
+ * The dialog's tick state.
  */
 export type TickState =
   | { kind: "idle" }
@@ -27,19 +27,86 @@ export type TickState =
   | { kind: "failed"; error: string };
 
 /**
- * May this sentinel entry perform a real check-in write?
- *
- * Every `false` branch here is a decision, not a guard against a bug:
- * - `preview`       D12, pre-launch has nothing to check into yet.
- * - `writesBlocked` D10, the existing per-action guard, passed straight through
- *                   rather than re-decided here. In the sandbox state it is
- *                   `false` and the tick writes for real -- that is the
- *                   sandbox's purpose, and `writesBlocked` has already pinned
- *                   the target to the tester's own active group. Any other test
- *                   mode state blocks, and the dialog simulates instead.
- * - `alreadyRead`   D8, re-opening a finished chapter replays, never re-writes.
- * - `alreadyFired`  D5/D6, the sentinel re-enters the viewport every time the
- *                   user scrolls back down. Only the first entry per chapter writes.
+ * Pure state machine tracking whether a reading check-in has qualified.
+ */
+export class ReadingQualificationTracker {
+  private contentLoadedAt: number | null = null;
+  private bottomReachedEligible = false;
+  private isAtBottom = false;
+  private qualified = false;
+
+  constructor(
+    private readonly minReadingTimeMs = MIN_READING_TIME_MS,
+    private readonly bottomEligibleDelayMs = BOTTOM_ELIGIBLE_DELAY_MS,
+  ) {}
+
+  onContentLoaded(timestamp: number) {
+    this.contentLoadedAt = timestamp;
+    this.bottomReachedEligible = false;
+    this.qualified = false;
+  }
+
+  onIntersectionChange(isIntersecting: boolean, timestamp: number): {
+    qualifies: boolean;
+    dwellMs?: number;
+  } {
+    this.isAtBottom = isIntersecting;
+
+    if (!isIntersecting) {
+      return { qualifies: false };
+    }
+
+    if (this.contentLoadedAt === null) {
+      return { qualifies: false };
+    }
+
+    const elapsed = timestamp - this.contentLoadedAt;
+
+    // Bottom tracking is only eligible starting 3 seconds after content load.
+    // A scroll-to-bottom before 3s does not arm the check-in.
+    if (elapsed < this.bottomEligibleDelayMs) {
+      this.bottomReachedEligible = false;
+      return { qualifies: false };
+    }
+
+    this.bottomReachedEligible = true;
+
+    // Condition 1: at least 15 seconds have elapsed since reading content loaded
+    if (elapsed >= this.minReadingTimeMs) {
+      this.qualified = true;
+      return { qualifies: true };
+    }
+
+    // Condition 2 met, waiting for 15s mark:
+    return {
+      qualifies: false,
+      dwellMs: this.minReadingTimeMs - elapsed,
+    };
+  }
+
+  onTimerElapsed(timestamp: number): boolean {
+    if (this.contentLoadedAt === null || !this.isAtBottom || !this.bottomReachedEligible) {
+      return false;
+    }
+    const elapsed = timestamp - this.contentLoadedAt;
+    if (elapsed >= this.minReadingTimeMs) {
+      this.qualified = true;
+      return true;
+    }
+    return false;
+  }
+
+  isEligibleAtBottom(): boolean {
+    return this.isAtBottom && this.bottomReachedEligible;
+  }
+
+  isQualified(): boolean {
+    return this.qualified;
+  }
+}
+
+/**
+ * May this check-in entry perform a real write?
  */
 export function shouldWrite(args: {
   alreadyRead: boolean;
@@ -54,58 +121,37 @@ export function shouldWrite(args: {
   return true;
 }
 
-/**
- * D13: how long the end of the reading must stay on screen before it ticks,
- * when it was already on screen the moment the dialog opened.
- *
- * Eight of the ten translations bundle only the key passage, so their dialog
- * body is a few verses plus a link -- on a phone that is often entirely within
- * view without scrolling, which would make "reading records the day" mean
- * "opening the sheet records the day" for most readers, while NET/KRV readers
- * scroll a real chapter to earn the same tick. The dwell restores a deliberate
- * pause for the short body without asking the long one to wait twice.
- *
- * Deliberately short. This is honour-based by design (D4) and is not a
- * reading-speed test -- it exists so the tick follows an intent to read rather
- * than the act of opening a sheet.
- */
-export const NO_SCROLL_DWELL_MS = 5000;
-
-/**
- * What a sentinel intersection callback should do.
- *
- * The discriminator is the observer's *first* callback, not the translation or
- * the body length: IntersectionObserver reports the current state immediately
- * on observe(), so a first callback that is already intersecting means the end
- * of the reading was in view before the reader scrolled at all. Anything later
- * means they scrolled it into view, which is the gesture D4 wanted, and ticks
- * instantly as before.
- *
- * Keying off `hasFullText` instead would be wrong in both directions: a NET
- * chapter can fit on a desktop viewport, and a short body can still overflow a
- * small phone.
- */
 export type SentinelAction =
   | { kind: "tick" }
   | { kind: "dwell"; delayMs: number }
   | { kind: "cancel" };
 
-export function sentinelAction(args: { isIntersecting: boolean; isFirstCallback: boolean }): SentinelAction {
+export function sentinelAction(args: {
+  isIntersecting: boolean;
+  contentLoadedAt?: number;
+  now?: number;
+  isFirstCallback?: boolean;
+}): SentinelAction {
   if (!args.isIntersecting) return { kind: "cancel" };
+
+  if (args.contentLoadedAt !== undefined && args.now !== undefined) {
+    const elapsed = args.now - args.contentLoadedAt;
+    if (elapsed < BOTTOM_ELIGIBLE_DELAY_MS) {
+      return { kind: "cancel" };
+    }
+    if (elapsed >= MIN_READING_TIME_MS) {
+      return { kind: "tick" };
+    }
+    return { kind: "dwell", delayMs: MIN_READING_TIME_MS - elapsed };
+  }
+
+  // Legacy fallback if timestamps are omitted
   if (args.isFirstCallback) return { kind: "dwell", delayMs: NO_SCROLL_DWELL_MS };
   return { kind: "tick" };
 }
 
 /**
- * D9: one silent retry, then surface it. The animation has already played by
- * the time this runs, so a single transient failure must not be shown to the
- * user -- but a second one must, because the reading card will stay unread and
- * silently disagreeing with the celebration they just watched is worse than
- * asking them to tap once.
- *
- * The server's unique constraint makes a duplicate check-in a no-op, so
- * retrying a request that actually succeeded but whose response was lost is
- * safe (app/actions/checkIn.ts:40).
+ * One silent retry, then surface an error.
  */
 export async function checkInWithRetry(
   action: () => Promise<CheckInResult>,
@@ -119,12 +165,6 @@ export async function checkInWithRetry(
   return first ?? { ok: false, error: "We couldn't save that just now. Tap to try again." };
 }
 
-/**
- * D10: the celebration needs a `CheckInGroupState` to render, and in test mode
- * no server call produced one. Build the same shape from the panel's simulated
- * group ratio so the tester sees a real celebration -- including a stage-up
- * when the added check-in crosses a milestone -- behind the SIMULATED badge.
- */
 export function simulatedCheckInGroup(args: {
   ratio: number;
   memberCount: number;

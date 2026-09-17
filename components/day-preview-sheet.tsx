@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import type { Translation } from "@/components/avatar";
 import { ReadingDialog } from "@/components/reading-dialog";
 import { Sheet } from "@/components/sheet";
-import { checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
+import { assignmentReference, checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
 
 export function DayPreviewSheet({
   open,
@@ -28,10 +28,6 @@ export function DayPreviewSheet({
   if (!open || !entry) return null;
 
   const isGraceDay = entry.day >= 29;
-  // D11/D12: the same reading dialog as everywhere else, in preview mode --
-  // this sheet shows plan days that may not be readable yet, so nothing here
-  // ever ticks. Every version previews the whole chapter now, so there is no
-  // longer a per-translation fork here.
 
   return (
     <Sheet open={open} onClose={onClose} labelledBy="day-preview-title" className="day-preview-sheet">
@@ -39,8 +35,8 @@ export function DayPreviewSheet({
         <button type="button" className="close-button" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <p className="eyebrow">{isGraceDay ? `OCTOBER ${entry.day}` : `DAY ${entry.day} OF 28`}</p>
-        <h2 id="day-preview-title">{isGraceDay ? `Grace Day ${entry.day - 28}` : `Matthew ${entry.chapter}`}</h2>
+        <p className="eyebrow">{isGraceDay ? `OCTOBER ${entry.day}` : `DAY ${entry.day} OF 20`}</p>
+        <h2 id="day-preview-title">{isGraceDay ? `Grace Day ${entry.day - 28}` : assignmentReference(entry)}</h2>
         <p className="day-preview-date">{longDate(entry.date)}</p>
         {entry.title ? <p className="day-preview-title-copy">{entry.title}</p> : null}
 
@@ -76,8 +72,10 @@ export function DayPreviewSheet({
       {readingOpen && entry.keyPassage && (
         <ReadingDialog
           chapter={entry.chapter}
-          passageRef={`Matthew ${entry.chapter}`}
+          chapters={entry.chapters}
+          passageRef={assignmentReference(entry)}
           keyPassageRef={entry.keyPassage}
+          assignmentTitle={entry.title}
           translation={translation}
           mode="preview"
           isCatchUp={false}

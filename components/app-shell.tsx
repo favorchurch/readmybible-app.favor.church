@@ -45,8 +45,15 @@ import { RewardsScreen } from "@/components/screens/rewards-screen";
 import { SoloScreen } from "@/components/screens/solo-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
 import { LeaderScreen } from "@/components/screens/leader-screen";
-import { coinsFor, streak as computeStreak, TOTAL_CHAPTERS } from "@/lib/game";
-import { planEntryForChapter } from "@/lib/plan";
+import { coinsFor, streak as computeStreak } from "@/lib/game";
+import {
+  assignmentReference,
+  completedAssignmentsCount,
+  isAssignmentCompleted,
+  planEntryForChapter,
+  unfinishedAssignmentsUpTo,
+  type PlanEntry,
+} from "@/lib/plan";
 import { checkInWithRetry, shouldWrite, simulatedCheckInGroup, type TickState } from "@/lib/reading-tick";
 import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
@@ -274,29 +281,29 @@ function AppShellInner(props: AppShellProps) {
   }, []);
   const [profileOpen, setProfileOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [readingChapter, setReadingChapter] = useState<number | null>(null);
+  const [readingAssignment, setReadingAssignment] = useState<PlanEntry | null>(null);
   const [tick, setTick] = useState<TickState>({ kind: "idle" });
   const [pending, setPending] = useState(false);
   const [chooseGroupError, setChooseGroupError] = useState<string | null>(null);
   const choosingGroup = useRef(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   /**
-   * Chapters whose sentinel already fired in this session (D5/D6). A ref, not
+   * Assignments whose sentinel already fired in this session (D5/D6). A ref, not
    * state: the sentinel re-enters the viewport on every scroll back down, and
    * this must be up to date within the same tick rather than after a render.
    */
-  const firedChapters = useRef<Set<number>>(new Set());
+  const firedAssignments = useRef<Set<number>>(new Set());
   /**
-   * Which chapter the dialog is showing right now. A ref because an in-flight
-   * check-in's `.then` closure would otherwise read a stale `readingChapter`.
+   * Which assignment the dialog is showing right now. A ref because an in-flight
+   * check-in's `.then` closure would otherwise read a stale `readingAssignment`.
    */
-  const openChapter = useRef<number | null>(null);
+  const openAssignment = useRef<PlanEntry | null>(null);
 
   const chapters = useMemo(() => {
     if (testMode.active) return simulatedChapters(testMode.state.completionPct);
     return Array.from(new Set(props.chapters));
   }, [testMode.active, testMode.state.completionPct, props.chapters]);
-  const chaptersRead = chapters.length;
+  const chaptersRead = completedAssignmentsCount(chapters);
   const coins = coinsFor(chaptersRead);
   const currentStreak = computeStreak(props.readingDates, today.todayLocal);
 
@@ -406,71 +413,56 @@ function AppShellInner(props: AppShellProps) {
     });
   }, [testMode.active, currentSnapshot, syntheticView, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
-  const catchUpChapter = useMemo(() => {
-    const ceiling = today.entry ? today.entry.chapter - 1 : Math.min(today.dayLabel, TOTAL_CHAPTERS);
-    for (let chapter = ceiling; chapter >= 1; chapter -= 1) {
-      if (!chapters.includes(chapter)) return chapter;
-    }
-    return null;
-  }, [chapters, today]);
+  const catchUpAssignment = useMemo(() => {
+    const pastUnfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
+    return pastUnfinished[0] ?? null;
+  }, [chapters, today.todayLocal]);
+  const catchUpChapter = catchUpAssignment ? (catchUpAssignment.chapters?.[0] ?? catchUpAssignment.chapter) : null;
 
   /**
-   * What the dialog asks the scripture API for: always the whole chapter, for
-   * every version. The five `fullText` versions resolve it from bundled data
-   * and the other six from a live per-chapter fetch, so the old fork that sent
-   * a key-passage reference for the non-bundled versions (and showed only
-   * those few verses) is gone. `keyPassageRef` survives because the dialog now
-   * tints those verses where they sit inside the chapter.
+   * What the dialog asks the scripture API for:
+   * passageRef and keyPassageRef derived from the current assignment.
    */
   const readingPassage = useMemo(() => {
-    const keyPassageRef = readingChapter === null ? null : (planEntryForChapter(readingChapter)?.keyPassage ?? null);
+    const keyPassageRef = readingAssignment?.keyPassage ?? null;
+    const passageRef = readingAssignment ? assignmentReference(readingAssignment) : "Matthew 1";
     return {
       keyPassageRef,
-      passageRef: `Matthew ${readingChapter ?? 1}`,
+      passageRef,
     };
-  }, [readingChapter]);
+  }, [readingAssignment]);
 
   const readingMode: ReadingDialogMode =
     today.displayPhase === "pre-launch" ? "preview" : tick.kind === "ticked" || tick.kind === "retrying" ? "read" : "unread";
 
   /**
    * The one way into reading, and so the one way to a check-in (D1/D11).
-   * An already-read chapter opens in its ticked state rather than a separate
-   * replay sheet (D8).
+   * Supports opening an assignment directly or looking it up by chapter number.
    */
-  function openReading(chapter: number) {
-    openChapter.current = chapter;
-    setReadingChapter(chapter);
-    setTick(chapters.includes(chapter) ? { kind: "ticked", group: null, simulated: blocked } : { kind: "idle" });
+  function openReading(target: PlanEntry | number) {
+    const entry = typeof target === "number" ? planEntryForChapter(target) : target;
+    if (!entry) return;
+    openAssignment.current = entry;
+    setReadingAssignment(entry);
+    const alreadyRead = isAssignmentCompleted(entry, chapters);
+    setTick(alreadyRead ? { kind: "ticked", group: null, simulated: blocked } : { kind: "idle" });
   }
 
   /**
-   * D5: the write starts here and is deliberately not awaited by anything tied
-   * to the dialog's lifetime. Closing the sheet, switching tabs, or navigating
-   * away after the tick does not cancel it -- the promise owns itself, and the
-   * server's unique constraint makes a duplicate a no-op.
+   * Records a reading check-in for an assignment.
+   * Checks in all chapters of the assignment (both chapters on two-chapter days).
    */
-  function recordReading(chapter: number) {
+  function recordReading(entry: PlanEntry) {
+    const alreadyRead = isAssignmentCompleted(entry, chapters);
+    const alreadyFired = firedAssignments.current.has(entry.day);
     const simulate = !shouldWrite({
-      alreadyRead: chapters.includes(chapter),
-      alreadyFired: firedChapters.current.has(chapter),
+      alreadyRead,
+      alreadyFired,
       writesBlocked: blocked,
       preview: today.displayPhase === "pre-launch",
     });
 
     if (simulate) {
-      // D10/D8: animate and celebrate, write nothing. In test mode the numbers
-      // come from the panel's simulated ratio so the celebration is real to look
-      // at; for an already-read chapter there is nothing new to report.
-      //
-      // Preserve an existing ticked state rather than rebuilding it: the
-      // sentinel re-enters on every scroll back down (D6), and replacing the
-      // state here would throw away the group result the real write returned.
-      // Only `idle` is replaced. Preserving `ticked` keeps the group result a
-      // real write returned; preserving `failed` and `retrying` is what stops a
-      // later sentinel entry from painting a celebration over a check-in that
-      // never landed -- which would also unmount the one retry button that can
-      // still write. Review finding F1.
       setTick((current) =>
         current.kind !== "idle"
           ? current
@@ -488,52 +480,45 @@ function AppShellInner(props: AppShellProps) {
       return;
     }
 
-    firedChapters.current.add(chapter);
+    firedAssignments.current.add(entry.day);
     setTick({ kind: "ticked", group: null, simulated: false });
     void runToastAction(
       "Saving your reading…",
       "Reading saved.",
       () =>
         checkInWithRetry(
-          () => guardedCheckIn({ chapter, timezone: today.timezone }),
-          // Same ownership check as the result below: the silent retry must not
-          // paint "retrying" onto whatever chapter the reader has since opened.
+          async () => {
+            const chaptersToRecord = entry.chapters && entry.chapters.length > 0 ? entry.chapters : [entry.chapter];
+            const results = await Promise.all(
+              chaptersToRecord.map((chapter) => guardedCheckIn({ chapter, timezone: today.timezone })),
+            );
+            const firstFailure = results.find((r) => !r.ok);
+            if (firstFailure) return firstFailure;
+            const lastResult = results[results.length - 1];
+            const lastGroup = lastResult && lastResult.ok ? lastResult.group : null;
+            return { ok: true, group: lastGroup };
+          },
           () => {
-            if (openChapter.current === chapter) setTick({ kind: "retrying" });
+            if (openAssignment.current?.day === entry.day) setTick({ kind: "retrying" });
           },
         ),
     ).then((result) => {
-      // The reader can close this chapter and open another while the request is
-      // in flight. `tick` is shared by whichever chapter the dialog is showing,
-      // so a late result must not drive a different chapter's dialog -- that
-      // would celebrate a chapter nobody read, and its retry button would then
-      // write one. Refresh regardless, so THIS chapter's card turns over.
-      // Review finding F2.
-      const stillOpen = openChapter.current === chapter;
+      const stillOpen = openAssignment.current?.day === entry.day;
       if (result.ok) {
         router.refresh();
         if (stillOpen) setTick({ kind: "ticked", group: result.group, simulated: false });
       } else if (stillOpen) {
-        // D9: let them retry rather than leaving the card silently disagreeing
-        // with the celebration they just watched.
-        //
-        // The chapter stays in `firedChapters` on purpose. Releasing it here
-        // re-arms the sentinel, which is still sitting in the viewport, so a
-        // failing check-in would loop and hammer the server. Only the explicit
-        // retry below is allowed to write again.
         setTick({ kind: "failed", error: result.error || "We couldn't save that just now." });
       }
     });
   }
 
   /**
-   * D9: the reader asked for this one. It bypasses the fired-chapter guard --
-   * which exists to stop the sentinel repeating itself, not to stop a person
-   * -- but still defers to `writesBlocked` and the already-read check.
+   * Retry reading check-in for an assignment.
    */
-  function retryReading(chapter: number) {
-    firedChapters.current.delete(chapter);
-    recordReading(chapter);
+  function retryReading(entry: PlanEntry) {
+    firedAssignments.current.delete(entry.day);
+    recordReading(entry);
   }
 
   function handleTranslationChange(translation: Translation) {
@@ -776,25 +761,27 @@ function AppShellInner(props: AppShellProps) {
         showLeaderTab={canSeeLeaderTab}
         showReaderTabs={showReaderTabs}
       />
-      {readingChapter !== null && (
+      {readingAssignment !== null && (
         <ReadingDialog
-          key={readingChapter}
-          chapter={readingChapter}
+          key={readingAssignment.day}
+          chapter={readingAssignment.chapters?.[0] ?? readingAssignment.chapter}
+          chapters={readingAssignment.chapters ?? [readingAssignment.chapter]}
+          assignmentTitle={readingAssignment.title}
           passageRef={readingPassage.passageRef}
           keyPassageRef={readingPassage.keyPassageRef}
           translation={profile.translation}
           mode={readingMode}
-          isCatchUp={readingChapter !== today.entry?.chapter}
+          isCatchUp={readingAssignment.date < today.todayLocal}
           chaptersRead={chaptersRead}
           groupName={groupName}
           group={tick.kind === "ticked" ? tick.group : null}
           tick={tick}
-          onReachBottom={() => recordReading(readingChapter)}
-          onRetry={() => retryReading(readingChapter)}
+          onReachBottom={() => recordReading(readingAssignment)}
+          onRetry={() => retryReading(readingAssignment)}
           onTranslationChange={handleTranslationChange}
           onClose={() => {
-            openChapter.current = null;
-            setReadingChapter(null);
+            openAssignment.current = null;
+            setReadingAssignment(null);
             setTick({ kind: "idle" });
           }}
         />
