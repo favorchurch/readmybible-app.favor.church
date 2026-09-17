@@ -412,7 +412,7 @@ export function TodayScreen({
               <p className="eyebrow">HOW THIS WORKS</p>
               <ol>
                 <li>
-                  <strong>Read.</strong> One Matthew chapter a day, starting {campaignStartLabel}.
+                  <strong>Read.</strong> One reading assignment a day, starting {campaignStartLabel}.
                 </li>
                 <li>
                   <strong>Check in.</strong> A quick, honor-based tap once you&apos;ve read.

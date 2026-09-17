@@ -2,8 +2,7 @@
 
 /**
  * Daily cumulative ratio chart, one line per top-level child of the admin
- * scope. See intent/COPY.md "Admin" ("Daily progress since October 1") and
- * intent/SPEC.md "Admin dashboard".
+ * scope. See intent/COPY.md "Admin" and intent/SPEC.md "Admin dashboard".
  */
 import {
   CategoryScale,
@@ -18,15 +17,15 @@ import {
 import { Line } from "react-chartjs-2";
 
 import type { TopLevelSeries } from "@/lib/admin/stats";
+// lib/plan.ts has no "server-only" import -- safe to pull PLAN_START/longDate
+// into this "use client" component without dragging in DB loaders.
+import { longDate, PLAN_START } from "@/lib/plan";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
 const LINE_COLORS = ["#d96c57", "#7b9caf", "#e7a72f", "#91a88b", "#9c84ab", "#172943"];
 
-// Mirrors lib/admin/stats.ts's PLAN_START (a frozen literal, not expected to
-// change) as a local value: importing the real binding here would pull that
-// module's server-only DB loaders into this "use client" component's bundle.
-const PLAN_START = "2026-10-01";
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 /**
  * True when every series has no on-or-after-launch data point (points
@@ -49,7 +48,7 @@ export function HierarchyChart({ series }: { series: TopLevelSeries[] }) {
   if (isPreLaunchOnly(series)) {
     return (
       <p className="admin-chart-empty" data-section="admin-chart-empty">
-        The chart starts filling in on October 1.
+        The chart starts filling in on {campaignStartLabel}.
       </p>
     );
   }

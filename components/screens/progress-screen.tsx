@@ -17,12 +17,18 @@ import {
   calendarLeadingBlankCount,
   dayState,
   isAssignmentCompleted,
+  longDate,
   PLAN,
+  PLAN_END,
+  PLAN_START,
   REVIEW_DATES,
   TOTAL_ASSIGNMENTS,
   type DayState,
   type PlanEntry,
 } from "@/lib/plan";
+
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
+const campaignEndLabel = longDate(PLAN_END).replace(/^[^,]+,\s*/, "");
 
 const CALENDAR_LEADING_BLANKS = calendarLeadingBlankCount();
 const CALENDAR_DAYS = [
@@ -203,10 +209,13 @@ export function ProgressScreen({
               <div className="section-heading">
                 <div>
                   <p className="eyebrow">THE PLAN</p>
-                  <h2>One chapter. Each day.</h2>
+                  <h2>One reading. Most days.</h2>
                 </div>
               </div>
-              <p>Start with Matthew 1 on October 1. Miss a day? There is room to catch up, including October 29–31.</p>
+              <p>
+                Start with Matthew 1 on {campaignStartLabel}. Miss a day? Weekend reviews and Review &amp;
+                Catch Up after {campaignEndLabel} give you room to catch up.
+              </p>
             </section>
 
             <p className="campus-group-count" data-section="campus-group-count">

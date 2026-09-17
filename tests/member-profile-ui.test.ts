@@ -22,7 +22,7 @@ import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
-import { longDate, PLAN_START } from "@/lib/plan";
+import { longDate, PLAN_END, PLAN_START } from "@/lib/plan";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -306,7 +306,7 @@ describe("TodayScreen tent people toggle", () => {
     expect(html).toContain(`Matthew starts on ${startLabel}.`);
     expect(html).toContain(`Set up before ${startLabel}`);
     expect(html).toContain(`Your home starts as a Tent on ${startLabel}.`);
-    expect(html).toContain(`One Matthew chapter a day, starting ${startLabel}.`);
+    expect(html).toContain(`One reading assignment a day, starting ${startLabel}.`);
   });
 
   it("does not expose dead pre-launch navigation controls to ordinary readers", () => {
@@ -478,6 +478,32 @@ describe("ProgressScreen campus groups", () => {
     expect(html).toContain("0 Connect Groups on this campus.");
     expect(html).not.toContain("leaderboard-card");
     expect(html).not.toContain("No groups on the board yet. October&#x27;s coming.");
+  });
+
+  it("R4: pre-launch plan-facts copy matches the real 20-assignment schedule, not the old Oct 1 one-chapter model", () => {
+    const startLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
+    const endLabel = longDate(PLAN_END).replace(/^[^,]+,\s*/, "");
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-09-20", displayPhase: "pre-launch", phase: "pre-launch", dayLabel: 0, entry: null },
+        chapters: [],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain(`Start with Matthew 1 on ${startLabel}.`);
+    expect(html).toContain(endLabel);
+    expect(html).not.toContain("One chapter. Each day.");
+    expect(html).not.toContain("Start with Matthew 1 on October 1");
+    expect(html).not.toContain("October 29");
   });
 
   it("uses singular grammar for a one-group campus", () => {

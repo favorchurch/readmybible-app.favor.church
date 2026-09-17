@@ -9,6 +9,9 @@ import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { UserProfile } from "@/components/avatar";
 import type { GroupStanding } from "@/lib/game";
+import { longDate, PLAN_START } from "@/lib/plan";
+
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 type LeaderScreenProps = {
   groupName: string | null;
@@ -128,7 +131,7 @@ function LeaderScreenContent({
             <p className="eyebrow">
               {phase === "pre-launch" ? "PRE-LAUNCH ONBOARDING" : "DAILY GROUP PULSE"}
             </p>
-            <h2>{phase === "pre-launch" ? "Get ready for Oct 1" : `${readMembers.length} of ${memberCount} read today`}</h2>
+            <h2>{phase === "pre-launch" ? `Get ready for ${campaignStartLabel}` : `${readMembers.length} of ${memberCount} read today`}</h2>
           </div>
           <div className="pulse-badge">{pctRead}%</div>
         </div>
@@ -136,7 +139,7 @@ function LeaderScreenContent({
           <div className="pulse-progress-fill" style={{ width: `${pctRead}%` }} />
         </div>
         <p className="pulse-stats-note">
-          {phase === "active" ? `${readMembers.length} members checked in for today's chapter` : "Ensure all members join before October 1"}
+          {phase === "active" ? `${readMembers.length} members checked in for today's reading` : `Ensure all members join before ${campaignStartLabel}`}
         </p>
         {phase === "active" && (
           <div className="leader-roster-breakdown">
@@ -185,7 +188,7 @@ function LeaderScreenContent({
         </div>
         <p>
           {phase === "pre-launch"
-            ? "Share this before October 1."
+            ? `Share this before ${campaignStartLabel}.`
             : "Show this code or QR to anyone in the room who isn't in a Connect Group yet. They enter it in the app and they're in."}
         </p>
         <div className="leader-code-row">

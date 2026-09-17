@@ -128,6 +128,15 @@ describe("LeaderScreen", () => {
     expect(screen.getByText(/haven't checked in today/)).toBeTruthy();
   });
 
+  it("R4: pre-launch copy names the real Oct 5 launch date, not the legacy October 1", () => {
+    renderLeader(preLaunchToday);
+
+    expect(screen.getByText("Get ready for October 5")).toBeTruthy();
+    expect(screen.getByText("Ensure all members join before October 5")).toBeTruthy();
+    expect(screen.getByText("Share this before October 5.")).toBeTruthy();
+    expect(screen.queryByText(/October 1\b/)).toBeNull();
+  });
+
   it("shows the daily group pulse card with read/still-reading breakdown and cheer action", async () => {
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
 

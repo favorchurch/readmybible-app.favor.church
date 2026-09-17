@@ -10,7 +10,10 @@ import { SectionTree } from "@/components/sections/SectionTree";
 import { TestSimulationChip } from "@/components/sections/test-simulation-chip";
 import { TEST_MODE_CAMPUSES, type TestModeCampus } from "@/components/test-mode/logic";
 import { LadderTownView } from "@/components/ladder/town-view";
+import { longDate, PLAN_START, TOTAL_ASSIGNMENTS } from "@/lib/plan";
 import "@/components/sections/admin.css";
+
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 /** Oxford-comma-joined list: "A", "A and B", "A, B, and C". */
 function formatNameList(names: string[]): string {
@@ -130,15 +133,15 @@ export default async function SectionDashboard({
       </section>
 
       <div className="admin-chart-card">
-        <h2>Daily progress since October 1</h2>
+        <h2>Daily progress since {campaignStartLabel}</h2>
         <HierarchyChart series={series} />
       </div>
 
       <details className="admin-progress-note" data-section="admin-progress-note">
         <summary>How progress is calculated</summary>
         <p>
-          Progress is completed chapter check-ins divided by active members x 28 chapters. This
-          keeps group sizes comparable.
+          Progress is completed reading assignments divided by active members x {TOTAL_ASSIGNMENTS}{" "}
+          assignments. This keeps group sizes comparable.
         </p>
       </details>
 
