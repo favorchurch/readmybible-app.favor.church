@@ -12,7 +12,32 @@
  *    single-chapter and a two-chapter assignment.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import React from "react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
+const testModeHarness = vi.hoisted(() => ({
+  checkIn: vi.fn(async (input: { chapter: number; timezone: string }) => ({ ok: true as const, group: null, input })),
+}));
+const searchParams = vi.hoisted(() => ({ value: new URLSearchParams("test=1&day=3") }));
+
+vi.mock("@/app/actions/checkIn", () => ({ checkIn: (input: { chapter: number; timezone: string }) => testModeHarness.checkIn(input) }));
+vi.mock("@/app/actions/joinByCode", () => ({ joinByCode: vi.fn(async () => ({ ok: true })) }));
+vi.mock("@/app/actions/chooseGroup", () => ({ chooseGroup: vi.fn(async () => ({ ok: true })) }));
+vi.mock("@/app/actions/saveProfile", () => ({ saveProfile: vi.fn(async () => ({ ok: true })) }));
+vi.mock("@/app/actions/getOrCreateJoinCode", () => ({ getOrCreateJoinCode: vi.fn(async () => ({ ok: true, code: "TEST12" })) }));
+vi.mock("@/app/actions/getTestGroupSnapshot", () => ({ getTestGroupSnapshot: vi.fn(async () => ({ ok: false, error: "not used" })) }));
+vi.mock("@/app/actions/getJoinCodeForGroup", () => ({ getJoinCodeForGroup: vi.fn(async () => ({ ok: true, code: null })) }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+  useSearchParams: () => searchParams.value,
+}));
+
+import { AppShell, type AppShellProps } from "@/components/app-shell";
+import { defaultAvatarConfig } from "@/components/avatar";
 
 import {
   PLAN,
@@ -29,9 +54,80 @@ import {
   MIN_READING_TIME_MS,
   ReadingQualificationTracker,
   sentinelAction,
-  shouldWrite,
 } from "@/lib/reading-tick";
-import { guardWrite } from "@/components/test-mode/logic";
+
+const roster = [{
+  personId: 7001,
+  avatar: { ...defaultAvatarConfig },
+  isSelf: true,
+  name: "Synthetic Reader",
+  isLeader: false,
+  readToday: false,
+  chapters: [],
+  readingDates: [],
+}];
+
+function baseProps(): AppShellProps {
+  return {
+    displayName: "Synthetic Reader",
+    avatar: { ...defaultAvatarConfig },
+    avatarCustomized: true,
+    translation: "NIV",
+    memberships: [],
+    activeGroup: { groupId: 12345, groupName: "Synthetic Group", campusId: 1, roleId: 23, isLeader: false },
+    needsGroupChoice: false,
+    isLeader: false,
+    campusName: "Synthetic Campus",
+    roster,
+    chapters: [],
+    readingDates: [],
+    groupStats: { checkinCount: 0, memberCount: 1, ratio: 0, readersTodayIds: [] },
+    campusBoard: [],
+    appBaseUrl: "https://example.test",
+    devMockToday: "2026-10-05",
+    campusGroups: [],
+    testWritableGroupId: null,
+    testModeAuthorized: true,
+    sectionSlot: null,
+  };
+}
+
+let mockNow = 1_000;
+class ImmediateIntersectionObserver {
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(target: Element) {
+    this.callback([{ isIntersecting: false, target } as unknown as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+    queueMicrotask(() => {
+      mockNow += 16_000;
+      this.callback([{ isIntersecting: true, target } as unknown as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+    });
+  }
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+}
+
+beforeEach(() => {
+  mockNow = 1_000;
+  searchParams.value = new URLSearchParams("test=1&day=3");
+  testModeHarness.checkIn.mockClear();
+  vi.spyOn(performance, "now").mockImplementation(() => mockNow);
+  vi.stubGlobal("IntersectionObserver", ImmediateIntersectionObserver);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+    ref: "Matthew 5",
+    translation: "NIV",
+    text: "A passage",
+    verses: { "1": "A verse" },
+    bibleComUrl: "",
+    attribution: "",
+  }), { status: 200, headers: { "content-type": "application/json" } })));
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("Known-bad 1: Scroll-to-bottom at t=2s after content load does NOT qualify", () => {
   it("rejects bottom intersection occurring before 3s mark, even after 15s+ elapse", () => {
@@ -185,80 +281,15 @@ describe("Known-bad 4: Dates after Oct 30 resolve to Review & Catch Up forever, 
 });
 
 describe("Known-bad 5: Check-in attempts while blocked in Test Mode perform NO write", () => {
-  it("blocks writes for a single-chapter assignment when blocked is true", async () => {
-    const rawCheckIn = vi.fn(async (input: { chapter: number; timezone: string }) => ({
-      ok: true as const,
-      group: null,
-      input,
-    }));
-    const guardedCheckIn = guardWrite(true, rawCheckIn);
+  it.each([
+    ["single-chapter", "3"],
+    ["two-chapter", "1"],
+  ])("drives the real AppShell and performs no %s write", async (_label, day) => {
+    searchParams.value = new URLSearchParams(`test=1&day=${day}`);
+    render(React.createElement(AppShell, baseProps()));
 
-    // Single-chapter assignment (e.g. Matthew 5)
-    const day3 = PLAN[2];
-    const chaptersToRecord = day3.chapters ?? [day3.chapter];
-    expect(chaptersToRecord).toEqual([5]);
-
-    const results = await Promise.all(
-      chaptersToRecord.map((chapter) => guardedCheckIn({ chapter, timezone: "UTC" })),
-    );
-
-    // No write occurred
-    expect(rawCheckIn).not.toHaveBeenCalled();
-    expect(results[0]).toEqual({ ok: false, error: "Test mode: writes are disabled." });
-
-    // shouldWrite logic also agrees
-    expect(
-      shouldWrite({
-        alreadyRead: false,
-        alreadyFired: false,
-        writesBlocked: true,
-        preview: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("blocks writes for both chapters of a two-chapter assignment when blocked is true", async () => {
-    const rawCheckIn = vi.fn(async (input: { chapter: number; timezone: string }) => ({
-      ok: true as const,
-      group: null,
-      input,
-    }));
-    const guardedCheckIn = guardWrite(true, rawCheckIn);
-
-    // Two-chapter assignment (e.g. Day 1: Matthew 1-2)
-    const day1 = PLAN[0];
-    const chaptersToRecord = day1.chapters ?? [day1.chapter];
-    expect(chaptersToRecord).toEqual([1, 2]);
-
-    const results = await Promise.all(
-      chaptersToRecord.map((chapter) => guardedCheckIn({ chapter, timezone: "UTC" })),
-    );
-
-    // Neither chapter 1 nor chapter 2 was written to the server
-    expect(rawCheckIn).not.toHaveBeenCalled();
-    expect(results).toHaveLength(2);
-    expect(results[0]).toEqual({ ok: false, error: "Test mode: writes are disabled." });
-    expect(results[1]).toEqual({ ok: false, error: "Test mode: writes are disabled." });
-  });
-
-  it("permits writes through guardWrite only when blocked is false", async () => {
-    const rawCheckIn = vi.fn(async (input: { chapter: number; timezone: string }) => ({
-      ok: true as const,
-      group: null,
-      chapter: input.chapter,
-    }));
-    const guardedCheckIn = guardWrite(false, rawCheckIn);
-
-    // Two-chapter assignment writes both chapters through when unblocked
-    const day1 = PLAN[0];
-    const chaptersToRecord = day1.chapters ?? [day1.chapter];
-
-    const results = await Promise.all(
-      chaptersToRecord.map((chapter) => guardedCheckIn({ chapter, timezone: "UTC" })),
-    );
-
-    expect(rawCheckIn).toHaveBeenCalledTimes(2);
-    expect(results[0]).toMatchObject({ ok: true, chapter: 1 });
-    expect(results[1]).toMatchObject({ ok: true, chapter: 2 });
+    fireEvent.click(screen.getByRole("button", { name: /read matthew/i }));
+    await waitFor(() => expect(document.querySelector('[data-section="reading-tick"]')?.getAttribute("data-state")).toBe("ticked"));
+    expect(testModeHarness.checkIn).not.toHaveBeenCalled();
   });
 });
