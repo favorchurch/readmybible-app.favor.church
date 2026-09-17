@@ -180,8 +180,16 @@ export function scoreConnect(input: {
   const completed = eligible.reduce((sum, member) => sum + assignmentsOf(member), 0);
   const basePoints = denominator > 0 ? (completed / denominator) * BASE_POINTS_MAX : 0;
 
-  const regionalBonus = poolBonus(dedupe(input.regionalLeaders));
-  const clusterBonus = poolBonus(dedupe(input.clusterHeads));
+  // Filter each pool by the role flag rather than trusting the array it arrived
+  // in, for the same reason base eligibility is derived: a resolver that drops a
+  // Cluster Head into regionalLeaders would otherwise move up to 75 points, and
+  // nothing downstream could tell. Membership of a pool fails closed too.
+  const regionalBonus = poolBonus(
+    dedupe(input.regionalLeaders).filter((person) => person.isRegionalLeader),
+  );
+  const clusterBonus = poolBonus(
+    dedupe(input.clusterHeads).filter((person) => person.isClusterHead),
+  );
 
   const totalPoints = basePoints + regionalBonus + clusterBonus;
 

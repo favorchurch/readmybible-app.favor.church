@@ -119,8 +119,8 @@ describe("scoreConnect bonus pools", () => {
   it("caps each pool independently at 75", () => {
     const score = connect({
       members: [person(1, 0)],
-      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS)],
-      clusterHeads: [person(8, TOTAL_ASSIGNMENTS)],
+      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS, { isRegionalLeader: true })],
+      clusterHeads: [person(8, TOTAL_ASSIGNMENTS, { isClusterHead: true })],
     });
     expect(score.regionalBonus).toBeCloseTo(BONUS_POOL_MAX, 10);
     expect(score.clusterBonus).toBeCloseTo(BONUS_POOL_MAX, 10);
@@ -129,7 +129,10 @@ describe("scoreConnect bonus pools", () => {
 
   it("averages across the leaders currently holding the role", () => {
     const score = connect({
-      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS), person(10, 0)],
+      regionalLeaders: [
+        person(9, TOTAL_ASSIGNMENTS, { isRegionalLeader: true }),
+        person(10, 0, { isRegionalLeader: true }),
+      ],
     });
     expect(score.regionalBonus).toBeCloseTo(BONUS_POOL_MAX / 2, 10);
   });
@@ -151,7 +154,7 @@ describe("scoreConnect presentation data", () => {
   it("unlocks the 3D Campfire only from a Connect member or leader contribution", () => {
     const upstreamOnly = connect({
       members: [person(1, 0)],
-      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS)],
+      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS, { isRegionalLeader: true })],
     });
     expect(upstreamOnly.unlocked3dCampfire).toBe(false);
 
@@ -241,7 +244,9 @@ describe("scoreConnect bad input containment", () => {
   });
 
   it("contains a NaN in a bonus pool", () => {
-    const score = connect({ regionalLeaders: [person(9, Number.NaN)] });
+    const score = connect({
+      regionalLeaders: [person(9, Number.NaN, { isRegionalLeader: true })],
+    });
     expect(score.regionalBonus).toBe(0);
     expect(Number.isNaN(score.totalPoints)).toBe(false);
   });
@@ -251,5 +256,16 @@ describe("scoreConnect bad input containment", () => {
     expect(over.basePoints).toBeCloseTo(BASE_POINTS_MAX, 10);
     const under = connect({ members: [person(1, -5)] });
     expect(under.basePoints).toBe(0);
+  });
+});
+
+describe("scoreConnect pool membership", () => {
+  it("ignores someone placed in a pool they do not hold the role for", () => {
+    // A resolver that drops a Cluster Head into regionalLeaders would otherwise
+    // move up to 75 points with nothing downstream able to tell.
+    const score = connect({
+      regionalLeaders: [person(9, TOTAL_ASSIGNMENTS, { isClusterHead: true })],
+    });
+    expect(score.regionalBonus).toBe(0);
   });
 });
