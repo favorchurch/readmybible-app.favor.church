@@ -45,6 +45,17 @@ describe("parseReference", () => {
     });
   });
 
+  it("parses a two-chapter assignment reference", () => {
+    expect(parseReference("Matthew 1–2")).toEqual({
+      book: "Matthew",
+      bookCode: "MAT",
+      chapter: 1,
+      chapterEnd: 2,
+      verseStart: 1,
+      verseEnd: null,
+    });
+  });
+
   it("parses a numbered book name", () => {
     expect(parseReference("1 John 4:8")).toEqual({
       book: "1 John",

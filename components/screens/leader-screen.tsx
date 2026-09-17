@@ -5,29 +5,22 @@ import { useEffect, useState } from "react";
 import type { JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { Header } from "@/components/screens/header";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
-import { StageMini } from "@/components/stage-mini";
-import { ProgressBar } from "@/components/progress-bar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { UserProfile } from "@/components/avatar";
-import { groupByLocality, stageFor, UNKNOWN_LOCALITY } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
+import { longDate, PLAN_START } from "@/lib/plan";
 
-export const MIN_RATIO_TO_SHOW = 0;
-
-/**
- * Each `StageMini` mounts a full ~19-node 3D CSS `HomeModel` subtree. A
- * single locality can carry 160+ campus groups, so rendering every group's
- * icon/card up front means 200+ of those subtrees painting at once on
- * first load (confirmed via live snapshot -- see T21 perf note). Cap what
- * mounts per locality and let the leader opt into the rest with a "show
- * more" toggle instead of forcing the browser to lay out and paint all of
- * them synchronously.
- */
-const GROUP_RENDER_CAP = 48;
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 type LeaderScreenProps = {
   groupName: string | null;
+  /**
+   * No longer read here -- the "Other Connects" card list this fed (issue
+   * #171) is retired in favor of the promoted town view (`sectionSlot`).
+   * Kept in the prop type, unused, so `components/app-shell.tsx` (out of
+   * this ticket's allowed-mutations scope) does not need to stop passing it.
+   */
   campusBoard: GroupStanding[];
   roster: RosterMemberView[];
   today: TodayState;
@@ -47,7 +40,6 @@ export function LeaderScreen(props: LeaderScreenProps) {
 
 function LeaderScreenContent({
   groupName,
-  campusBoard,
   roster,
   today,
   profile,
@@ -68,8 +60,6 @@ function LeaderScreenContent({
   // Tracked separately from codeError so an expected "not created yet" is not
   // painted with the same red treatment as a real failure.
   const [isMissingCode, setIsMissingCode] = useState(false);
-  const [showNames, setShowNames] = useState(false);
-  const [expandedLocalities, setExpandedLocalities] = useState<ReadonlySet<string>>(() => new Set());
   const [cheeredMember, setCheeredMember] = useState<string | null>(null);
 
   const readMembers = roster.filter((m) => m.readToday);
@@ -122,10 +112,6 @@ function LeaderScreenContent({
     };
   }, [joinCode, appBaseUrl]);
 
-  const sections = groupByLocality(
-    campusBoard.filter((g) => g.ratio >= MIN_RATIO_TO_SHOW),
-  );
-
   if (!hasGroupView) {
     return (
       <main className="screen leader-screen">
@@ -145,7 +131,7 @@ function LeaderScreenContent({
             <p className="eyebrow">
               {phase === "pre-launch" ? "PRE-LAUNCH ONBOARDING" : "DAILY GROUP PULSE"}
             </p>
-            <h2>{phase === "pre-launch" ? "Get ready for Oct 1" : `${readMembers.length} of ${memberCount} read today`}</h2>
+            <h2>{phase === "pre-launch" ? `Get ready for ${campaignStartLabel}` : `${readMembers.length} of ${memberCount} read today`}</h2>
           </div>
           <div className="pulse-badge">{pctRead}%</div>
         </div>
@@ -153,7 +139,7 @@ function LeaderScreenContent({
           <div className="pulse-progress-fill" style={{ width: `${pctRead}%` }} />
         </div>
         <p className="pulse-stats-note">
-          {phase === "active" ? `${readMembers.length} members checked in for today's chapter` : "Ensure all members join before October 1"}
+          {phase === "active" ? `${readMembers.length} members checked in for today's reading` : `Ensure all members join before ${campaignStartLabel}`}
         </p>
         {phase === "active" && (
           <div className="leader-roster-breakdown">
@@ -202,7 +188,7 @@ function LeaderScreenContent({
         </div>
         <p>
           {phase === "pre-launch"
-            ? "Share this before October 1."
+            ? `Share this before ${campaignStartLabel}.`
             : "Show this code or QR to anyone in the room who isn't in a Connect Group yet. They enter it in the app and they're in."}
         </p>
         <div className="leader-code-row">
@@ -271,104 +257,13 @@ function LeaderScreenContent({
         </a>
       </section>
 
-      {/* Other Connects */}
-      <section className="leader-section leader-connects" data-section="other-connects">
-        <div className="leader-connects-header">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">OTHER CONNECTS</p>
-              <h2>Groups on the journey</h2>
-            </div>
-          </div>
-          {sections.length > 0 && (
-            <button
-              type="button"
-              className="leader-toggle-names"
-              aria-pressed={showNames}
-              onClick={() => setShowNames((v) => !v)}
-            >
-              {showNames ? "Show icons" : "Show names"}
-            </button>
-          )}
-        </div>
-
-        {sections.length === 0 ? (
-          <p className="gentle-note">No groups on the board yet. October&apos;s coming.</p>
-        ) : (
-          sections.map(({ locality, groups }) => {
-            const isExpanded = expandedLocalities.has(locality);
-            const visibleGroups = isExpanded ? groups : groups.slice(0, GROUP_RENDER_CAP);
-            const hiddenCount = groups.length - visibleGroups.length;
-            const expandLocality = () =>
-              setExpandedLocalities((prev) => {
-                const next = new Set(prev);
-                next.add(locality);
-                return next;
-              });
-            return (
-              <div key={locality} className="locality-section">
-                <h3 className="locality-heading">
-                  {locality === UNKNOWN_LOCALITY ? "Unknown" : locality}
-                  <span className="locality-count">{groups.length} group{groups.length !== 1 ? "s" : ""}</span>
-                </h3>
-                {showNames ? (
-                  <div className="campus-groups-grid">
-                    {visibleGroups.map((g) => {
-                      const currentStage = stageFor(g.ratio);
-                      const pct = Math.round(g.ratio * 100);
-                      return (
-                        <article className="campus-group-card" key={g.groupId}>
-                          <div className="campus-group-header">
-                            <StageMini name={currentStage} size={42} className="campus-group-mini" />
-                            <div className="campus-group-info">
-                              <strong>{g.name}</strong>
-                              <span className="campus-group-status">{pct}% complete · {currentStage}</span>
-                            </div>
-                          </div>
-                          <ProgressBar value={pct} max={100} />
-                        </article>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div
-                    className="locality-icons"
-                    aria-label={`${locality === UNKNOWN_LOCALITY ? "Unknown" : locality} — ${groups.length} group${groups.length !== 1 ? "s" : ""}`}
-                  >
-                    {visibleGroups.map((g) => {
-                      const currentStage = stageFor(g.ratio);
-                      const isOwn = readerGroupId !== null && g.groupId === readerGroupId;
-                      return (
-                        <span
-                          key={g.groupId}
-                          className={`locality-icon-wrap${isOwn ? " locality-icon-own" : ""}`}
-                          aria-label={`${g.name} — ${currentStage}${isOwn ? " (your group)" : ""}`}
-                        >
-                          <StageMini
-                            name={currentStage}
-                            size={40}
-                            className="locality-stage-mini"
-                          />
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-                {hiddenCount > 0 && (
-                  <button
-                    type="button"
-                    className="locality-show-more"
-                    onClick={expandLocality}
-                  >
-                    Show {hiddenCount} more
-                  </button>
-                )}
-              </div>
-            );
-          })
-        )}
-      </section>
-
+      {/*
+       * "Other Connects" / "Groups on the journey" (issue #171) is retired:
+       * the promoted town view (sectionSlot -- see
+       * components/sections/section-dashboard.tsx) is the one surface for a
+       * leader's Connects now, carrying across its locality grouping,
+       * legend-visibility default, and per-Connect stage + percentage.
+       */}
       {sectionSlot}
     </main>
   );

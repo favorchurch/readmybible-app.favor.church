@@ -2,8 +2,9 @@
 
 import { Avatar } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
+import { NudgeButton, useNotifications } from "@/components/notifications";
 import { recentFiveDayStreak } from "@/lib/member-progress";
-import { PLAN } from "@/lib/plan";
+import { assignmentReference, completedAssignmentsCount, isAssignmentCompleted, PLAN, TOTAL_ASSIGNMENTS } from "@/lib/plan";
 import type { RosterMemberView } from "@/components/app-shell";
 
 export function MemberProfileSheet({
@@ -11,17 +12,34 @@ export function MemberProfileSheet({
   onClose,
   member,
   todayLocal,
+  viewerIsConnectMember,
+  groupId,
 }: {
   open: boolean;
   onClose: () => void;
   member: RosterMemberView | null;
   todayLocal: string;
+  viewerIsConnectMember?: boolean;
+  groupId?: number | null;
 }) {
+  const notificationsContext = useNotifications();
   if (!member) return null;
 
+  const effectiveViewerIsConnectMember =
+    viewerIsConnectMember !== undefined
+      ? viewerIsConnectMember
+      : notificationsContext.viewerIsConnectMember;
+  const effectiveGroupId = groupId ?? notificationsContext.activeGroupId;
+
+  const canNudge =
+    !member.isSelf &&
+    effectiveViewerIsConnectMember &&
+    effectiveGroupId !== null;
+
   const streakMarks = recentFiveDayStreak(member.readingDates ?? [], todayLocal);
-  const readChapters = new Set(member.chapters ?? []);
-  const readCount = readChapters.size;
+
+  const memberChapters = member.chapters ?? [];
+  const readCount = completedAssignmentsCount(memberChapters);
 
   return (
     <Sheet
@@ -42,7 +60,7 @@ export function MemberProfileSheet({
               <h2 id="member-profile-title">{member.name}</h2>
               <span className="member-profile-status">
                 {member.isLeader ? "Group Leader · " : ""}
-                {readCount} of 28 chapters read
+                {readCount} of {TOTAL_ASSIGNMENTS} assignments read
               </span>
             </div>
           </div>
@@ -50,6 +68,16 @@ export function MemberProfileSheet({
             ×
           </button>
         </div>
+
+        {canNudge && (
+          <div className="member-profile-actions">
+            <NudgeButton
+              targetPersonId={member.personId}
+              groupId={effectiveGroupId}
+              targetName={member.name}
+            />
+          </div>
+        )}
 
         {/* 5-day streak strip */}
         <div className="member-streak-section">
@@ -73,23 +101,24 @@ export function MemberProfileSheet({
           </div>
         </div>
 
-        {/* Compact October 28-day progress calendar */}
+        {/* Compact 20-assignment progress calendar */}
         <div className="member-calendar-section">
           <div className="member-calendar-header">
             <span className="section-subhead">Matthew · October 2026</span>
-            <span className="member-calendar-count">{readCount}/28 complete</span>
+            <span className="member-calendar-count">{readCount}/{TOTAL_ASSIGNMENTS} complete</span>
           </div>
 
           <div className="member-mini-grid" role="list" aria-label={`${member.name}'s October reading calendar`}>
             {PLAN.map((entry) => {
-              const isRead = readChapters.has(entry.chapter);
+              const isRead = isAssignmentCompleted(entry, memberChapters);
+              const ref = assignmentReference(entry);
               return (
                 <div
                   key={entry.day}
                   className={`mini-grid-cell ${isRead ? "read" : "unread"}`}
                   role="listitem"
-                  title={`Day ${entry.day} (Matthew ${entry.chapter}): ${isRead ? "Read" : "Not yet read"}`}
-                  aria-label={`Day ${entry.day}, Matthew ${entry.chapter}: ${isRead ? "Read" : "Not yet read"}`}
+                  title={`Day ${entry.day} (${ref}): ${isRead ? "Read" : "Not yet read"}`}
+                  aria-label={`Day ${entry.day}, ${ref}: ${isRead ? "Read" : "Not yet read"}`}
                 >
                   <span className="mini-day-num">{entry.day}</span>
                   {isRead && <span className="mini-day-check" aria-hidden="true">✓</span>}

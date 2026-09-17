@@ -126,15 +126,9 @@ export function ConnectScreen({
                 </div>
               </>
             )}
-            {phase === "grace" && (
+            {phase === "review" && (
               <div>
                 <h2>Finishing Matthew together</h2>
-                <p className="roster-sub">{Math.round(ratio * 100)}% of Matthew completed · {memberCount} members</p>
-              </div>
-            )}
-            {phase === "closed" && (
-              <div>
-                <h2>Matthew, finished together</h2>
                 <p className="roster-sub">{Math.round(ratio * 100)}% of Matthew completed · {memberCount} members</p>
               </div>
             )}
@@ -159,7 +153,7 @@ export function ConnectScreen({
             {sorted.map((m) => {
               const avatar = m.isSelf ? profile : m.avatar;
 
-              if (phase === "pre-launch" || phase === "grace" || phase === "closed") {
+              if (phase === "pre-launch" || phase === "review") {
                 return (
                   <button
                     type="button"

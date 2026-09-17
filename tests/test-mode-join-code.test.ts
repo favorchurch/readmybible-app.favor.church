@@ -18,7 +18,7 @@ vi.mock("qrcode", () => ({
 }));
 
 const REAL_GROUP = 87177;
-const OTHER_GROUP = 24077;
+const OTHER_GROUP = 24099;
 
 const searchParams = vi.hoisted(() => ({ value: new URLSearchParams("test=1") }));
 

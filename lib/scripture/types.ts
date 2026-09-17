@@ -101,6 +101,8 @@ export type ParsedReference = {
   /** Three-letter USFM-style book code, e.g. "MAT". */
   bookCode: string;
   chapter: number;
+  /** Last chapter when the reference spans a chapter range. */
+  chapterEnd?: number;
   verseStart: number;
   /** null means the reference covers the rest of the chapter. */
   verseEnd: number | null;

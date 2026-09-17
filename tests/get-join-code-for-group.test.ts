@@ -71,13 +71,13 @@ describe("getJoinCodeForGroup", () => {
     mocks.loadSectionSubtree.mockResolvedValue([
       {
         id: 23869,
-        name: "Cluster // Cielo Pabalan & Peejay Pabalan",
+        name: "Cluster // Grace Villanueva & Miguel Villanueva",
         campusId: null,
         children: [],
         groups: [{ id: 9001, name: "In-scope group", campusId: 1, memberCount: 0, leaders: [] }],
       },
     ]);
-    await expect(getJoinCodeForGroup(24077)).resolves.toEqual({
+    await expect(getJoinCodeForGroup(24099)).resolves.toEqual({
       ok: false,
       error: "You don't have access to this group's join code.",
     });
@@ -91,7 +91,7 @@ describe("getJoinCodeForGroup", () => {
     mocks.loadSectionSubtree.mockResolvedValue([
       {
         id: 23869,
-        name: "Cluster // Cielo Pabalan & Peejay Pabalan",
+        name: "Cluster // Grace Villanueva & Miguel Villanueva",
         campusId: null,
         children: [],
         groups: [{ id: 9001, name: "In-scope group", campusId: 1, memberCount: 0, leaders: [] }],

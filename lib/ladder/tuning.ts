@@ -9,7 +9,8 @@
  * stage, which is the one thing the prototype must not do.
  */
 import type { SectionWithStats } from "@/lib/admin/stats";
-import { groupRatio, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
+import { groupRatio, stageFor } from "@/lib/game";
+import { TOTAL_ASSIGNMENTS } from "@/lib/plan";
 import type { HierarchySectionNode } from "@/lib/rock/hierarchy";
 
 /** Midpoint ratio of each stage band, lowest to highest (STAGE_THRESHOLDS in lib/game.ts). */
@@ -105,9 +106,9 @@ export function attachTunedStats(
           : group.id === states.zeroId
             ? 0
             : tunedRatio(node.id, index, node.groups.length);
-        // `checkins` is cumulative chapters and groupRatio divides by
-        // members x TOTAL_CHAPTERS, so the target scales back up through both.
-        const checkins = unavailable ? 0 : Math.round(target * group.memberCount * TOTAL_CHAPTERS);
+        // `checkins` is cumulative assignments and groupRatio divides by
+        // members x TOTAL_ASSIGNMENTS, so the target scales back up through both.
+        const checkins = unavailable ? 0 : Math.round(target * group.memberCount * TOTAL_ASSIGNMENTS);
         const ratio = groupRatio(checkins, group.memberCount);
         return {
           ...group,

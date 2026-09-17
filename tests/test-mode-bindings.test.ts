@@ -103,6 +103,10 @@ async function assertUnblocked() {
     const show = screen.queryByRole("button", { name: /^show$/i });
     if (show) fireEvent.click(show);
   }
+  // Map 146: the sandbox unblock also requires the explicit opt-in toggle,
+  // off by default -- turn it on so this reaches the same "blocked === false"
+  // control the rest of this file relies on.
+  fireEvent.click(screen.getByRole("checkbox", { name: /allow real database writes/i }));
   expect(await screen.findByText(/writes are REAL/i)).toBeTruthy();
 }
 
@@ -139,7 +143,7 @@ describe("chooseGroup stays blocked in the sandbox state", () => {
     props.needsGroupChoice = true;
     props.memberships = [
       { groupId: SANDBOX, groupName: "TEST // Connect Group", campusId: 5, roleId: 23, isLeader: false },
-      { groupId: 24077, groupName: "Another Group", campusId: 5, roleId: 23, isLeader: false },
+      { groupId: 24099, groupName: "Another Group", campusId: 5, roleId: 23, isLeader: false },
     ];
     render(React.createElement(AppShell, props));
     await assertUnblocked();

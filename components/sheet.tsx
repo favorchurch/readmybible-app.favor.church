@@ -25,6 +25,7 @@ export function Sheet({
   children,
   initialFocusRef,
   immersive = false,
+  elevated = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -33,6 +34,8 @@ export function Sheet({
   children?: ReactNode;
   initialFocusRef?: RefObject<HTMLElement | null>;
   immersive?: boolean;
+  /** Paint this dialog above every toast layer. See app/styles/sheet.css. */
+  elevated?: boolean;
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const savedFocusRef = useRef<HTMLElement | null>(null);
@@ -146,7 +149,7 @@ export function Sheet({
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className={`modal-wrap${immersive ? ' modal-wrap--immersive' : ''}`} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+    <div className={`modal-wrap${immersive ? ' modal-wrap--immersive' : ''}${elevated ? ' modal-wrap--elevated' : ''}`} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
       <button className="modal-backdrop" onClick={onClose} aria-label="Close" tabIndex={-1} />
       <div className={`modal-sheet ${className ?? ''}`} tabIndex={-1} ref={sheetRef}
         onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}>

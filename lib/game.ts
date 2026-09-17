@@ -5,9 +5,11 @@
  * over plain data so they can be unit tested directly.
  */
 
+import { TOTAL_ASSIGNMENTS } from "@/lib/plan";
+
 export const COINS_PER_CHAPTER = 10;
 export const TOTAL_CHAPTERS = 28;
-export const MEDAL_THRESHOLDS = [3, 7, 14, 21, 28] as const;
+export const MEDAL_THRESHOLDS = [3, 7, 14, 15, 20] as const;
 
 export type Stage = "Tent" | "Trailer" | "Cabin" | "Apartment" | "House" | "Mansion";
 
@@ -90,12 +92,12 @@ function toKey(date: Date): string {
 }
 
 /**
- * Group ratio: checkins / (members * total chapters), clamped to [0, 1].
+ * Group ratio: completed assignments / (members * total assignments), clamped to [0, 1].
  * `members` at 0 returns 0 rather than dividing by zero.
  */
 export function groupRatio(checkins: number, members: number): number {
   if (members <= 0) return 0;
-  const ratio = checkins / (members * TOTAL_CHAPTERS);
+  const ratio = checkins / (members * TOTAL_ASSIGNMENTS);
   return Math.min(1, Math.max(0, ratio));
 }
 

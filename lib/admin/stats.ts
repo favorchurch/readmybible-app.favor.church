@@ -11,13 +11,13 @@
  */
 import { createHash } from "node:crypto";
 
-import { and, count, countDistinct, eq, gte, inArray } from "drizzle-orm";
+import { and, countDistinct, eq, gte, inArray } from "drizzle-orm";
 
 import { appNow } from "@/lib/dev-clock";
-import { groupRatio, stageFor, TOTAL_CHAPTERS, type Stage } from "@/lib/game";
+import { groupRatio, stageFor, type Stage } from "@/lib/game";
+import { completedAssignmentCheckinCount, completedAssignmentsCount, PLAN_START } from "@/lib/plan";
 import type { HierarchyGroupNode, HierarchySectionNode } from "@/lib/rock/hierarchy";
 
-export const PLAN_START = "2026-10-01";
 const ADMIN_TZ = "Asia/Manila";
 
 /** Today's date (YYYY-MM-DD) in Favor's org-local timezone, for "read today" and chart range. */
@@ -44,7 +44,7 @@ export type SectionWithStats = {
   groups: GroupWithStats[];
 };
 
-export type DailyCount = { date: string; count: number };
+export type DailyCheckinRow = { rockPersonId: number; chapter: number; readingDate: string };
 export type SeriesPoint = { date: string; ratio: number };
 export type TopLevelSeries = { label: string; points: SeriesPoint[] };
 
@@ -78,21 +78,36 @@ function dateRange(fromDate: string, toDate: string): string[] {
 
 /**
  * Fills in every day from `fromDate` to `toDate` (a day with no checkins
- * repeats the prior cumulative count) and turns the running total into a
- * ratio against a fixed denominator of `memberCount * TOTAL_CHAPTERS`, the
- * same ratio used for a group's stage (see lib/game.ts groupRatio).
+ * repeats the prior cumulative total) and turns the running count of
+ * *completed assignments* -- not raw check-in rows -- into a ratio against
+ * `memberCount * TOTAL_ASSIGNMENTS`, the same ratio used for a group's stage
+ * (see lib/game.ts groupRatio). A two-chapter assignment only increments the
+ * total once its last chapter's row lands, same as completedAssignmentCheckinCount.
  */
 export function buildDailyCumulativeSeries(
-  dailyCounts: DailyCount[],
+  rows: readonly DailyCheckinRow[],
   memberCount: number,
   fromDate: string,
   toDate: string,
 ): SeriesPoint[] {
-  const countByDate = new Map(dailyCounts.map((d) => [d.date, d.count]));
-  let cumulative = 0;
+  const rowsByDate = new Map<string, DailyCheckinRow[]>();
+  for (const row of rows) {
+    const list = rowsByDate.get(row.readingDate) ?? [];
+    list.push(row);
+    rowsByDate.set(row.readingDate, list);
+  }
+
+  const chaptersByMember = new Map<number, number[]>();
+  let cumulativeCompleted = 0;
   return dateRange(fromDate, toDate).map((date) => {
-    cumulative += countByDate.get(date) ?? 0;
-    return { date, ratio: groupRatio(cumulative, memberCount) };
+    for (const row of rowsByDate.get(date) ?? []) {
+      const chapters = chaptersByMember.get(row.rockPersonId) ?? [];
+      const before = completedAssignmentsCount(chapters);
+      chapters.push(row.chapter);
+      chaptersByMember.set(row.rockPersonId, chapters);
+      cumulativeCompleted += completedAssignmentsCount(chapters) - before;
+    }
+    return { date, ratio: groupRatio(cumulativeCompleted, memberCount) };
   });
 }
 
@@ -176,19 +191,29 @@ async function getDb() {
   return { db, checkins, cached };
 }
 
-/** Total checkins per group id, cached 5 minutes per exact group-id set. */
+/**
+ * Completed assignments per group id, cached 5 minutes per exact group-id
+ * set. Counts distinct completed assignments per member (completedAssignmentCheckinCount),
+ * not raw check-in rows -- a two-chapter assignment is one row-pair, not two.
+ */
 export async function loadCheckinTotals(groupIds: number[]): Promise<Map<number, number>> {
   if (groupIds.length === 0) return new Map();
   const { db, checkins, cached } = await getDb();
   const key = `admin:totals:${idsHash(groupIds)}`;
   const rows = await cached(key, 300, async () =>
     db
-      .select({ groupId: checkins.groupId, total: count() })
+      .select({ groupId: checkins.groupId, rockPersonId: checkins.rockPersonId, chapter: checkins.chapter })
       .from(checkins)
-      .where(inArray(checkins.groupId, groupIds))
-      .groupBy(checkins.groupId),
+      .where(inArray(checkins.groupId, groupIds)),
   );
-  return new Map(rows.filter((r) => r.groupId !== null).map((r) => [r.groupId as number, Number(r.total)]));
+  const rowsByGroup = new Map<number, { rockPersonId: number; chapter: number }[]>();
+  for (const r of rows) {
+    if (r.groupId === null) continue;
+    const list = rowsByGroup.get(r.groupId) ?? [];
+    list.push({ rockPersonId: r.rockPersonId, chapter: r.chapter });
+    rowsByGroup.set(r.groupId, list);
+  }
+  return new Map(groupIds.map((id) => [id, completedAssignmentCheckinCount(rowsByGroup.get(id) ?? [])]));
 }
 
 /** Distinct readers per group id for `today`, cached 5 minutes. */
@@ -206,19 +231,17 @@ export async function loadReadersToday(groupIds: number[], today: string): Promi
   return new Map(rows.filter((r) => r.groupId !== null).map((r) => [r.groupId as number, Number(r.readers)]));
 }
 
-/** Checkins grouped by reading_date across a set of group ids since `fromDate`, cached 5 minutes. */
-export async function loadDailyCounts(groupIds: number[], fromDate: string): Promise<DailyCount[]> {
+/** Raw check-in rows (member, chapter, date) across a set of group ids since `fromDate`, cached 5 minutes. */
+export async function loadDailyCounts(groupIds: number[], fromDate: string): Promise<DailyCheckinRow[]> {
   if (groupIds.length === 0) return [];
   const { db, checkins, cached } = await getDb();
   const key = `admin:daily:${fromDate}:${idsHash(groupIds)}`;
-  const rows = await cached(key, 300, async () =>
+  return cached(key, 300, async () =>
     db
-      .select({ readingDate: checkins.readingDate, total: count() })
+      .select({ rockPersonId: checkins.rockPersonId, chapter: checkins.chapter, readingDate: checkins.readingDate })
       .from(checkins)
-      .where(and(inArray(checkins.groupId, groupIds), gte(checkins.readingDate, fromDate)))
-      .groupBy(checkins.readingDate),
+      .where(and(inArray(checkins.groupId, groupIds), gte(checkins.readingDate, fromDate))),
   );
-  return rows.map((r) => ({ date: r.readingDate, count: Number(r.total) }));
 }
 
 /** Full stats pass over a scope's hierarchy: stats-attached tree + per-top-level-child chart series. */
@@ -248,8 +271,6 @@ export async function loadAdminStats(
 
   return { sections: statsSections, series };
 }
-
-export { TOTAL_CHAPTERS };
 
 /** Short stable digest of a group id set, so cache keys stay small under global scope. */
 function idsHash(groupIds: Iterable<number>): string {

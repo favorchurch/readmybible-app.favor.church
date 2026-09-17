@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,6 +9,7 @@ import {
   flattenGroupNodes,
   statForGroup,
 } from "@/lib/admin/stats";
+import { completedAssignmentCheckinCount, PLAN_START } from "@/lib/plan";
 import type { HierarchyGroupNode, HierarchySectionNode } from "@/lib/rock/hierarchy";
 
 function group(overrides: Partial<HierarchyGroupNode>): HierarchyGroupNode {
@@ -16,9 +19,9 @@ function group(overrides: Partial<HierarchyGroupNode>): HierarchyGroupNode {
 describe("statForGroup", () => {
   it("matches lib/game.ts groupRatio/stageFor", () => {
     const g = group({ id: 1, memberCount: 10 });
-    // 28 checkins / (10 members * 28 chapters) = 0.1 -> Trailer
+    // 28 completed assignments / (10 members * 20 assignments) = 0.14 -> Trailer
     const stat = statForGroup(g, 28, 3);
-    expect(stat.ratio).toBeCloseTo(0.1);
+    expect(stat.ratio).toBeCloseTo(0.14);
     expect(stat.stage).toBe("Trailer");
     expect(stat.checkins).toBe(28);
     expect(stat.readersToday).toBe(3);
@@ -29,28 +32,60 @@ describe("statForGroup", () => {
     expect(stat.ratio).toBe(0);
     expect(stat.stage).toBe("Tent");
   });
+
+  it("R3: counts a two-chapter assignment as one completed assignment, not two check-in rows", () => {
+    // A one-member group completes Day 1 (Matthew 1-2, a single assignment):
+    // two check-in rows, chapters 1 and 2, for the same member.
+    const g = group({ id: 1, memberCount: 1 });
+    const rows = [
+      { rockPersonId: 500, chapter: 1 },
+      { rockPersonId: 500, chapter: 2 },
+    ];
+    const stat = statForGroup(g, completedAssignmentCheckinCount(rows), 1);
+    // The true ratio is 1 completed assignment / 20 == 5% (Tent), not the
+    // 2-row / 20 == 10% (Trailer) a raw row count would have produced.
+    expect(stat.checkins).toBe(1);
+    expect(stat.ratio).toBeCloseTo(1 / 20);
+    expect(stat.stage).toBe("Tent");
+  });
 });
 
 describe("buildDailyCumulativeSeries", () => {
-  it("fills gap days by carrying the prior cumulative total forward", () => {
+  it("fills gap days by carrying the prior cumulative total forward, counting assignments not rows", () => {
+    // One member (900) completes 5 assignments on day 1 (Matthew 1-2, 3-4,
+    // 5, 6, 7 -- 7 chapter rows) and 3 more on day 3 (Matthew 8-9, 10, 11-12
+    // -- 5 chapter rows). A raw row count would read 7 then +5=12; the
+    // correct assignment count is 5 then +3=8.
+    const rows = [1, 2, 3, 4, 5, 6, 7].map((chapter) => ({
+      rockPersonId: 900,
+      chapter,
+      readingDate: "2026-10-01",
+    }));
+    rows.push(
+      ...[8, 9, 10, 11, 12].map((chapter) => ({ rockPersonId: 900, chapter, readingDate: "2026-10-03" })),
+    );
+
     const points = buildDailyCumulativeSeries(
-      [
-        { date: "2026-10-01", count: 5 },
-        { date: "2026-10-03", count: 3 },
-      ],
-      1, // memberCount 1 => denominator 28
+      rows,
+      1, // memberCount 1 => denominator 20
       "2026-10-01",
       "2026-10-04",
     );
     expect(points.map((p) => p.date)).toEqual(["2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"]);
-    expect(points[0].ratio).toBeCloseTo(5 / 28);
-    expect(points[1].ratio).toBeCloseTo(5 / 28); // no new checkins on the 2nd
-    expect(points[2].ratio).toBeCloseTo(8 / 28); // cumulative 5 + 3
-    expect(points[3].ratio).toBeCloseTo(8 / 28);
+    expect(points[0].ratio).toBeCloseTo(5 / 20);
+    expect(points[1].ratio).toBeCloseTo(5 / 20); // no new assignments on the 2nd
+    expect(points[2].ratio).toBeCloseTo(8 / 20); // cumulative 5 + 3 completed assignments
+    expect(points[3].ratio).toBeCloseTo(8 / 20);
   });
 
-  it("clamps the ratio at 1 even if cumulative checkins exceed the denominator", () => {
-    const points = buildDailyCumulativeSeries([{ date: "2026-10-01", count: 1000 }], 1, "2026-10-01", "2026-10-01");
+  it("clamps the ratio at 1 even if cumulative completed assignments exceed the denominator", () => {
+    // Three members each finish all 20 assignments (60 completed total)
+    // against a memberCount of 1 -- an extreme case, but the ratio must
+    // still clamp rather than exceed 1.
+    const rows = [1, 2, 3].flatMap((rockPersonId) =>
+      Array.from({ length: 28 }, (_, i) => ({ rockPersonId, chapter: i + 1, readingDate: "2026-10-01" })),
+    );
+    const points = buildDailyCumulativeSeries(rows, 1, "2026-10-01", "2026-10-01");
     expect(points[0].ratio).toBe(1);
   });
 });
@@ -134,5 +169,28 @@ describe("flattenGroupNodes / collectTopLevelSeriesInputs", () => {
     expect(g10.readersToday).toBe(5);
     expect(g11.checkins).toBe(0);
     expect(g11.stage).toBe("Tent");
+  });
+});
+
+describe("R4: admin stats derive the launch date from the real schedule", () => {
+  it("does not carry its own retired PLAN_START copy", async () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../lib/admin/stats.ts", import.meta.url)),
+      "utf8",
+    );
+    // A second PLAN_START declared here shadowed lib/plan.ts and pinned the
+    // admin chart to the retired October 1 date, so the cumulative series
+    // opened with four days that precede the first scheduled assignment --
+    // any legacy check-in row in that window renders as pre-launch progress.
+    expect(source).not.toMatch(/export const PLAN_START\s*=/);
+  });
+
+  it("pulls the launch date from lib/plan, the real schedule source", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../lib/admin/stats.ts", import.meta.url)),
+      "utf8",
+    );
+    expect(source).toMatch(/import \{[^}]*\bPLAN_START\b[^}]*\} from "@\/lib\/plan"/);
+    expect(PLAN_START).toBe("2026-10-05");
   });
 });

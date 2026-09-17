@@ -1,7 +1,7 @@
 /**
  * Dev-only Rock fixture data, frozen from a real read of Rock production on
  * 2026-09-03 (rock_ministry groupMembers + rock_entity groupmembers/people
- * for group 24077). Used ONLY when ROCK_API_KEY is empty AND
+ * for group 24099). Used ONLY when ROCK_API_KEY is empty AND
  * NODE_ENV !== "production" -- see lib/rock/client.ts. Never used to write;
  * writes against this fixture are simulated in-memory for the dev process
  * lifetime only.
@@ -13,8 +13,8 @@ import type { RockGroup, RockGroupMember, RockPerson } from "@/lib/rock/client";
 export const FIXTURE_PERSON_ID = 152;
 
 const FIXTURE_GROUP: RockGroup = {
-  Id: 24077,
-  Name: "Adults // Erwin & Jeric Presnedi",
+  Id: 24099,
+  Name: "Adults // Marco & Denise Alcantara",
   GroupTypeId: 25,
   CampusId: 1,
   ParentGroupId: 23870,
@@ -31,8 +31,8 @@ const FIXTURE_EXTRA_GROUPS: RockGroup[] = [
   { Id: 24103, Name: "Adults // Reyes Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Pasig" },
   { Id: 24104, Name: "Adults // Dela Cruz Group", GroupTypeId: 25, CampusId: 1, ParentGroupId: 23870, IsActive: true, IsArchived: false, locality: "Quezon City" },
   // Two groups with no locality — matches the real production fixture case (see docs/plans/leader-tools-tab.md Settled facts)
-  { Id: 31192, Name: "Youth // Junior High // Ely Borja", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24021, IsActive: true, IsArchived: false, locality: null },
-  { Id: 31193, Name: "Youth // Junior High // Vince Puno", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24021, IsActive: true, IsArchived: false, locality: null },
+  { Id: 31292, Name: "Youth // Junior High // Nico Ramos", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24029, IsActive: true, IsArchived: false, locality: null },
+  { Id: 31293, Name: "Youth // Junior High // Paolo Santiago", GroupTypeId: 25, CampusId: 1, ParentGroupId: 24029, IsActive: true, IsArchived: false, locality: null },
 ];
 
 // Keep the fixture's dense locality representative of the measured production
@@ -93,23 +93,23 @@ export function fixtureAllConnectGroups(): RockGroup[] {
 
 // PersonId -> NickName, first names only. Frozen from Rock prod.
 const FIXTURE_PEOPLE: Record<number, string> = {
-  18038: "Erwin",
-  194: "Jeric Anne",
-  1869: "Jeffrey",
-  3927: "Gonzales",
-  548: "Jayson",
-  3011: "Elaine",
-  3150: "Michael",
-  3554: "Mariah Joyce Mhikaella",
-  3949: "Arneth",
-  10: "Cielo",
-  152: "Rico",
-  112: "Alliyah",
+  18038: "Marco",
+  194: "Denise Anne",
+  1869: "Harold",
+  3927: "Isabel",
+  548: "Warren",
+  3011: "Noreen",
+  3150: "Patrick",
+  3554: "Samantha Faith Averielle",
+  3949: "Corazon",
+  10: "Grace",
+  152: "Teodoro",
+  112: "Josephine",
 };
 
 // PersonId -> Rock.Model.Gender (1 Male, 2 Female). Frozen from Rock prod.
 // Without this, resolveAvatar() has no rockGender to read and falls back to
-// a personId-parity coin flip -- which is how Alliyah (112, actually Female)
+// a personId-parity coin flip -- which is how Josephine (112, actually Female)
 // rendered as a male avatar in fixture mode.
 const FIXTURE_GENDERS: Record<number, number> = {
   18038: 1,
@@ -218,8 +218,63 @@ export function fixtureAllCampusNames(): Map<number, string> {
   return new Map(Object.entries(FIXTURE_CAMPUS_NAMES).map(([id, name]) => [Number(id), name]));
 }
 
+// GT24 sections (regions, clusters, departments) have no locality -- that
+// concept only applies to GT25 Connect Groups.
+const FIXTURE_SECTIONS: Record<number, RockGroup> = {
+  23870: {
+    Id: 23870,
+    Name: "Region // Synthetic Region",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 23869,
+    IsActive: true,
+    IsArchived: false,
+    locality: null,
+  },
+  23869: {
+    Id: 23869,
+    Name: "Cluster // Synthetic Cluster",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 78,
+    IsActive: true,
+    IsArchived: false,
+    locality: null,
+  },
+  78: {
+    Id: 78,
+    Name: "MNL Adults",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 39,
+    IsActive: true,
+    IsArchived: false,
+    locality: null,
+  },
+  39: {
+    Id: 39,
+    Name: "MNL Connect Groups",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 22464,
+    IsActive: true,
+    IsArchived: false,
+    locality: null,
+  },
+  22464: {
+    Id: 22464,
+    Name: "Connect Groups",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: null,
+    IsActive: true,
+    IsArchived: false,
+    locality: null,
+  },
+};
+
 export function fixtureGroupBasic(groupId: number): RockGroup | null {
-  return fixtureAllConnectGroups().find((g) => g.Id === groupId) ?? null;
+  return fixtureAllConnectGroups().find((g) => g.Id === groupId) ?? FIXTURE_SECTIONS[groupId] ?? null;
 }
 
 export function isFixtureMode(): boolean {

@@ -22,7 +22,7 @@ import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
 import type { GroupStats } from "@/lib/data/stats";
-import { longDate, PLAN_START } from "@/lib/plan";
+import { longDate, PLAN_END, PLAN_START } from "@/lib/plan";
 
 const testProfile: UserProfile = {
   displayName: "Alex",
@@ -99,7 +99,7 @@ function renderPortalMarkup(element: React.ReactElement): string {
 }
 
 describe("MemberProfileSheet", () => {
-  it("renders an accessible modal dialog with first name, avatar, 5-day streak, and 28-day calendar", () => {
+  it("renders an accessible modal dialog with first name, avatar, 5-day streak, and 20-assignment calendar", () => {
     const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
@@ -121,12 +121,14 @@ describe("MemberProfileSheet", () => {
     expect(html).toContain('aria-label="Recent 5-day streak status"');
     expect(html).toContain("Oct 1");
     expect(html).toContain("Oct 5");
-    expect(html).toContain("5 of 28 chapters read");
+    // R5: chapters [1,2,3,4,5] complete 3 assignments (Day 1: 1-2, Day 2:
+    // 3-4, Day 3: 5), not 5 distinct chapters read.
+    expect(html).toContain("3 of 20 assignments read");
 
-    // 28-day October progress calendar
+    // 20-assignment October progress calendar
     expect(html).toContain('aria-label="Jordan\'s October reading calendar"');
     expect(html).toContain("Matthew · October 2026");
-    expect(html).toContain("5/28 complete");
+    expect(html).toContain("3/20 complete");
 
     // Privacy note
     expect(html).toContain("Reading check-ins only. Private notes, verse bookmarks, and personal metadata are never shared.");
@@ -143,8 +145,8 @@ describe("MemberProfileSheet", () => {
     );
 
     expect(html).toContain("Sam</h2>");
-    expect(html).toContain("0 of 28 chapters read");
-    expect(html).toContain("0/28 complete");
+    expect(html).toContain("0 of 20 assignments read");
+    expect(html).toContain("0/20 complete");
     expect(html).not.toContain("mini-grid-cell read");
   });
 
@@ -175,8 +177,12 @@ describe("MemberProfileSheet", () => {
     );
 
     expect(html).toContain("Taylor</h2>");
-    expect(html).toContain("8 of 28 chapters read");
-    expect(html).toContain("8/28 complete");
+    // R5: chapters 1-8 complete only 5 assignments (Days 1-5); Day 6 needs
+    // both chapters 8 and 9, and only 8 has landed, so it does not count as
+    // complete -- a partial row on a two-chapter assignment must not paint
+    // it done.
+    expect(html).toContain("5 of 20 assignments read");
+    expect(html).toContain("5/20 complete");
   });
 
   it("labels launch-week dates that have not happened yet as upcoming", () => {
@@ -306,7 +312,7 @@ describe("TodayScreen tent people toggle", () => {
     expect(html).toContain(`Matthew starts on ${startLabel}.`);
     expect(html).toContain(`Set up before ${startLabel}`);
     expect(html).toContain(`Your home starts as a Tent on ${startLabel}.`);
-    expect(html).toContain(`One Matthew chapter a day, starting ${startLabel}.`);
+    expect(html).toContain(`One reading assignment a day, starting ${startLabel}.`);
   });
 
   it("does not expose dead pre-launch navigation controls to ordinary readers", () => {
@@ -403,6 +409,33 @@ describe("TodayScreen tent people toggle", () => {
 });
 
 describe("ProgressScreen campus groups", () => {
+  it("uses assignments and renders review days from the plan calendar", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-10-12", entry: null },
+        chapters: [1],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain("20 assignments · Oct 5–30 · 6 review days");
+    expect(html).not.toContain("28 chapters · Oct 1–28 · 3 catch-up days");
+    expect(html).toContain('data-date="2026-10-10"');
+    expect(html).toContain('data-day-state="review"');
+    expect(html).toContain('data-day="1"');
+    expect(html).toContain('data-day-state="catch-up"');
+    expect(html).not.toContain('data-day="29"');
+    expect(html).not.toContain('data-day="30"');
+  });
+
   it("renders only the campus group count on the active branch", () => {
     const html = renderToStaticMarkup(
       React.createElement(ProgressScreen, {
@@ -451,6 +484,32 @@ describe("ProgressScreen campus groups", () => {
     expect(html).toContain("0 Connect Groups on this campus.");
     expect(html).not.toContain("leaderboard-card");
     expect(html).not.toContain("No groups on the board yet. October&#x27;s coming.");
+  });
+
+  it("R4: pre-launch plan-facts copy matches the real 20-assignment schedule, not the old Oct 1 one-chapter model", () => {
+    const startLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
+    const endLabel = longDate(PLAN_END).replace(/^[^,]+,\s*/, "");
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-09-20", displayPhase: "pre-launch", phase: "pre-launch", dayLabel: 0, entry: null },
+        chapters: [],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain(`Start with Matthew 1 on ${startLabel}.`);
+    expect(html).toContain(endLabel);
+    expect(html).not.toContain("One chapter. Each day.");
+    expect(html).not.toContain("Start with Matthew 1 on October 1");
+    expect(html).not.toContain("October 29");
   });
 
   it("uses singular grammar for a one-group campus", () => {

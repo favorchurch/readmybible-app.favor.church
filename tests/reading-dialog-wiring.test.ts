@@ -47,9 +47,8 @@ vi.mock("next/navigation", () => ({
 
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
 import { defaultAvatarConfig } from "@/components/avatar";
-import { NO_SCROLL_DWELL_MS } from "@/lib/reading-tick";
 
-const GROUP = 24077;
+const GROUP = 24099;
 
 /**
  * jsdom has no IntersectionObserver and no layout. This stub reports whatever
@@ -92,6 +91,8 @@ class ReplayableIntersectionObserver {
   }
 }
 
+let mockNow = 1000;
+
 /** Model the reader scrolling down to the bottom (again). */
 function reachBottomAgain() {
   for (const o of observers) {
@@ -106,6 +107,7 @@ function reachBottomAgain() {
 /** Wait for the passage to resolve and arm the sentinel, then scroll to it. */
 async function reachBottom() {
   await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+  mockNow += 16_000;
   reachBottomAgain();
 }
 
@@ -139,7 +141,7 @@ function baseProps(overrides: Partial<AppShellProps> = {}): AppShellProps {
     groupStats: { checkinCount: 0, memberCount: 1, ratio: 0, readersTodayIds: [] },
     campusBoard: [],
     appBaseUrl: "https://example.test",
-    devMockToday: "2026-10-12",
+    devMockToday: "2026-10-07",
     campusGroups: [],
     testModeAuthorized: true,
     testWritableGroupId: null,
@@ -168,6 +170,8 @@ function mockMatchMedia(reduceMotion: boolean) {
 }
 
 beforeEach(() => {
+  mockNow = 1000;
+  vi.spyOn(performance, "now").mockImplementation(() => mockNow);
   search.value = "";
   observers.length = 0;
   openState.intersecting = false;
@@ -177,19 +181,22 @@ beforeEach(() => {
   vi.stubGlobal("IntersectionObserver", ReplayableIntersectionObserver);
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      new Response(
+    vi.fn(async (url: string | URL | Request) => {
+      const urlStr = String(url);
+      const match = urlStr.match(/Matthew%20(\d+)|Matthew\+(\d+)|Matthew (\d+)/i);
+      const ch = match ? match[1] || match[2] || match[3] : "5";
+      return new Response(
         JSON.stringify({
-          ref: "Matthew 12",
+          ref: `Matthew ${ch}`,
           translation: "NIV",
-          text: "Then one said unto him.",
-          verses: { "1": "Then one said unto him." },
+          text: `Then one said unto him in chapter ${ch}.`,
+          verses: { "1": `Verse 1 of chapter ${ch}.`, "2": `Verse 2 of chapter ${ch}.` },
           bibleComUrl: "",
           attribution: "NIV attribution",
         }),
         { status: 200, headers: { "content-type": "application/json" } },
-      ),
-    ),
+      );
+    }),
   );
 });
 
@@ -222,7 +229,7 @@ describe("the scroll tick records a reading exactly once", () => {
   });
 
   it("never checks in for a chapter already marked read (D8)", async () => {
-    render(React.createElement(AppShell, baseProps({ chapters: [12], readingDates: ["2026-10-12"] })));
+    render(React.createElement(AppShell, baseProps({ chapters: [5], readingDates: ["2026-10-07"] })));
     openReadingDialog();
     await reachBottom();
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -234,6 +241,10 @@ describe("the scroll tick records a reading exactly once", () => {
     openReadingDialog();
     await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+    // Details collapsed by default under "You have read" summary to minimize reading distraction
+    expect(screen.queryByText(/POINTS ADDED/i)).toBeNull();
+    // Clicking "You have read" reveals the completion details
+    fireEvent.click(screen.getByRole("button", { name: /you have read/i }));
     expect(await screen.findByText(/POINTS ADDED/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /I read today/i })).toBeNull();
   });
@@ -243,10 +254,12 @@ describe("the scroll tick records a reading exactly once", () => {
     openReadingDialog();
     await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+    // Click to expand
+    fireEvent.click(screen.getByRole("button", { name: /you have read/i }));
     await screen.findByText(/POINTS ADDED/i);
 
-    fireEvent.click(screen.getByRole("button", { name: /read today/i }));
-
+    // Click again to collapse
+    fireEvent.click(screen.getByRole("button", { name: /you have read/i }));
     expect(screen.queryByText(/POINTS ADDED/i)).toBeNull();
     expect(checkIn).toHaveBeenCalledTimes(1);
   });
@@ -276,6 +289,7 @@ describe("a failed check-in is surfaced rather than silently lost (D9)", () => {
     fireEvent.click(retry);
 
     await waitFor(() => expect(checkIn).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole("button", { name: /you have read/i }));
     expect(await screen.findByText(/POINTS ADDED/i)).toBeTruthy();
   });
 });
@@ -302,11 +316,8 @@ describe("review regressions", () => {
   });
 
   it("F2: a late result never drives the chapter the reader has since opened", async () => {
-    // Keyed by chapter: chapter 11 starts its own in-flight write when it is
+    // Keyed by chapter: Day 2 starts its own in-flight write when it is
     // opened, and a single shared resolver would release the wrong promise.
-    // One entry per attempt, not per chapter: checkInWithRetry makes a second
-    // attempt for the same chapter, and both must be released to reach the
-    // final failed state.
     const pending = new Map<number, ((value: { ok: false; error: string }) => void)[]>();
     checkIn.mockImplementation(
       ((input: CheckInInput) =>
@@ -326,32 +337,26 @@ describe("review regressions", () => {
 
     render(React.createElement(AppShell, baseProps()));
 
-    // Chapter 12 (today): sentinel fires, request hangs in flight.
+    // Day 3 (today, chapter 5): sentinel fires, request hangs in flight.
     openReadingDialog();
     await reachBottom();
     await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
-    expect(checkIn.mock.calls[0][0].chapter).toBe(12);
+    expect(checkIn.mock.calls[0][0].chapter).toBe(5);
 
     const close = document.querySelector(".reading-dialog-sheet .close-button");
     fireEvent.click(close as Element);
 
-    // Move back to chapter 11 and open it. Its own sentinel fires and is
-    // blocked only by its own state, not by chapter 12's.
+    // Move back to Day 2 (Matthew 3–4) and open it. Its own sentinel fires.
     fireEvent.click(screen.getByRole("button", { name: /previous chapter/i }));
     openReadingDialog();
     await reachBottom();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    // Chapter 12's request now fails, with chapter 11 on screen.
-    await failAll(12);
+    // Chapter 5's request now fails, with Matthew 3–4 on screen.
+    await failAll(5);
 
-    // Chapter 11 must not inherit chapter 12's failure: tapping a retry here
-    // would write a check-in for a chapter this reader never finished.
-    // Chapter 11 must not inherit chapter 12's failure in any form: neither a
-    // retry button (tapping it would write a chapter this reader never
-    // finished) nor the "retrying" tick that precedes it.
     expect(screen.queryByRole("button", { name: /tap to retry/i })).toBeNull();
-    expect(document.querySelector("#reading-dialog-title")?.textContent).toContain("11");
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toContain("Matthew 3–4");
     expect(document.querySelector(".reading-tick")?.getAttribute("data-state")).not.toBe("failed");
   });
 
@@ -380,7 +385,7 @@ describe("review regressions", () => {
       vi.fn(async () =>
         new Response(
           JSON.stringify({
-            ref: "Matthew 12",
+            ref: "Matthew 5",
             translation: "NIV",
             text: "Then one said unto him.",
             bibleComUrl: "",
@@ -405,10 +410,10 @@ describe("review regressions", () => {
       vi.fn(async () =>
         new Response(
           JSON.stringify({
-            ref: "Matthew 12",
+            ref: "Matthew 5",
             translation: "NIV",
-            text: "ten eleven twelve thirteen",
-            verses: { "10": "ten", "11": "eleven", "12": "twelve", "13": "thirteen" },
+            text: "two three four thirteen",
+            verses: { "2": "two", "3": "three", "4": "four", "13": "thirteen" },
             bibleComUrl: "",
             attribution: "NIV attribution",
           }),
@@ -423,32 +428,27 @@ describe("review regressions", () => {
       expect(chapter).toBeTruthy();
       expect(chapter!.querySelectorAll(".passage-verse")).toHaveLength(4);
       expect([...chapter!.querySelectorAll(".passage-verse-number")].map((n) => n.textContent)).toEqual([
-        "10",
-        "11",
-        "12",
+        "2",
+        "3",
+        "4",
         "13",
       ]);
-      // The plan's key passage for Matthew 12 is 12:11-12, so the tint must
-      // land on exactly those two and not on the verses either side of them.
+      // The plan's key passage for Matthew 5 is 5:3-12, so 3 and 4 are key verses
       const keyed = [...chapter!.querySelectorAll('.passage-verse[data-key-verse="true"]')];
-      expect(keyed.map((v) => v.querySelector(".passage-verse-number")?.textContent)).toEqual(["11", "12"]);
+      expect(keyed.map((v) => v.querySelector(".passage-verse-number")?.textContent)).toEqual(["3", "4"]);
     });
   });
 
   it("says so when only the key passage is available, instead of substituting silently", async () => {
-    // The heading still reads "Matthew 12" while the body is a few verses, so
-    // without this line the reader cannot tell a degraded day from a whole
-    // chapter. They can still tick -- the fallback is better than a blank day
-    // -- but they are told what they are looking at.
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
         new Response(
           JSON.stringify({
-            ref: "Matthew 12",
+            ref: "Matthew 5",
             translation: "NIV",
-            text: "eleven twelve",
-            verses: { "11": "eleven", "12": "twelve" },
+            text: "three four",
+            verses: { "3": "three", "4": "four" },
             bibleComUrl: "",
             attribution: "NIV attribution",
             source: "key-passage-fallback",
@@ -474,8 +474,6 @@ describe("review regressions", () => {
   });
 
   it("F7: a blocked test-mode sentinel entry never reaches the server action", async () => {
-    // Test mode on with no sandbox configured, so writesBlocked is true. This
-    // is the wiring half of the rule tests/reading-tick.test.ts proves purely.
     search.value = "test=1";
     render(React.createElement(AppShell, baseProps({ testWritableGroupId: null })));
     openReadingDialog();
@@ -487,9 +485,6 @@ describe("review regressions", () => {
 
 describe("issue #123: the heading shows the chapter's full verse range", () => {
   it("shows the full range immediately, before the passage fetch resolves", async () => {
-    // The heading must be correct off the static MATTHEW_VERSE_COUNTS table
-    // while passage === "loading" -- it cannot wait on the fetch. Hold the
-    // fetch open to freeze the dialog in the loading state and assert first.
     let resolveFetch!: (value: Response) => void;
     vi.stubGlobal(
       "fetch",
@@ -503,13 +498,12 @@ describe("issue #123: the heading shows the chapter's full verse range", () => {
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
 
-    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 12:1-50");
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 5:1-48");
 
-    // Release the pending fetch so it does not leak into the next test.
     resolveFetch(
       new Response(
         JSON.stringify({
-          ref: "Matthew 12",
+          ref: "Matthew 5",
           translation: "NIV",
           text: "Then one said unto him.",
           verses: { "1": "Then one said unto him." },
@@ -522,18 +516,15 @@ describe("issue #123: the heading shows the chapter's full verse range", () => {
   });
 
   it("shows the whole chapter's range, not the 2-3 verse fallback range, under key-passage-fallback", async () => {
-    // The loaded body only carries Matthew 12:11-12 here. Deriving the
-    // heading from passage.verses would render "Matthew 12:11-12" instead of
-    // the full chapter -- the static table must win.
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
         new Response(
           JSON.stringify({
-            ref: "Matthew 12",
+            ref: "Matthew 5",
             translation: "NIV",
-            text: "eleven twelve",
-            verses: { "11": "eleven", "12": "twelve" },
+            text: "three four",
+            verses: { "3": "three", "4": "four" },
             bibleComUrl: "",
             attribution: "NIV attribution",
             source: "key-passage-fallback",
@@ -548,7 +539,7 @@ describe("issue #123: the heading shows the chapter's full verse range", () => {
     await waitFor(() => {
       expect(document.querySelector('[data-section="passage-degraded"]')).toBeTruthy();
     });
-    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 12:1-50");
+    expect(document.querySelector("#reading-dialog-title")?.textContent).toBe("Matthew 5:1-48");
   });
 });
 
@@ -572,7 +563,7 @@ describe("issue #125: verse loading shows the companion glyph, not bare text", (
     resolveFetch(
       new Response(
         JSON.stringify({
-          ref: "Matthew 12",
+          ref: "Matthew 5",
           translation: "NIV",
           text: "Then one said unto him.",
           verses: { "1": "Then one said unto him." },
@@ -598,23 +589,15 @@ describe("issue #125: verse loading shows the companion glyph, not bare text", (
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
 
-    // Queried by role + content, not by accessible name: `status` is not a
-    // name-from-content role, and a live region is announced from its text
-    // anyway -- so the text is the thing worth asserting.
     const status = document.querySelector(".passage-loading[role='status']") as HTMLElement | null;
     expect(status).toBeTruthy();
-    // The glyph itself stays decorative -- the container is what carries the
-    // accessible name, matching how AppBrandSplash separates the two.
     expect(status!.querySelector(".splash-companion")?.getAttribute("aria-hidden")).toBe("true");
-    // A live region announces its TEXT, and the glyph is aria-hidden. Asserting
-    // the attributes alone cannot tell a region that speaks from one that is
-    // silent, so assert the text node a screen reader actually reads.
-    expect(status!.textContent).toMatch(/loading matthew 12:1-50/i);
+    expect(status!.textContent).toMatch(/loading matthew 5:1-48/i);
 
     resolveFetch(
       new Response(
         JSON.stringify({
-          ref: "Matthew 12",
+          ref: "Matthew 5",
           translation: "NIV",
           text: "Then one said unto him.",
           verses: { "1": "Then one said unto him." },
@@ -651,41 +634,51 @@ describe("issue #125: verse loading shows the companion glyph, not bare text", (
   });
 });
 
-describe("D13: a body that needs no scrolling must not tick on open", () => {
-  it("does not record the day just because the dialog opened", async () => {
-    // Eight of the ten translations bundle only the key passage, so the end of
-    // the reading is already in view when the sheet opens. Without the dwell,
-    // opening the sheet IS the check-in for most of the audience.
-    openState.intersecting = true;
+describe("qualification: 15s elapsed and 3s bottom eligibility delay", () => {
+  it("does not qualify when reaching bottom before 3s mark", async () => {
+    openState.intersecting = false;
     render(React.createElement(AppShell, baseProps()));
     openReadingDialog();
     await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
-    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    // Scroll to bottom at t = 2s
+    mockNow += 2000;
+    reachBottomAgain();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(checkIn).not.toHaveBeenCalled();
+
+    // Even if waiting until t = 16s, bottom reached before 3s did not arm check-in
+    mockNow += 14000;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(checkIn).not.toHaveBeenCalled();
+  });
+
+  it("qualifies when re-reaching bottom after 3s mark once 15s have elapsed", async () => {
+    openState.intersecting = false;
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+
+    // Scroll to bottom at t = 16s (>= 3s and >= 15s)
+    mockNow += 16000;
+    reachBottomAgain();
+    await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
+  });
+
+  it("arms dwell when reaching bottom at t >= 3s but before 15s", async () => {
+    openState.intersecting = false;
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+    await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
+
+    // Scroll to bottom at t = 4s (eligible, but < 15s)
+    mockNow += 4000;
+    reachBottomAgain();
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(checkIn).not.toHaveBeenCalled();
     expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeTruthy();
     expect(document.querySelector(".reading-tick")?.getAttribute("data-dwelling")).toBe("true");
-  });
-
-  it("records it once the dwell elapses", async () => {
-    openState.intersecting = true;
-    render(React.createElement(AppShell, baseProps()));
-    openReadingDialog();
-    await waitFor(() => expect(observers.some((o) => o.target !== null)).toBe(true));
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(checkIn).not.toHaveBeenCalled();
-
-    await new Promise((resolve) => setTimeout(resolve, NO_SCROLL_DWELL_MS + 50));
-    expect(checkIn).toHaveBeenCalledTimes(1);
-    expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeNull();
-  }, 15_000);
-
-  it("still ticks instantly when the reader had to scroll (D4 is unchanged)", async () => {
-    openState.intersecting = false;
-    render(React.createElement(AppShell, baseProps()));
-    openReadingDialog();
-    await reachBottom();
-    await waitFor(() => expect(checkIn).toHaveBeenCalledTimes(1));
-    expect(document.querySelector("[data-section='reading-tick-dwell']")).toBeNull();
   });
 });

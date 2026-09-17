@@ -47,4 +47,21 @@ describe("ladder reachability", () => {
     expect((await proxy(request("/admin"))).status).toBe(200);
     vi.unstubAllEnvs();
   });
+
+  // Issue 151: the town view is promoted to production for authorized
+  // leaders, and /ladder/legend is the data route it depends on. The
+  // dev-only prototype page it still lives inside (/ladder) must keep
+  // 404ing in production even though this sibling route does not.
+  it("does not block /ladder/legend in production -- the promoted town view depends on it", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect((await proxy(request("/ladder/legend"))).status).toBe(200);
+    vi.unstubAllEnvs();
+  });
+
+  it("still blocks /ladder itself in production alongside the ungated legend route", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect((await proxy(request("/ladder"))).status).toBe(404);
+    expect((await proxy(request("/ladder/legend"))).status).toBe(200);
+    vi.unstubAllEnvs();
+  });
 });

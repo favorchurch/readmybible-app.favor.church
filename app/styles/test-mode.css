@@ -14,6 +14,8 @@
 .test-mode-field input[type="search"] { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
 .test-mode-skeleton { height: 44px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--line); opacity: .6; } /* decorative placeholder while the group list streams in */
 .test-mode-field select { width: 100%; min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--ink); font-size: 12px; }
+.test-mode-field-checkbox > span:first-child { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.test-mode-field-checkbox input[type="checkbox"] { min-width: 20px; min-height: 20px; }
 .test-mode-phase-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .test-mode-phase-row button { min-height: 44px; min-width: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-1); color: var(--ink); cursor: pointer; font-weight: 700; }
 .test-mode-phase-row button.selected { background: var(--navy); color: #fff; border-color: var(--navy); }

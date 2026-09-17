@@ -9,20 +9,27 @@ import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
+import { MyNotesButton, NotebookModal } from "@/components/notes";
 import { PrototypeSwitcher } from "@/components/prototype-switcher";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import type { useToday } from "@/components/use-today";
-import { coinsFor, medals, nextStageMilestone, nextStageProgress, stageFor, TOTAL_CHAPTERS } from "@/lib/game";
+import { coinsFor, nextStageMilestone, nextStageProgress, stageFor } from "@/lib/game";
 import {
+  assignmentReference,
   clampReadingChapter,
-  GRACE_DATES,
-  isChapterRead,
+  isAssignmentCompleted,
   longDate,
+  PLAN,
+  PLAN_END,
   PLAN_START,
   planEntryForChapter,
+  reviewForDate,
   syncViewedChapter,
+  TOTAL_ASSIGNMENTS,
+  unfinishedAssignmentsUpTo,
+  type PlanEntry,
 } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
 
@@ -63,19 +70,31 @@ function readingSurfaceServerSnapshot(): ReadingSurface {
 }
 
 type ReadingVariantProps = {
+  entry?: PlanEntry | null;
   chapter: number;
   day: number;
   keyPassage: string | null;
   alreadyRead: boolean;
   streakDays: number;
-  onStart: (chapter: number) => void;
+  onStart: (target: PlanEntry | number) => void;
 };
 
-function ReadingAction({ chapter, alreadyRead, onStart, className = "" }: Pick<ReadingVariantProps, "chapter" | "alreadyRead" | "onStart"> & { className?: string }) {
+function ReadingAction({
+  entry,
+  chapter,
+  alreadyRead,
+  onStart,
+  className = "",
+}: Pick<ReadingVariantProps, "chapter" | "alreadyRead" | "onStart"> & {
+  entry?: PlanEntry | null;
+  className?: string;
+}) {
+  const ref = entry ? assignmentReference(entry) : `Matthew ${chapter}`;
+  const target = entry ?? chapter;
   return (
-    <button type="button" className={`reading-prototype-action ${className}`} onClick={() => onStart(chapter)}>
+    <button type="button" className={`reading-prototype-action ${className}`} onClick={() => onStart(target)}>
       <span>
-        <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${chapter}`}</strong>
+        <strong>{alreadyRead ? "Read. Nice one." : `Read ${ref}`}</strong>
         <small>Opens the full chapter</small>
       </span>
       <b aria-hidden="true">→</b>
@@ -83,9 +102,29 @@ function ReadingAction({ chapter, alreadyRead, onStart, className = "" }: Pick<R
   );
 }
 
+function formatChapterMark(entry?: PlanEntry | null, fallbackChapter?: number): string {
+  const chs = entry?.chapters && entry.chapters.length > 0 ? entry.chapters : entry?.chapter ? [entry.chapter] : fallbackChapter ? [fallbackChapter] : [1];
+  if (chs.length > 1) {
+    return `${chs[0]}–${chs[chs.length - 1]}`;
+  }
+  return String(chs[0]).padStart(2, "0");
+}
+
 type ShippedReadingCardProps = ReadingVariantProps & { isToday: boolean };
 
-function ShippedReadingCard({ chapter, day, isToday, alreadyRead, streakDays, onStart }: ShippedReadingCardProps) {
+function ShippedReadingCard({
+  entry,
+  chapter,
+  day,
+  isToday,
+  alreadyRead,
+  streakDays,
+  onStart,
+}: ShippedReadingCardProps) {
+  const ref = entry ? assignmentReference(entry) : `Matthew ${chapter}`;
+  const target = entry ?? chapter;
+  const chapterMark = formatChapterMark(entry, chapter);
+
   return (
     <section
       className={`reading-card ${alreadyRead ? "is-complete" : ""}`}
@@ -102,22 +141,25 @@ function ShippedReadingCard({ chapter, day, isToday, alreadyRead, streakDays, on
       <div className="reading-main">
         <div>
           <span className="book-label">GOSPEL OF</span>
-          <h2>Matthew {chapter}</h2>
+          <h2>{ref}</h2>
           <p>Earns 10 points for your group&apos;s home.</p>
         </div>
-        <div className="chapter-mark">{String(chapter).padStart(2, "0")}</div>
+        <div className="chapter-mark">{chapterMark}</div>
       </div>
       {/* D1: one entrypoint. Reading is what records the day, so
           there is nothing else here to tap. */}
-      <button className="primary-button today-reading-button" onClick={() => onStart(chapter)}>
-        <strong>{alreadyRead ? "Read. Nice one." : `Read Matthew ${chapter}`}</strong>
+      <button className="primary-button today-reading-button" onClick={() => onStart(target)}>
+        <strong>{alreadyRead ? "Read. Nice one." : `Read ${ref}`}</strong>
         <span className="button-arrow" aria-hidden="true">→</span>
       </button>
     </section>
   );
 }
 
-function VariantA({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+function VariantA({ entry, chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  const ref = entry ? assignmentReference(entry) : `Matthew ${chapter}`;
+  const chapterMark = formatChapterMark(entry, chapter);
+
   return (
     <section className={`reading-prototype reading-prototype-a ${alreadyRead ? "is-complete" : ""}`} data-section="reading-prototype-a">
       <div className="prototype-reading-topline">
@@ -127,44 +169,50 @@ function VariantA({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }
       <div className="prototype-reading-lockup">
         <div>
           <span className="book-label">GOSPEL OF</span>
-          <h2>Matthew {chapter}</h2>
-          <p>Day {day} of 28 · Earns 10 points for your group&apos;s home.</p>
+          <h2>{ref}</h2>
+          <p>Day {day} of {TOTAL_ASSIGNMENTS} · Earns 10 points for your group&apos;s home.</p>
         </div>
-        <div className="prototype-chapter-mark">{String(chapter).padStart(2, "0")}</div>
+        <div className="prototype-chapter-mark">{chapterMark}</div>
       </div>
       {keyPassage && <p className="prototype-key-passage"><span>KEY PASSAGE</span>{keyPassage}</p>}
-      <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
+      <ReadingAction entry={entry} chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
     </section>
   );
 }
 
-function VariantB({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+function VariantB({ entry, chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  const ref = entry ? assignmentReference(entry) : `Matthew ${chapter}`;
+  const chapterMark = formatChapterMark(entry, chapter);
+
   return (
     <section className="reading-prototype reading-prototype-b" data-section="reading-prototype-b">
       <div className="chapter-rail-meta">
-        <span><b>DAY {String(day).padStart(2, "0")}</b> / 28</span>
+        <span><b>DAY {String(day).padStart(2, "0")}</b> / {TOTAL_ASSIGNMENTS}</span>
         <span>● {streakDays} day streak</span>
       </div>
       <div className="chapter-rail-body">
-        <div className="chapter-rail-number">{String(chapter).padStart(2, "0")}</div>
+        <div className="chapter-rail-number">{chapterMark}</div>
         <div>
           <span className="book-label">MATTHEW</span>
-          <h2>Make space for Matthew {chapter}.</h2>
-          <p>One chapter today. Ten points toward your group&apos;s home.</p>
+          <h2>Make space for {ref}.</h2>
+          <p>One assignment today. Ten points toward your group&apos;s home.</p>
         </div>
       </div>
       <div className="chapter-rail-footer">
         <div>
           <span className="book-label">TODAY&apos;S FOCUS</span>
-          <strong>{keyPassage ?? `Matthew ${chapter}`}</strong>
+          <strong>{keyPassage ?? ref}</strong>
         </div>
-        <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} className="compact" />
+        <ReadingAction entry={entry} chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} className="compact" />
       </div>
     </section>
   );
 }
 
-function VariantC({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+function VariantC({ entry, chapter, day, keyPassage, alreadyRead, streakDays, onStart }: ReadingVariantProps) {
+  const chapterMark = formatChapterMark(entry, chapter);
+  const chs = entry?.chapters && entry.chapters.length > 0 ? entry.chapters : entry?.chapter ? [entry.chapter] : [chapter];
+
   return (
     <section className="reading-prototype reading-prototype-c" data-section="reading-prototype-c">
       <div className="reading-sheet-heading">
@@ -172,18 +220,18 @@ function VariantC({ chapter, day, keyPassage, alreadyRead, streakDays, onStart }
         <span>● {streakDays} day streak</span>
       </div>
       <div className="reading-sheet-title">
-        <div className="reading-sheet-number">{String(chapter).padStart(2, "0")}</div>
+        <div className="reading-sheet-number">{chapterMark}</div>
         <div>
           <p>Gospel of</p>
           <h2>Matthew</h2>
-          <strong>Chapter {chapter}</strong>
+          <strong>{chs.length > 1 ? `Chapters ${chs[0]}–${chs[chs.length - 1]}` : `Chapter ${chapter}`}</strong>
         </div>
       </div>
       <div className="reading-sheet-note">
         <span>Carry this with you</span>
         <strong>{keyPassage ?? "A chapter to read at your pace."}</strong>
       </div>
-      <ReadingAction chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
+      <ReadingAction entry={entry} chapter={chapter} alreadyRead={alreadyRead} onStart={onStart} />
     </section>
   );
 }
@@ -216,7 +264,7 @@ export function TodayScreen({
   roster: RosterMemberView[];
   profile: UserProfile;
   avatarCustomized: boolean;
-  onStart: (chapter: number) => void;
+  onStart: (target: PlanEntry | number) => void;
   onEditProfile: () => void;
   onViewConnect: () => void;
   onViewProgress: () => void;
@@ -234,6 +282,7 @@ export function TodayScreen({
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
 
@@ -244,12 +293,12 @@ export function TodayScreen({
   }
 
   const viewedChapter = entry ? Math.min(entry.chapter, clampReadingChapter(syncedView.viewedChapter, entry.chapter)) : 1;
-  const viewedEntry = planEntryForChapter(viewedChapter);
-  const viewingUnavailable = Boolean(entry && viewedChapter > entry.chapter);
-  const todayAlreadyRead = entry ? isChapterRead(entry.chapter, chapters) : false;
-  const alreadyRead = entry ? isChapterRead(viewedChapter, chapters) : false;
+  const viewedEntry = planEntryForChapter(viewedChapter) ?? entry;
+  const viewingUnavailable = Boolean(entry && viewedEntry && viewedEntry.day > entry.day);
+  const todayAlreadyRead = entry ? isAssignmentCompleted(entry, chapters) : false;
+  const alreadyRead = viewedEntry ? isAssignmentCompleted(viewedEntry, chapters) : false;
   const catchUpEntry = catchUpChapter ? planEntryForChapter(catchUpChapter) : null;
-  const catchUpDone = catchUpChapter ? chapters.includes(catchUpChapter) : true;
+  const catchUpDone = catchUpEntry ? isAssignmentCompleted(catchUpEntry, chapters) : true;
   const ratio = groupStats?.ratio ?? 0;
   const stage = stageFor(ratio);
   const nextStage = nextStageProgress(ratio);
@@ -268,7 +317,7 @@ export function TodayScreen({
             <section className="hero-copy" data-section="prelaunch-hero">
               <h1>Matthew starts on {campaignStartLabel}.</h1>
               <p>
-                One chapter a day. 28 chapters. Your Connect Group grows a shared home as you read
+                20 reading assignments. 28 chapters. Your Connect Group grows a shared home as you read
                 together.
               </p>
             </section>
@@ -315,15 +364,15 @@ export function TodayScreen({
               <div className="reading-main">
                 <div>
                   <span className="book-label">GOSPEL OF</span>
-                  <h2>Matthew 1</h2>
+                  <h2>{assignmentReference(dayOneEntry)}</h2>
                   <p>{longDate(dayOneEntry.date)}</p>
                 </div>
-                <div className="chapter-mark">01</div>
+                <div className="chapter-mark">{formatChapterMark(dayOneEntry)}</div>
               </div>
               <button
                 type="button"
                 className="quick-verse-button"
-                onClick={() => onStart(1)}
+                onClick={() => onStart(dayOneEntry)}
               >
                 <span className="eyebrow">PREVIEW DAY 1</span>
                 <strong>{dayOneEntry.keyPassage}</strong>
@@ -363,7 +412,7 @@ export function TodayScreen({
               <p className="eyebrow">HOW THIS WORKS</p>
               <ol>
                 <li>
-                  <strong>Read.</strong> One Matthew chapter a day, starting {campaignStartLabel}.
+                  <strong>Read.</strong> One reading assignment a day, starting {campaignStartLabel}.
                 </li>
                 <li>
                   <strong>Check in.</strong> A quick, honor-based tap once you&apos;ve read.
@@ -420,45 +469,72 @@ export function TodayScreen({
     );
   }
 
-  if (today.displayPhase === "grace") {
-    const remainingChapters = Array.from({ length: TOTAL_CHAPTERS }, (_, i) => i + 1).filter(
-      (chapter) => !chapters.includes(chapter),
-    );
-    const allRead = chaptersRead === TOTAL_CHAPTERS;
-    const graceDayIndex = GRACE_DATES.indexOf(today.todayLocal);
-    const graceDaysLeft = graceDayIndex === -1 ? GRACE_DATES.length : GRACE_DATES.length - graceDayIndex;
-    const graceDayWord = { 1: "One", 2: "Two", 3: "Three" }[graceDaysLeft] ?? String(graceDaysLeft);
-    const graceHero = `${graceDayWord} catch-up day${graceDaysLeft === 1 ? "" : "s"}.`;
+  if (today.displayPhase === "review") {
+    const review = reviewForDate(today.todayLocal);
+    const unfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
+    const allCaughtUp = unfinished.length === 0;
+    const isPostPlan = today.todayLocal > PLAN_END;
+    const heroTitle = isPostPlan ? "Review & Catch Up" : review.title;
+    const heroSubtitle = allCaughtUp
+      ? "You're caught up on all assignments so far. Well done."
+      : `${unfinished.length} assignment${unfinished.length === 1 ? "" : "s"} left to catch up.`;
 
     return (
       <main className="screen today-screen frame">
         <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
-        <section className="hero-copy">
-          <h1>{graceHero}</h1>
-          <p>
-            {allRead
-              ? "You've read every chapter. Well done."
-              : `${remainingChapters.length} chapter${remainingChapters.length === 1 ? "" : "s"} left to finish Matthew.`}
-          </p>
+        <section className="hero-copy" data-section="review-hero">
+          <p className="eyebrow">{review.chaptersSummary.toUpperCase()}</p>
+          <h1>{heroTitle}</h1>
+          <p>{heroSubtitle}</p>
         </section>
 
-        <section className="grace-dashboard" data-section="grace-dashboard">
+        <section className="grace-dashboard" data-section="review-dashboard">
           <div className="grace-stat">
             <strong>{chaptersRead}</strong>
-            <span>/ {TOTAL_CHAPTERS} chapters complete</span>
+            <span>/ {TOTAL_ASSIGNMENTS} assignments complete</span>
           </div>
 
-          {allRead ? (
-            <p className="grace-complete-note">All 28 chapters. Well done.</p>
-          ) : (
-            <div className="grace-chip-list">
-              {remainingChapters.map((chapter) => (
-                <button key={chapter} type="button" className="chapter-chip" onClick={() => onStart(chapter)}>
-                  Matthew {chapter}
-                </button>
-              ))}
+          <div style={{ marginTop: "var(--space-4)" }}>
+            <p className="eyebrow" style={{ marginBottom: "var(--space-2)" }}>WEEKLY REVELATION</p>
+            <p style={{ fontStyle: "italic", color: "var(--ink)", marginBottom: "var(--space-3)" }}>
+              &ldquo;{review.revelationPrompt}&rdquo;
+            </p>
+            {review.keyPassages && review.keyPassages.length > 0 && (
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 var(--space-4) 0", display: "grid", gap: "var(--space-2)" }}>
+                {review.keyPassages.map((kp) => (
+                  <li key={kp.ref} style={{ fontSize: "13px", color: "var(--ink-muted)" }}>
+                    <strong style={{ color: "var(--navy)", marginRight: "var(--space-2)" }}>{kp.ref}</strong>
+                    <span>{kp.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div style={{ marginTop: "var(--space-3)", marginBottom: "var(--space-2)" }}>
+              <MyNotesButton onClick={() => setNotesOpen(true)} />
             </div>
-          )}
+          </div>
+
+          <div style={{ marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--line)" }}>
+            <p className="eyebrow" style={{ marginBottom: "var(--space-2)" }}>
+              {allCaughtUp ? "READING PROGRESS" : "CATCH UP ON UNFINISHED READINGS"}
+            </p>
+            {allCaughtUp ? (
+              <p className="grace-complete-note">All scheduled assignments complete. Well done.</p>
+            ) : (
+              <div className="grace-chip-list" data-section="unfinished-assignments">
+                {unfinished.map((item) => (
+                  <button
+                    key={item.day}
+                    type="button"
+                    className="chapter-chip"
+                    onClick={() => onStart(item)}
+                  >
+                    {assignmentReference(item)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {groupName && (
             <div className="grace-group-status">
@@ -469,42 +545,30 @@ export function TodayScreen({
             </div>
           )}
         </section>
+        {notesOpen && (
+          <NotebookModal
+            open
+            initialPage={today.todayLocal <= PLAN_END && today.todayLocal >= PLAN_START ? today.todayLocal : "general"}
+            onClose={() => setNotesOpen(false)}
+          />
+        )}
       </main>
     );
   }
 
-  if (today.displayPhase === "closed") {
-    const earnedMedals = medals(chaptersRead);
+  const canGoPrevious = Boolean(viewedEntry && viewedEntry.day > 1);
+  const canGoNext = Boolean(entry && viewedEntry && viewedEntry.day < entry.day);
 
-    return (
-      <main className="screen today-screen frame">
-        <Header heading={`Good morning, ${profile.displayName}`} profile={profile} onEditProfile={onEditProfile} connectSwitcher={connectSwitcher} />
-        <section className="hero-copy">
-          <h1>That&apos;s Matthew, start to finish.</h1>
-          <p>Thank you for reading with us this October.</p>
-        </section>
+  function handlePrevAssignment() {
+    if (!viewedEntry || !canGoPrevious) return;
+    const prev = PLAN.find((e) => e.day === viewedEntry.day - 1);
+    if (prev) setViewed(prev.chapter);
+  }
 
-        <section className="closed-summary" data-section="closed-summary">
-          <div className="closed-summary-stat">
-            <strong>{chaptersRead}</strong>
-            <span>of {TOTAL_CHAPTERS} chapters read</span>
-          </div>
-          <div className="closed-summary-stat">
-            <strong>{earnedMedals.length}</strong>
-            <span>medal{earnedMedals.length === 1 ? "" : "s"} earned</span>
-          </div>
-          {groupName && (
-            <div className="closed-summary-stat">
-              <strong>{stage}</strong>
-              <span>{groupName}&apos;s final home</span>
-            </div>
-          )}
-          <button type="button" className="secondary-link" onClick={onViewProgress}>
-            Review your Progress <span aria-hidden="true">→</span>
-          </button>
-        </section>
-      </main>
-    );
+  function handleNextAssignment() {
+    if (!viewedEntry || !entry || !canGoNext) return;
+    const next = PLAN.find((e) => e.day === viewedEntry.day + 1);
+    if (next) setViewed(next.chapter);
   }
 
   return (
@@ -513,7 +577,7 @@ export function TodayScreen({
       <div className="frame--rail">
         <div className="frame__main">
           <section className="hero-copy">
-            <p className="eyebrow">DAY {today.dayLabel} OF {TOTAL_CHAPTERS}</p>
+            <p className="eyebrow">DAY {today.dayLabel} OF {TOTAL_ASSIGNMENTS}</p>
             <h1>{todayAlreadyRead ? "You made space for the Word today." : "Make space for the Word today."}</h1>
           </section>
 
@@ -523,16 +587,16 @@ export function TodayScreen({
                 <button
                   type="button"
                   aria-label="Previous chapter"
-                  disabled={viewedChapter === 1}
-                  onClick={() => setViewed(clampReadingChapter(viewedChapter - 1, entry.chapter))}
+                  disabled={!canGoPrevious}
+                  onClick={handlePrevAssignment}
                 >
                   <span aria-hidden="true">←</span>
                 </button>
                 <button
                   type="button"
                   aria-label="Next chapter"
-                  disabled={viewedChapter >= entry.chapter}
-                  onClick={() => setViewed(Math.min(entry.chapter, viewedChapter + 1))}
+                  disabled={!canGoNext}
+                  onClick={handleNextAssignment}
                 >
                   <span aria-hidden="true">→</span>
                 </button>
@@ -549,9 +613,10 @@ export function TodayScreen({
                   <>
                     {readingVariant === "shipped" && (
                       <ShippedReadingCard
+                        entry={viewedEntry}
                         chapter={viewedChapter}
                         day={viewedEntry.day}
-                        isToday={viewedChapter === entry.chapter}
+                        isToday={Boolean(entry && viewedEntry.day === entry.day)}
                         keyPassage={viewedEntry.keyPassage}
                         alreadyRead={alreadyRead}
                         streakDays={streakDays}
@@ -560,6 +625,7 @@ export function TodayScreen({
                     )}
                     {readingVariant === "A" && (
                       <VariantA
+                        entry={viewedEntry}
                         chapter={viewedChapter}
                         day={viewedEntry.day}
                         keyPassage={viewedEntry.keyPassage}
@@ -570,6 +636,7 @@ export function TodayScreen({
                     )}
                     {readingVariant === "B" && (
                       <VariantB
+                        entry={viewedEntry}
                         chapter={viewedChapter}
                         day={viewedEntry.day}
                         keyPassage={viewedEntry.keyPassage}
@@ -580,6 +647,7 @@ export function TodayScreen({
                     )}
                     {readingVariant === "C" && (
                       <VariantC
+                        entry={viewedEntry}
                         chapter={viewedChapter}
                         day={viewedEntry.day}
                         keyPassage={viewedEntry.keyPassage}
@@ -596,15 +664,15 @@ export function TodayScreen({
 
           {catchUpChapter && catchUpEntry && (
             <section className={`catchup-card ${catchUpDone ? "is-complete" : ""}`} data-section="catch-up">
-              <div className="catchup-mark">{catchUpDone ? "✓" : String(catchUpChapter).padStart(2, "0")}</div>
+              <div className="catchup-mark">{catchUpDone ? "✓" : String(catchUpEntry.day).padStart(2, "0")}</div>
               <div className="catchup-copy">
-                <p className="eyebrow">{catchUpDone ? "CAUGHT UP" : "YESTERDAY'S CHAPTER IS STILL OPEN"}</p>
-                <h2>Matthew {catchUpChapter}</h2>
+                <p className="eyebrow">{catchUpDone ? "CAUGHT UP" : "YESTERDAY'S ASSIGNMENT IS STILL OPEN"}</p>
+                <h2>{assignmentReference(catchUpEntry)}</h2>
                 <span>Grace for the missed days. Joy in the next one.</span>
               </div>
               {!catchUpDone && (
-                <button type="button" onClick={() => onStart(catchUpChapter)}>
-                  Mark Matthew {catchUpChapter} read <b>→</b>
+                <button type="button" onClick={() => onStart(catchUpEntry)}>
+                  Mark {assignmentReference(catchUpEntry)} read <b>→</b>
                 </button>
               )}
             </section>
@@ -729,6 +797,13 @@ export function TodayScreen({
         />
       )}
       {!homeOpen && <PrototypeSwitcher />}
+      {notesOpen && (
+        <NotebookModal
+          open
+          initialPage={viewedEntry?.date ?? (today.todayLocal <= PLAN_END && today.todayLocal >= PLAN_START ? today.todayLocal : "general")}
+          onClose={() => setNotesOpen(false)}
+        />
+      )}
     </main>
   );
 }

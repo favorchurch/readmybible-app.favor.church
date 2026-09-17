@@ -164,7 +164,7 @@ const SEED_SKIN_COLORS = ["#edc7a3", "#d8a373", "#b97856", "#754732"];
 
 // SEED_HAIR mixed every cut into one pool keyed only on personId, with no
 // regard for the avatar's own gender -- a correctly-tagged gender-female
-// avatar could still land on a short, male-reading cut (e.g. Alliyah, person
+// avatar could still land on a short, male-reading cut (e.g. Josephine, person
 // 112, got "crop"). Split into per-gender pools so the generated hairstyle
 // never visually contradicts a gender Rock (or the seed fallback) already
 // committed to.

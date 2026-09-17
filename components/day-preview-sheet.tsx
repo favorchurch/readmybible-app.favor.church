@@ -3,15 +3,17 @@
 import { useRef, useState } from "react";
 
 import type { Translation } from "@/components/avatar";
+import { MyNotesButton, NoteIndicator, NotebookModal, useNotesPresence } from "@/components/notes";
 import { ReadingDialog } from "@/components/reading-dialog";
 import { Sheet } from "@/components/sheet";
-import { checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
+import { assignmentReference, checkInOpensLabel, longDate, type PlanEntry } from "@/lib/plan";
 
 export function DayPreviewSheet({
   open,
   entry,
   isRead = false,
   translation = "NET",
+  authorPersonId,
   onTranslationChange,
   onClose,
 }: {
@@ -19,19 +21,21 @@ export function DayPreviewSheet({
   entry: PlanEntry | null;
   isRead?: boolean;
   translation?: Translation;
+  authorPersonId?: number;
   onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
   const [readingOpen, setReadingOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const readingTriggerRef = useRef<HTMLButtonElement>(null);
+  const { hasNote, isShared, setPagePresence } = useNotesPresence(authorPersonId);
+  const isOwner = !authorPersonId;
+  const dayHasNote = entry ? hasNote(entry.date) : false;
+  const dayIsShared = entry ? isShared(entry.date) : false;
 
   if (!open || !entry) return null;
 
   const isGraceDay = entry.day >= 29;
-  // D11/D12: the same reading dialog as everywhere else, in preview mode --
-  // this sheet shows plan days that may not be readable yet, so nothing here
-  // ever ticks. Every version previews the whole chapter now, so there is no
-  // longer a per-translation fork here.
 
   return (
     <Sheet open={open} onClose={onClose} labelledBy="day-preview-title" className="day-preview-sheet">
@@ -39,8 +43,8 @@ export function DayPreviewSheet({
         <button type="button" className="close-button" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <p className="eyebrow">{isGraceDay ? `OCTOBER ${entry.day}` : `DAY ${entry.day} OF 28`}</p>
-        <h2 id="day-preview-title">{isGraceDay ? `Grace Day ${entry.day - 28}` : `Matthew ${entry.chapter}`}</h2>
+        <p className="eyebrow">{isGraceDay ? `OCTOBER ${entry.day}` : `DAY ${entry.day} OF 20`}</p>
+        <h2 id="day-preview-title">{isGraceDay ? `Grace Day ${entry.day - 28}` : assignmentReference(entry)}</h2>
         <p className="day-preview-date">{longDate(entry.date)}</p>
         {entry.title ? <p className="day-preview-title-copy">{entry.title}</p> : null}
 
@@ -71,13 +75,32 @@ export function DayPreviewSheet({
             <p className="day-preview-opens">This is a preview of the plan. {checkInOpensLabel(entry)}</p>
           </div>
         )}
+
+        <div className="day-preview-notes-row" data-section="day-preview-notes" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", margin: "var(--space-3) 0" }}>
+          {isOwner ? (
+            <MyNotesButton onClick={() => setNotesOpen(true)} variant="pill" />
+          ) : dayHasNote ? (
+            <button
+              type="button"
+              className="my-notes-pill-btn"
+              onClick={() => setNotesOpen(true)}
+              title={dayIsShared ? "Read shared revelation" : "Author's private note"}
+            >
+              <NoteIndicator exists isShared={dayIsShared} isOwner={false} />
+              <span>{dayIsShared ? "Shared Notes" : "Private Note"}</span>
+            </button>
+          ) : null}
+          {isOwner && <NoteIndicator exists={dayHasNote} isShared={dayIsShared} isOwner />}
+        </div>
       </div>
 
       {readingOpen && entry.keyPassage && (
         <ReadingDialog
           chapter={entry.chapter}
-          passageRef={`Matthew ${entry.chapter}`}
+          chapters={entry.chapters}
+          passageRef={assignmentReference(entry)}
           keyPassageRef={entry.keyPassage}
+          assignmentTitle={entry.title}
           translation={translation}
           mode="preview"
           isCatchUp={false}
@@ -92,6 +115,16 @@ export function DayPreviewSheet({
             setReadingOpen(false);
             readingTriggerRef.current?.focus();
           }}
+        />
+      )}
+
+      {notesOpen && entry && (
+        <NotebookModal
+          open
+          initialPage={entry.date}
+          authorPersonId={authorPersonId}
+          onClose={() => setNotesOpen(false)}
+          onNoteSaved={(page, shared) => setPagePresence(page, { exists: true, isShared: shared })}
         />
       )}
     </Sheet>

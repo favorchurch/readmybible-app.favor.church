@@ -16,9 +16,9 @@ describe("groupStateFor", () => {
   });
 
   it("crosses a stage boundary when the ratio passes a threshold", () => {
-    // groupRatio = checkins / (members * 28); Cabin starts at 0.25.
-    const before = groupStateFor(69, 10); // 69/280 = .2464..
-    const after = groupStateFor(70, 10); // 70/280 = .25 exactly
+    // groupRatio = assignments / (members * 20); Cabin starts at 0.25.
+    const before = groupStateFor(49, 10); // 49/200 = .245
+    const after = groupStateFor(50, 10); // 50/200 = .25 exactly
     expect(before.stage).toBe("Trailer");
     expect(after.stage).toBe("Cabin");
   });

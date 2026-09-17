@@ -7,8 +7,13 @@ import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { loadAdminStats } from "@/lib/admin/stats";
 import { HierarchyChart } from "@/components/sections/HierarchyChart";
 import { SectionTree } from "@/components/sections/SectionTree";
+import { TestSimulationChip } from "@/components/sections/test-simulation-chip";
 import { TEST_MODE_CAMPUSES, type TestModeCampus } from "@/components/test-mode/logic";
+import { LadderTownView } from "@/components/ladder/town-view";
+import { longDate, PLAN_START, TOTAL_ASSIGNMENTS } from "@/lib/plan";
 import "@/components/sections/admin.css";
+
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
 /** Oxford-comma-joined list: "A", "A and B", "A, B, and C". */
 function formatNameList(names: string[]): string {
@@ -38,8 +43,16 @@ export default async function SectionDashboard({
   }
   const csvUrl = simulatedScope !== undefined ? `/admin/export.csv?${csvParams.toString()}` : "/admin/export.csv";
 
+  // Member-facing collapse to the umbrella "Leader" (issue #165); the ladder
+  // never fabricates a Region/Cluster/Department-owned home, and reflects
+  // navigation across scope only, so the town view's own viewer key stays
+  // generic rather than naming an upstream tier.
+  const ladderViewer = "leader";
+
   return (
     <>
+      {simulatedScope !== undefined && <TestSimulationChip simulatedScope={simulatedScope} />}
+
       {simulatedScope !== undefined && (
         <div className="admin-test-bar" role="region" aria-label="Admin test mode">
           <span className="admin-test-badge">Test mode</span>
@@ -67,9 +80,37 @@ export default async function SectionDashboard({
         </div>
       )}
 
-      <section className="page-title">
-        <h1>Connect Group progress</h1>
-      </section>
+      {/*
+       * No page-title heading here on purpose: this renders inside
+       * LeaderScreen, whose own <Header heading="Leader" /> already titles
+       * the surface. A second "Connect Group progress" h1 was a leftover
+       * from when this was its own standalone /admin page.
+       *
+       * Issue #151: the Leader tab and the home ladder are one surface for
+       * upstream leaders, not two. This is the promotion of the town view
+       * out of the dev-only /ladder prototype -- a Regional Leader's roots
+       * have no child sections, so they land directly on their region's
+       * Connect homes; a Cluster Head's roots do, so they land on the
+       * region list first (regionsForRoot/LadderTownView, not a fixed
+       * viewer name, decide which per jurisdiction).
+       */}
+      {/*
+       * Keyed by the jurisdiction's root ids: LadderTownView owns internal
+       * navigation state (which region is entered, which root is selected)
+       * that must reset when the jurisdiction itself changes shape, not
+       * just when a group inside it changes. Without this key, switching
+       * Test Mode role from Regional to Cluster while staying on the Leader
+       * tab left a Cluster Head landed already "inside" the prior Regional
+       * Leader's region instead of on the plain region list (issue #117) --
+       * found during this ticket's own hand-verification.
+       */}
+      <LadderTownView
+        key={scope.rootIds.join(",")}
+        roots={statsSections}
+        unavailableGroupIds={[]}
+        viewer={ladderViewer}
+        ownGroupId={null}
+      />
 
       <section className="admin-scope-card" data-section="admin-scope">
         <div className="admin-scope-header">
@@ -92,15 +133,15 @@ export default async function SectionDashboard({
       </section>
 
       <div className="admin-chart-card">
-        <h2>Daily progress since October 1</h2>
+        <h2>Daily progress since {campaignStartLabel}</h2>
         <HierarchyChart series={series} />
       </div>
 
       <details className="admin-progress-note" data-section="admin-progress-note">
         <summary>How progress is calculated</summary>
         <p>
-          Progress is completed chapter check-ins divided by active members x 28 chapters. This
-          keeps group sizes comparable.
+          Progress is completed reading assignments divided by active members x {TOTAL_ASSIGNMENTS}{" "}
+          assignments. This keeps group sizes comparable.
         </p>
       </details>
 

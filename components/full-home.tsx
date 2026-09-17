@@ -9,8 +9,10 @@ import { ProgressBar } from "@/components/progress-bar";
 import type { TodayState } from "@/components/use-today";
 import { modelFor } from "./scene-home-registry";
 import { sceneEligibility } from "@/lib/scene-eligibility";
+import { longDate, PLAN_START } from "@/lib/plan";
 
 const TIMES = ['Day', 'Sunset', 'Night'] as const;
+const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 const ImmersiveHomeScene = lazy(() => import('@/components/immersive-home-scene').then(module => ({ default: module.ImmersiveHomeScene })));
 
 function SceneControlIcon({ icon }: { icon: 'people' | 'moon' | 'sun' | 'reset' | 'expand' }) {
@@ -99,12 +101,11 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           <span>{progress ? `${progress.pct}% through this stage · ${progress.stage} unlocks at ${milestone?.pct ?? 100}% overall` : 'Every stage reached'}</span>
           <p>{isCampsite && gatheringOpen ? eligibility.message : "Your group's reading grows this home."}</p>
           <ProgressBar value={progress?.pct ?? 100} max={100} />
-          {today.displayPhase === "pre-launch" && <><small>Reading begins October 1.</small>{onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}</>}
+          {today.displayPhase === "pre-launch" && <><small>Reading begins {campaignStartLabel}.</small>{onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}</>}
           {today.displayPhase === "active" && (currentMember?.readToday
             ? <button type="button" className="primary-button home-reading-cta" disabled>You&apos;re done for today <span aria-hidden="true">✓</span></button>
             : onViewReading ? <button type="button" className="primary-button home-reading-cta" onClick={onViewReading}>{today.entry ? `Read Matthew ${today.entry.chapter}` : "Continue reading"} <span aria-hidden="true">→</span></button> : null)}
-          {today.displayPhase === "grace" && onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
-          {today.displayPhase === "closed" && onViewPlan && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
+          {today.displayPhase === "review" && onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
           </div>
         </details>
         {supportsScene && <div className="home-scene-switch" role="group" aria-label="Scene presentation">

@@ -1,4 +1,4 @@
-import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, planPhase, todaysEntry } from "@/lib/plan";
+import { PLAN, PLAN_END, dayLabelNumber, displayPhase, entryChapters, planPhase, todaysEntry } from "@/lib/plan";
 import type { TodayState } from "@/components/use-today";
 import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 
@@ -8,7 +8,7 @@ export const DAY_PARAM = "day";
 
 export const TEST_MODE_BLOCKED_MESSAGE = "Test mode: writes are disabled.";
 
-export type SimulatedPhase = "pre-launch" | "active" | "grace" | "closed";
+export type SimulatedPhase = "pre-launch" | "active" | "review";
 
 /**
  * The roles the panel can simulate, widest scope first among the admin tiers.
@@ -100,6 +100,14 @@ export type TestModeState = {
   scenario: TestModeScenario;
   role: TestModeRole;
   campus: TestModeCampus;
+  /**
+   * Explicit opt-in for the sandbox write exception. Map 146 locks writes
+   * blocked by default; this toggle is the ONLY way a leader can reach the
+   * triple-match unblock in `writesBlocked` below. Client/session state only
+   * -- never persisted server-side, so turning it on cannot itself become a
+   * write (see components/test-mode/TestModePanel.tsx).
+   */
+  sandboxWritesEnabled: boolean;
 };
 
 /**
@@ -112,8 +120,8 @@ export type TestModeState = {
  * campus instead -- see `departmentRootForCampus`.
  */
 export const SIMULATED_SECTION_ROOTS = {
-  cluster: 23869, // Cluster // Cielo Pabalan & Peejay Pabalan
-  regional: 23870, // Region // Arnel Guiron & Belle Guiron
+  cluster: 23869, // Cluster // Grace Villanueva & Miguel Villanueva
+  regional: 23870, // Region // Carlo Mendoza & Bianca Mendoza
 } as const;
 
 /**
@@ -299,6 +307,9 @@ export function initialTestModeState(
     scenario: "real",
     role,
     campus: campusFromParams(searchParams, sessionCampus),
+    // Default off, matching the locked decision that Test Mode writes
+    // nothing unless a leader deliberately opts in.
+    sandboxWritesEnabled: false,
   };
 }
 
@@ -366,8 +377,11 @@ export const STAGE_PRESETS: ReadonlyArray<{ stage: string; pct: number; threshol
  */
 export function dateForSimulatedDay(day: number, phase: SimulatedPhase): string {
   if (phase === "pre-launch") return "2026-09-15";
-  if (phase === "grace") return GRACE_DATES[0];
-  if (phase === "closed") return "2026-11-02"; // day after PLAN_END (2026-10-31)
+  if (phase === "review") {
+    const reviewDate = new Date(`${PLAN_END}T00:00:00Z`);
+    reviewDate.setUTCDate(reviewDate.getUTCDate() + 1);
+    return reviewDate.toISOString().slice(0, 10);
+  }
   const clamped = Math.min(Math.max(Math.trunc(day), 1), PLAN.length);
   return PLAN[clamped - 1].date;
 }
@@ -393,7 +407,7 @@ export function simulatedTodayState(date: string, timezone: string): TodayState 
 export function simulatedChapters(completionPct: number): number[] {
   const clamped = Math.min(Math.max(completionPct, 0), 100);
   const count = Math.round((clamped / 100) * PLAN.length);
-  return Array.from({ length: count }, (_, i) => i + 1);
+  return PLAN.slice(0, count).flatMap(entryChapters);
 }
 
 /** A synthetic group ratio (0-1, the unit `groupStats.ratio` and `stageFor` use) for a group percentage, 0-100. */
@@ -407,13 +421,13 @@ export function simulatedMemberHistory(
   completionPct: number,
   todayLocal: string,
 ): { chapters: number[]; readingDates: string[] } {
-  const chapterCount = simulatedChapters(completionPct).length;
-  const maxStart = Math.max(PLAN.length - chapterCount, 0);
-  const start = chapterCount === 0 ? 0 : Math.abs(memberId) % (maxStart + 1);
-  const chapters = Array.from({ length: chapterCount }, (_, index) => start + index + 1);
-  const readingDates = chapters
-    .filter((ch) => ch <= PLAN.length)
-    .map((ch) => PLAN[ch - 1].date)
+  const assignmentCount = Math.round((Math.min(Math.max(completionPct, 0), 100) / 100) * PLAN.length);
+  const maxStart = Math.max(PLAN.length - assignmentCount, 0);
+  const start = assignmentCount === 0 ? 0 : Math.abs(memberId) % (maxStart + 1);
+  const assignments = PLAN.slice(start, start + assignmentCount);
+  const chapters = assignments.flatMap(entryChapters);
+  const readingDates = assignments
+    .map((entry) => entry.date)
     .filter((d) => d <= todayLocal);
   return { chapters, readingDates };
 }
@@ -423,16 +437,25 @@ type WriteResult = { ok: true } | { ok: false; error: string };
 /**
  * Pure helper to determine if writes are blocked in test mode.
  * Returns `false` (writes allowed) only when all hold:
- * `active === true`, `writableGroupId !== null`, `selectedGroupId === writableGroupId`, `realActiveGroupId === writableGroupId`.
+ * `active === true`, `sandboxWritesEnabled === true`, `writableGroupId !== null`,
+ * `selectedGroupId === writableGroupId`, `realActiveGroupId === writableGroupId`.
  * Otherwise `true`. When `active` is `false`, returns `false` so `guardWrite` stays a pass-through.
+ *
+ * `sandboxWritesEnabled` is an explicit, additional gate on top of the
+ * triple-match -- Map 146 locks writes blocked by default, so the
+ * triple-match alone must never be enough to unblock. Toggle on + triple-match
+ * fails is still blocked; the toggle only ever narrows, never replaces, the
+ * existing match.
  */
 export function writesBlocked(
   active: boolean,
   selectedGroupId: number | null,
   realActiveGroupId: number | null,
   writableGroupId: number | null,
+  sandboxWritesEnabled: boolean,
 ): boolean {
   if (!active) return false;
+  if (!sandboxWritesEnabled) return true;
   // `selectedGroupId === null` means "my real active group" -- the panel's
   // first option, which is also the ONLY way that group can be selected,
   // because the picker filters it out of the campus list to avoid listing it

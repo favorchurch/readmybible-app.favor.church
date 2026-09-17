@@ -6,11 +6,17 @@ import type { CheckInGroupState } from "@/app/actions/checkIn";
 import { SplashCompanion } from "@/components/app-splash";
 import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
+import { MyNotesButton, NotebookModal } from "@/components/notes";
 import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
-import { chapterReference } from "@/lib/plan";
-import { NO_SCROLL_DWELL_MS, sentinelAction, type TickState } from "@/lib/reading-tick";
+import { chapterReference, planEntryForChapter } from "@/lib/plan";
+import {
+  BOTTOM_ELIGIBLE_DELAY_MS,
+  MIN_READING_TIME_MS,
+  ReadingQualificationTracker,
+  type TickState,
+} from "@/lib/reading-tick";
 import { TRANSLATIONS, type ScriptureSource } from "@/lib/scripture/types";
 
 type PassageResponse = {
@@ -33,18 +39,8 @@ type PassageState =
   | "loading"
   | "error";
 
-/**
- * Bumped whenever the response shape changes. The API sends
- * Cache-Control: public, max-age=86400, so without this a reader's browser
- * serves a body from before the deploy for a full day -- which is how a
- * response with `text` and no `verses` reached the dialog at all.
- */
 const PASSAGE_SHAPE_VERSION = "2";
 
-/**
- * `preview` is pre-launch (D12): the passage is readable, nothing ticks.
- * `unread` arms the sentinel. `read` renders the tick already filled (D8).
- */
 export type ReadingDialogMode = "preview" | "unread" | "read";
 
 async function fetchPassage(ref: string, translation: Translation): Promise<PassageState> {
@@ -67,18 +63,21 @@ async function fetchPassage(ref: string, translation: Translation): Promise<Pass
 }
 
 /**
- * The single entrypoint into reading, and the only thing that records a
- * check-in (D1/D2 of docs/reading-dialog-tick.md).
+ * The single entrypoint into reading and check-in recording (issue #147).
  *
- * Reaching the bottom is the tick. The sentinel is deliberately NOT armed
- * until the passage has actually resolved -- otherwise an empty dialog is
- * entirely "scrolled to the bottom" the instant it opens, and every reader
- * would be checked in before a word rendered.
+ * Renders single or two-chapter assignments in one long reading pane.
+ * Check-in qualifies only when:
+ * 1. at least 15 seconds have elapsed since content load, and
+ * 2. the reader has reached the bottom (bottom tracking only eligible after 3 seconds).
+ *
+ * Completion details remain collapsed under the clickable "You have read" summary.
  */
 export function ReadingDialog({
   chapter,
+  chapters: chaptersProp,
   passageRef,
   keyPassageRef,
+  assignmentTitle,
   translation,
   mode,
   isCatchUp,
@@ -91,9 +90,11 @@ export function ReadingDialog({
   onTranslationChange,
   onClose,
 }: {
-  chapter: number;
-  passageRef: string;
-  keyPassageRef: string | null;
+  chapter?: number;
+  chapters?: number[];
+  passageRef?: string;
+  keyPassageRef?: string | null;
+  assignmentTitle?: string;
   translation: Translation;
   mode: ReadingDialogMode;
   isCatchUp: boolean;
@@ -106,151 +107,198 @@ export function ReadingDialog({
   onTranslationChange: (translation: Translation) => void;
   onClose: () => void;
 }) {
-  // Each fetch result is stored with the ref/translation it was fetched for,
-  // so a stale result for the previous translation reads as "loading" during
-  // the next render instead of needing a synchronous reset in the effect.
-  const [fetched, setFetched] = useState<{ ref: string; translation: Translation; value: PassageState } | null>(null);
+  const resolvedChapters = useMemo(() => {
+    if (chaptersProp && chaptersProp.length > 0) return chaptersProp;
+    if (chapter !== undefined) return [chapter];
+    return [1];
+  }, [chaptersProp, chapter]);
+
+  const [fetchedPassages, setFetchedPassages] = useState<Record<number, PassageState>>({});
+  const [loadedPassageKey, setLoadedPassageKey] = useState<string | null>(null);
+  const passageRequestKey = `${translation}:${resolvedChapters.join(",")}`;
   const bodyStyle = useReadingBodyStyle();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
   const [replayKey, setReplayKey] = useState(0);
-  const [celebrationVisible, setCelebrationVisible] = useState(true);
+  // Collapsed under the "You have read" summary by default to minimise reading distraction
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const notePage = useMemo(() => {
+    const primaryChapter = resolvedChapters[0];
+    if (primaryChapter) {
+      const entry = planEntryForChapter(primaryChapter);
+      if (entry?.date) return entry.date;
+    }
+    return "general";
+  }, [resolvedChapters]);
 
-  const passage: PassageState =
-    fetched && fetched.ref === passageRef && fetched.translation === translation ? fetched.value : "loading";
-
-  // The key passage used to be pulled out into a blockquote above the body.
-  // Now that every version renders its whole chapter, quoting it there printed
-  // the same verses twice in one scroll, so it is tinted in place instead --
-  // this is just which verse numbers get the tint.
-  const keyVerseNumbers = useMemo(() => {
-    const parsedKey = keyPassageRef ? parseReference(keyPassageRef) : null;
-    if (!parsedKey || parsedKey.chapter !== chapter) return new Set<number>();
+  // Key passage verse numbers per chapter for tinted highlight
+  const keyVerseNumbersMap = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    if (!keyPassageRef) return map;
+    const parsedKey = parseReference(keyPassageRef);
+    if (!parsedKey) return map;
     const end = parsedKey.verseEnd ?? parsedKey.verseStart;
     const numbers = new Set<number>();
     for (let v = parsedKey.verseStart; v <= end; v++) numbers.add(v);
-    return numbers;
-  }, [keyPassageRef, chapter]);
+    map.set(parsedKey.chapter, numbers);
+    return map;
+  }, [keyPassageRef]);
 
   useEffect(() => {
     let cancelled = false;
-    void fetchPassage(passageRef, translation).then((value) => {
-      if (!cancelled) setFetched({ ref: passageRef, translation, value });
+    void Promise.all(
+      resolvedChapters.map(async (ch) => {
+        const ref = `Matthew ${ch}`;
+        const res = await fetchPassage(ref, translation);
+        return { ch, res };
+      }),
+    ).then((results) => {
+      if (!cancelled) {
+        const nextMap: Record<number, PassageState> = {};
+        for (const { ch, res } of results) {
+          nextMap[ch] = res;
+        }
+        setFetchedPassages(nextMap);
+        setLoadedPassageKey(passageRequestKey);
+      }
     });
     return () => {
       cancelled = true;
     };
-  }, [passageRef, translation]);
+  }, [passageRequestKey, resolvedChapters, translation]);
 
-  const resolved = passage !== "loading";
-  // F3: arm only once scripture is actually on screen. `resolved` alone counts
-  // an API error as resolved, and the error body is a single "available at
-  // Bible.com" line -- entirely within view on open, so the reader would be
-  // checked in for a chapter the app never showed them. No text, no tick.
-  //
-  // Keyed off `verses` because that is what the body below actually renders.
-  // Keying it off `text` instead let the two disagree: the API sets
-  // Cache-Control: public, max-age=86400, so for a day after this shipped a
-  // returning reader on a bundled version would be served a pre-deploy body
-  // that has `text` and no `verses` -- the dialog would render the "available
-  // at Bible.com" line, arm anyway, and tick them in for a chapter it never
-  // showed. Derive arming from the rendered content, not from a sibling field
-  // the client has to trust the server to keep in sync -- and count the keys
-  // rather than testing the object, because `{}` is truthy and would arm an
-  // empty card.
+  const allResolved = resolvedChapters.every((ch) => {
+    const p = fetchedPassages[ch];
+    return p !== undefined && p !== "loading";
+  });
+  const anyError = resolvedChapters.some((ch) => fetchedPassages[ch] === "error");
+  const allHaveVerses = resolvedChapters.every((ch) => {
+    const p = fetchedPassages[ch];
+    return p && typeof p === "object" && Object.keys(p.verses ?? {}).length > 0;
+  });
+
+  const isPassageLoading = !allResolved;
+  const isPassageError = allResolved && (anyError || !allHaveVerses);
+
+  // Arm only once all scripture in the assignment has loaded onto the screen
   const armed =
-    mode !== "preview" && resolved && passage !== "error" && Object.keys(passage.verses ?? {}).length > 0;
+    mode !== "preview" &&
+    loadedPassageKey === passageRequestKey &&
+    allResolved &&
+    !isPassageError &&
+    allHaveVerses;
 
-  // Held in a ref so the observer effect does not depend on the callback's
-  // identity. It is a new closure on every render, and re-running the effect
-  // tears down and re-creates the observer -- whose observe() fires
-  // immediately, setting state, rendering again, forever. Caught by
-  // tests/reading-dialog-wiring.test.ts at 1334 calls where 2 were expected.
   const reachedBottom = useRef(onReachBottom);
   useEffect(() => {
     reachedBottom.current = onReachBottom;
   });
 
   const ticked = tick.kind === "ticked" || tick.kind === "retrying";
-
-  // F4: D6 says re-reaching the bottom replays the celebration. The parent
-  // returns the identical tick state for an already-fired chapter, so React
-  // bails out and nothing re-renders -- the replay has to be driven from here.
-  // A ref for the same reason as above: the observer effect must not re-run.
   const tickedRef = useRef(ticked);
   useEffect(() => {
     tickedRef.current = ticked;
   });
 
-  // D13: true while a no-scroll dwell is counting down, so the hint can say so
-  // instead of telling a reader who is already at the end to reach the end.
   const [dwelling, setDwelling] = useState(false);
+  const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qualificationTracker = useRef(new ReadingQualificationTracker(MIN_READING_TIME_MS, BOTTOM_ELIGIBLE_DELAY_MS));
 
   useEffect(() => {
     const node = sentinelRef.current;
     if (!armed || !node) return;
 
-    let firstCallback = true;
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    const tracker = qualificationTracker.current;
+    tracker.onContentLoaded(performance.now());
 
     function fire() {
       if (tickedRef.current) setReplayKey((n) => n + 1);
       reachedBottom.current();
     }
 
-    function clearDwell() {
-      if (timer !== null) clearTimeout(timer);
-      timer = null;
+    function clearTimer() {
+      if (dwellTimer.current !== null) {
+        clearTimeout(dwellTimer.current);
+        dwellTimer.current = null;
+      }
       setDwelling(false);
+    }
+
+    function handleIntersection(isIntersecting: boolean, timestamp: number) {
+      const result = tracker.onIntersectionChange(isIntersecting, timestamp);
+      if (!isIntersecting) {
+        clearTimer();
+        return;
+      }
+      if (result.qualifies) {
+        clearTimer();
+        fire();
+        return;
+      }
+      if (result.dwellMs !== undefined) {
+        clearTimer();
+        setDwelling(true);
+        dwellTimer.current = setTimeout(() => {
+          clearTimer();
+          if (tracker.onTimerElapsed(performance.now())) fire();
+        }, result.dwellMs);
+      }
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const action = sentinelAction({ isIntersecting: entry.isIntersecting, isFirstCallback: firstCallback });
-          firstCallback = false;
-          if (action.kind === "cancel") {
-            clearDwell();
-            continue;
-          }
-          if (action.kind === "tick") {
-            clearDwell();
-            fire();
-            continue;
-          }
-          // Already at the end without scrolling: wait it out, but only once --
-          // a re-armed timer on every later callback would never resolve.
-          if (timer !== null) continue;
-          setDwelling(true);
-          timer = setTimeout(() => {
-            timer = null;
-            setDwelling(false);
-            fire();
-          }, action.delayMs);
+          handleIntersection(entry.isIntersecting, performance.now());
         }
       },
       { root: node.closest(".sheet-scroll"), threshold: 0.9 },
     );
+    function handleVisibilityChange() {
+      const timestamp = performance.now();
+      const visible = document.visibilityState !== "hidden";
+      tracker.onVisibilityChange(visible, timestamp);
+      clearTimer();
+      if (visible) handleIntersection(true, timestamp);
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     observer.observe(node);
     return () => {
-      if (timer !== null) clearTimeout(timer);
+      clearTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };
-  }, [armed]);
+  }, [armed, loadedPassageKey, passageRequestKey]);
 
-  const parsed = parseReference(passageRef);
-  const attribution = resolved && passage !== "error" ? passage.attribution : null;
+  const primaryRef = passageRef ?? `Matthew ${resolvedChapters[0]}`;
+  const parsed = parseReference(primaryRef);
+  const firstPassage = fetchedPassages[resolvedChapters[0]];
+  const attribution =
+    allResolved && !isPassageError && firstPassage && typeof firstPassage === "object"
+      ? firstPassage.attribution
+      : null;
+
   const eyebrow = mode === "preview" ? "DAY 1 PREVIEW" : isCatchUp ? "CATCH-UP READING" : "TODAY'S READING";
+  const headingText =
+    resolvedChapters.length === 1
+      ? chapterReference(resolvedChapters[0])
+      : `Matthew ${resolvedChapters[0]}–${resolvedChapters[resolvedChapters.length - 1]}`;
 
   return (
-    <Sheet open onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet scripture-sheet">
+    <Sheet open elevated onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet scripture-sheet">
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>
       <ReadingBodySwitch />
       <p className="eyebrow">{eyebrow}</p>
       <div className="scripture-heading">
-        <h2 id="reading-dialog-title">{chapterReference(chapter)}</h2>
+        <div>
+          <h2 id="reading-dialog-title">{headingText}</h2>
+          {assignmentTitle && (
+            <p className="assignment-title-sub" style={{ fontSize: "13px", color: "var(--ink-muted)", margin: "2px 0 0" }}>
+              {assignmentTitle}
+            </p>
+          )}
+        </div>
         <select
           className="translation-select"
           aria-label="Bible translation"
@@ -265,54 +313,61 @@ export function ReadingDialog({
         </select>
       </div>
 
-      {passage === "loading" && (
+      {isPassageLoading && (
         <div className="passage-loading" role="status">
-          {/* The glyph is aria-hidden because it is decorative, and a live
-              region is announced from its TEXT content -- an aria-label names
-              the region but is not what gets read out on update, and `status`
-              is not a name-from-content role either. Without this span a
-              screen-reader user gets silence where they previously heard
-              "Loading", which is the regression issue #125 called out. */}
-          <span className="sr-only">Loading {chapterReference(chapter)}</span>
+          <span className="sr-only">Loading {headingText}</span>
           <SplashCompanion size={48} />
         </div>
       )}
-      {passage === "error" && <p className="passage-note">This chapter is available at Bible.com.</p>}
-      {resolved && passage !== "error" && passage.verses && (
-        <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
-          {/* The heading says "Matthew 4:1-25" but a degraded body is only the
-              key passage. Saying so turns a silent substitution into an honest
-              one -- without it the reader has no way to tell they are looking
-              at three verses instead of the chapter. */}
-          {passage.source === "key-passage-fallback" && (
-            <p className="passage-degraded-note" data-section="passage-degraded">
-              Only the key passage is available right now. Read the full chapter on Bible.com below.
-            </p>
-          )}
-          {Object.keys(passage.verses)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .map((n) => (
-              <p
-                key={n}
-                className="passage-verse"
-                data-key-verse={keyVerseNumbers.has(n) ? "true" : undefined}
-              >
-                {/* Not aria-hidden: the number tells a reader which verse this
-                    is, which is content, not ornament. It is sized as content
-                    for the same reason. */}
-                <sup className="passage-verse-number">{n}</sup>{" "}
-                {passage.verses?.[String(n)]}
-              </p>
-            ))}
+
+      {isPassageError && <p className="passage-note">This chapter is available at Bible.com.</p>}
+
+      {!isPassageLoading && !isPassageError && (
+        <div className="passage-chapters-container">
+          {resolvedChapters.map((ch) => {
+            const p = fetchedPassages[ch];
+            if (!p || typeof p !== "object" || !p.verses) return null;
+            const keyVerses = keyVerseNumbersMap.get(ch) ?? new Set<number>();
+            return (
+              <div key={ch} className="passage-chapter-section" data-chapter={ch}>
+                {resolvedChapters.length > 1 && (
+                  <div className="chapter-separator">
+                    <h3 className="chapter-subtitle">{chapterReference(ch)}</h3>
+                  </div>
+                )}
+                <div className="passage-chapter" data-body-style={bodyStyle} data-section="passage-chapter">
+                  {p.source === "key-passage-fallback" && (
+                    <p className="passage-degraded-note" data-section="passage-degraded">
+                      Only the key passage is available right now. Read the full chapter on Bible.com below.
+                    </p>
+                  )}
+                  {Object.keys(p.verses)
+                    .map(Number)
+                    .sort((a, b) => a - b)
+                    .map((n) => (
+                      <p
+                        key={n}
+                        className="passage-verse"
+                        data-key-verse={keyVerses.has(n) ? "true" : undefined}
+                      >
+                        <sup className="passage-verse-number">{n}</sup>{" "}
+                        {p.verses?.[String(n)]}
+                      </p>
+                    ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
-      {resolved && passage !== "error" && !passage.verses && (
-        <p className="passage-note">This passage is available at Bible.com.</p>
       )}
 
       {parsed && (
-        <a className="primary-button scripture-chapter-action" href={bibleComUrl(parsed, translation)} target="_blank" rel="noreferrer">
+        <a
+          className="primary-button scripture-chapter-action"
+          href={bibleComUrl(parsed, translation)}
+          target="_blank"
+          rel="noreferrer"
+        >
           Read the entire chapter on Bible.com ↗
         </a>
       )}
@@ -343,9 +398,13 @@ export function ReadingDialog({
 
       {attribution && <p className="passage-attribution">{attribution}</p>}
 
+      <div className="reading-notes-wrap" data-section="reading-notes" style={{ display: "flex", justifyContent: "center", margin: "var(--space-4) 0" }}>
+        <MyNotesButton onClick={() => setNotesOpen(true)} />
+      </div>
+
       {mode === "preview" && (
         <p className="honor-note" data-section="preview-note">
-          Reading counts from October 1. Reach the end of a chapter and your day is marked for you.
+          Reading counts from October 5. Reach the end of a chapter and your day is marked for you.
         </p>
       )}
 
@@ -367,7 +426,7 @@ export function ReadingDialog({
               Stay a moment and today is marked for you.
               <span
                 className="reading-dwell-bar"
-                style={{ animationDuration: `${NO_SCROLL_DWELL_MS}ms` }}
+                style={{ animationDuration: `${MIN_READING_TIME_MS}ms` }}
                 aria-hidden="true"
               />
             </p>
@@ -379,13 +438,13 @@ export function ReadingDialog({
               key={replayKey}
               aria-controls="today-completion"
               aria-expanded={celebrationVisible}
-              aria-label={celebrationVisible ? "Read today. Hide completion details" : "Read today"}
-              onClick={() => setCelebrationVisible(false)}
+              aria-label={celebrationVisible ? "You have read. Hide completion details" : "You have read"}
+              onClick={() => setCelebrationVisible((v) => !v)}
             >
               <span className="reading-tick-check" aria-hidden="true">
                 ✓
               </span>
-              <strong>Read today</strong>
+              <strong>You have read</strong>
               <span className="reading-tick-coins">+10</span>
             </button>
           )}
@@ -400,7 +459,7 @@ export function ReadingDialog({
       {ticked && celebrationVisible && (
         <div ref={celebrationRef}>
           <Celebration
-            chapter={chapter}
+            chapter={resolvedChapters[0]}
             isCatchUp={isCatchUp}
             chaptersRead={chaptersRead}
             groupName={groupName}
@@ -409,6 +468,14 @@ export function ReadingDialog({
             replayKey={replayKey}
           />
         </div>
+      )}
+
+      {notesOpen && (
+        <NotebookModal
+          open
+          initialPage={notePage}
+          onClose={() => setNotesOpen(false)}
+        />
       )}
     </Sheet>
   );

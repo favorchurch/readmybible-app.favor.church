@@ -122,26 +122,35 @@ function selectSandbox() {
 }
 
 /**
+ * Turns on the explicit sandbox-writes opt-in. Off by default (Map 146):
+ * the triple-match alone is never enough, so any test that wants the
+ * sandbox unblock to actually take effect must call this too.
+ */
+function enableSandboxWrites() {
+  fireEvent.click(screen.getByRole("checkbox", { name: /allow real database writes/i }));
+}
+
+/**
  * The reading dialog ticks when a sentinel below the passage scrolls into
  * view. jsdom has no IntersectionObserver and no layout, so stub it to report
  * the sentinel as visible the moment it is observed -- that IS "the reader
  * reached the bottom" for the purposes of this wiring test.
  */
+let mockNow = 1000;
+
 class ImmediateIntersectionObserver {
   constructor(private readonly callback: IntersectionObserverCallback) {}
   observe(target: Element) {
-    // Two callbacks, because D13 distinguishes them: the first reports the
-    // state on open (not yet at the end -- a chapter that overflows the
-    // sheet), and the second is the reader scrolling down to it. Reporting
-    // the end as visible on the first callback would mean a no-scroll dwell,
-    // which is not what this test is about.
     const fire = (isIntersecting: boolean) =>
       this.callback(
         [{ isIntersecting, target } as unknown as IntersectionObserverEntry],
         this as unknown as IntersectionObserver,
       );
     fire(false);
-    queueMicrotask(() => fire(true));
+    queueMicrotask(() => {
+      mockNow += 16_000;
+      fire(true);
+    });
   }
   unobserve() {}
   disconnect() {}
@@ -176,6 +185,8 @@ afterEach(() => {
   searchParams.value = new URLSearchParams("test=1");
 });
 beforeEach(() => {
+  mockNow = 1000;
+  vi.spyOn(performance, "now").mockImplementation(() => mockNow);
   vi.stubGlobal("IntersectionObserver", ImmediateIntersectionObserver);
   stubScriptureFetch();
   [checkIn, joinByCode, chooseGroup, saveProfile, getOrCreateJoinCode, getTestGroupSnapshot].forEach((m) =>
@@ -203,9 +214,10 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
    * This also pins checkIn's own binding: change AppShell to pass
    * `testMode.active` to checkIn like the other four and this goes red.
    */
-  it("actually calls checkIn in the sandbox state (control: writes are NOT blocked)", async () => {
+  it("actually calls checkIn in the sandbox state with the opt-in toggle on (control: writes are NOT blocked)", async () => {
     render(React.createElement(AppShell, baseProps()));
     selectSandbox();
+    enableSandboxWrites();
 
     // Today screen -> opens the reading dialog. Reaching the bottom of the
     // passage is the check-in now; there is no confirm button to press.
@@ -219,9 +231,54 @@ describe("AppShell wiring: the sandbox unblock reaches check-in only", () => {
     expect(checkIn.mock.calls[0][0]).toMatchObject({ sandboxGroupId: SANDBOX });
   });
 
+  /**
+   * Map 146 locks writes blocked by default. Reaching the fully-matching
+   * sandbox state is not enough on its own -- without the explicit opt-in,
+   * checkIn must never be called, and the tick must say so rather than
+   * looking like a normal save (the "false saved tick" failure this repo has
+   * shipped before).
+   */
+  it("never calls checkIn in the sandbox state while the opt-in toggle is off (default)", async () => {
+    render(React.createElement(AppShell, baseProps()));
+    selectSandbox();
+
+    fireEvent.click(screen.getByRole("button", { name: /read matthew/i }));
+
+    // The tick renders as soon as qualification completes; the celebration
+    // detail (and its SIMULATED badge) is collapsed under it until tapped.
+    const tickButton = await screen.findByRole("button", { name: /you have read/i });
+    expect(checkIn).not.toHaveBeenCalled();
+
+    fireEvent.click(tickButton);
+    expect(screen.getByText(/SIMULATED · NOT SAVED/i)).toBeTruthy();
+  });
+
+  /**
+   * Map 146: the toggle is an ADDITIONAL gate, not a replacement for the
+   * triple-match. Opting in while the simulated group is not the sandbox
+   * must still block the write.
+   */
+  it("never calls checkIn when the toggle is on but the selected group is not the sandbox", async () => {
+    const props = baseProps();
+    props.campusGroups = [{ groupId: 999, groupName: "Some Other Group" }];
+    render(React.createElement(AppShell, props));
+    selectSandbox();
+    enableSandboxWrites();
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "999" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /read matthew/i }));
+
+    const tickButton = await screen.findByRole("button", { name: /you have read/i });
+    expect(checkIn).not.toHaveBeenCalled();
+
+    fireEvent.click(tickButton);
+    expect(screen.getByText(/SIMULATED · NOT SAVED/i)).toBeTruthy();
+  });
+
   it("never calls joinByCode in that same unblocked state", async () => {
     render(React.createElement(AppShell, baseProps()));
     selectSandbox();
+    enableSandboxWrites();
 
     // Same control, inline: this test only means something if writes really
     // are unblocked at this point.

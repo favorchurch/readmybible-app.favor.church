@@ -1,38 +1,57 @@
 import { describe, expect, it } from "vitest";
 
-import { chapterReference, MATTHEW_VERSE_COUNTS, PLAN, planEntryForChapter, planEntryForDate } from "@/lib/plan";
+import {
+  assignmentReference,
+  chapterReference,
+  completedAssignmentCheckinCount,
+  completedAssignmentsCount,
+  entryChapters,
+  isAssignmentCompleted,
+  MATTHEW_VERSE_COUNTS,
+  PLAN,
+  planEntryForChapter,
+  planEntryForDate,
+  TOTAL_ASSIGNMENTS,
+  TOTAL_CHAPTERS,
+} from "@/lib/plan";
 
 describe("PLAN", () => {
-  it("has 28 entries", () => {
-    expect(PLAN).toHaveLength(28);
+  it("has 20 entries", () => {
+    expect(PLAN).toHaveLength(TOTAL_ASSIGNMENTS);
   });
 
-  it("has day and chapter matching 1..28 in order", () => {
+  it("has day matching 1..20 in order and covers chapters 1..28", () => {
     PLAN.forEach((entry, index) => {
       expect(entry.day).toBe(index + 1);
-      expect(entry.chapter).toBe(index + 1);
     });
+    const allChapters = PLAN.flatMap((e) => entryChapters(e));
+    expect(allChapters).toHaveLength(TOTAL_CHAPTERS);
+    expect(allChapters).toEqual(Array.from({ length: 28 }, (_, i) => i + 1));
   });
 
-  it("dates run October 1 through October 28, 2026", () => {
-    expect(PLAN[0].date).toBe("2026-10-01");
-    expect(PLAN[27].date).toBe("2026-10-28");
+  it("dates run October 5 through October 30, 2026", () => {
+    expect(PLAN[0].date).toBe("2026-10-05");
+    expect(PLAN[19].date).toBe("2026-10-30");
     PLAN.forEach((entry) => {
       expect(entry.date).toMatch(/^2026-10-\d{2}$/);
     });
   });
 
-  it("every entry has a key passage referencing its own chapter and a title", () => {
+  it("every entry has a key passage referencing its chapters and a title", () => {
     PLAN.forEach((entry) => {
-      expect(entry.keyPassage.startsWith(`Matthew ${entry.chapter}:`)).toBe(true);
+      const chs = entryChapters(entry);
+      expect(chs.some((c) => entry.keyPassage.startsWith(`Matthew ${c}:`))).toBe(true);
       expect(entry.title.length).toBeGreaterThan(0);
     });
   });
 });
 
 describe("planEntryForChapter", () => {
-  it("finds the entry for a chapter", () => {
-    expect(planEntryForChapter(8)?.date).toBe("2026-10-08");
+  it("finds the entry for a chapter (including multi-chapter assignments)", () => {
+    expect(planEntryForChapter(1)?.date).toBe("2026-10-05");
+    expect(planEntryForChapter(2)?.date).toBe("2026-10-05");
+    expect(planEntryForChapter(8)?.date).toBe("2026-10-12");
+    expect(planEntryForChapter(9)?.date).toBe("2026-10-12");
   });
 
   it("returns undefined for an out-of-range chapter", () => {
@@ -41,8 +60,14 @@ describe("planEntryForChapter", () => {
 });
 
 describe("planEntryForDate", () => {
-  it("finds the entry for a date", () => {
-    expect(planEntryForDate("2026-10-08")?.chapter).toBe(8);
+  it("finds the entry for a scheduled reading date", () => {
+    expect(planEntryForDate("2026-10-05")?.chapter).toBe(1);
+    expect(planEntryForDate("2026-10-12")?.chapter).toBe(8);
+  });
+
+  it("returns undefined for weekend review dates", () => {
+    expect(planEntryForDate("2026-10-10")).toBeUndefined();
+    expect(planEntryForDate("2026-10-11")).toBeUndefined();
   });
 });
 
@@ -77,5 +102,38 @@ describe("chapterReference", () => {
     expect(chapterReference(0)).toBe("Matthew 1:1-25");
     expect(chapterReference(-5)).toBe("Matthew 1:1-25");
     expect(chapterReference(29)).not.toContain("undefined");
+  });
+});
+
+describe("assignmentReference", () => {
+  it("formats single-chapter and multi-chapter assignment references", () => {
+    expect(assignmentReference(PLAN[0])).toBe("Matthew 1–2");
+    expect(assignmentReference(PLAN[2])).toBe("Matthew 5");
+  });
+});
+
+describe("assignment completion model", () => {
+  it("keeps a two-chapter assignment incomplete until both chapters are read", () => {
+    expect(completedAssignmentsCount([1])).toBe(0);
+    expect(completedAssignmentsCount([1, 2])).toBe(1);
+  });
+});
+
+describe("assignment completion", () => {
+  it("checks completion and counts completed assignments", () => {
+    expect(isAssignmentCompleted(PLAN[0], [1])).toBe(false);
+    expect(isAssignmentCompleted(PLAN[0], [1, 2])).toBe(true);
+    expect(completedAssignmentsCount([1, 2])).toBe(1);
+    expect(completedAssignmentsCount([1, 2, 3, 4])).toBe(2);
+  });
+
+  it("counts a two-chapter assignment once per member in shared-home stats", () => {
+    expect(
+      completedAssignmentCheckinCount([
+        { rockPersonId: 1, chapter: 1 },
+        { rockPersonId: 1, chapter: 2 },
+        { rockPersonId: 2, chapter: 1 },
+      ]),
+    ).toBe(1);
   });
 });
