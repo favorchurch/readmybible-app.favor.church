@@ -76,23 +76,28 @@ const BOOK_CODES: Record<string, string> = {
   revelation: "REV",
 };
 
-/** Matches "Book chapter", "Book chapter:verse", or "Book chapter:verse-verse", book may lead with a number (e.g. "1 John"). */
-const REFERENCE_PATTERN = /^([1-3]?\s*[A-Za-z]+(?:\s+of\s+[A-Za-z]+|\s+[A-Za-z]+)*)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/;
+/** Matches whole chapters, chapter ranges, and verse ranges; book may lead with a number (e.g. "1 John"). */
+const REFERENCE_PATTERN = /^([1-3]?\s*[A-Za-z]+(?:\s+of\s+[A-Za-z]+|\s+[A-Za-z]+)*)\s+(\d+)(?:[-–](\d+))?(?::(\d+)(?:-(\d+))?)?$/;
 
 export function parseReference(ref: string): ParsedReference | null {
   const match = REFERENCE_PATTERN.exec(ref.trim());
   if (!match) return null;
-  const [, rawBook, chapterStr, verseStartStr, verseEndStr] = match;
+  const [, rawBook, chapterStr, chapterEndStr, verseStartStr, verseEndStr] = match;
   const book = rawBook.trim().replace(/\s+/g, " ");
   const bookCode = BOOK_CODES[book.toLowerCase()];
   if (!bookCode) return null;
 
   const chapter = Number.parseInt(chapterStr, 10);
+  const chapterEnd = chapterEndStr ? Number.parseInt(chapterEndStr, 10) : undefined;
+  if (chapterEnd !== undefined && chapterEnd < chapter) return null;
+  if (chapterEnd !== undefined && verseStartStr) return null;
   const verseStart = verseStartStr ? Number.parseInt(verseStartStr, 10) : 1;
   const verseEnd = verseStartStr ? (verseEndStr ? Number.parseInt(verseEndStr, 10) : verseStart) : null;
   if (verseEnd !== null && verseEnd < verseStart) return null;
 
-  return { book, bookCode, chapter, verseStart, verseEnd };
+  return chapterEnd === undefined
+    ? { book, bookCode, chapter, verseStart, verseEnd }
+    : { book, bookCode, chapter, chapterEnd, verseStart, verseEnd };
 }
 
 export function bibleComUrl(parsed: ParsedReference, translation: Translation): string {
