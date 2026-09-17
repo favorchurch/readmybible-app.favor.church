@@ -2,6 +2,7 @@
 
 import { Avatar } from "@/components/avatar";
 import { Sheet } from "@/components/sheet";
+import { NudgeButton, useNotifications } from "@/components/notifications";
 import { recentFiveDayStreak } from "@/lib/member-progress";
 import { PLAN } from "@/lib/plan";
 import type { RosterMemberView } from "@/components/app-shell";
@@ -11,15 +12,32 @@ export function MemberProfileSheet({
   onClose,
   member,
   todayLocal,
+  viewerIsConnectMember,
+  groupId,
 }: {
   open: boolean;
   onClose: () => void;
   member: RosterMemberView | null;
   todayLocal: string;
+  viewerIsConnectMember?: boolean;
+  groupId?: number | null;
 }) {
+  const notificationsContext = useNotifications();
   if (!member) return null;
 
+  const effectiveViewerIsConnectMember =
+    viewerIsConnectMember !== undefined
+      ? viewerIsConnectMember
+      : notificationsContext.viewerIsConnectMember;
+  const effectiveGroupId = groupId ?? notificationsContext.activeGroupId;
+
+  const canNudge =
+    !member.isSelf &&
+    effectiveViewerIsConnectMember &&
+    effectiveGroupId !== null;
+
   const streakMarks = recentFiveDayStreak(member.readingDates ?? [], todayLocal);
+
   const readChapters = new Set(member.chapters ?? []);
   const readCount = readChapters.size;
 
@@ -50,6 +68,16 @@ export function MemberProfileSheet({
             ×
           </button>
         </div>
+
+        {canNudge && (
+          <div className="member-profile-actions">
+            <NudgeButton
+              targetPersonId={member.personId}
+              groupId={effectiveGroupId}
+              targetName={member.name}
+            />
+          </div>
+        )}
 
         {/* 5-day streak strip */}
         <div className="member-streak-section">
