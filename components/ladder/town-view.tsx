@@ -377,7 +377,9 @@ function RegionPicker({
         {regions.map((region, regionIndex) => (
           <button type="button" className={regionIndex === index ? "is-selected" : ""} key={region.id} onClick={() => onChange(regionIndex)}>
             <span>{region.name}</span>
-            <small>{region.groups.length} Connect homes →</small>
+            <small>
+              {region.groups.length} Connect home{region.groups.length !== 1 ? "s" : ""} →
+            </small>
           </button>
         ))}
       </div>

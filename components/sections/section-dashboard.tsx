@@ -91,7 +91,23 @@ export default async function SectionDashboard({
        * region list first (regionsForRoot/LadderTownView, not a fixed
        * viewer name, decide which per jurisdiction).
        */}
-      <LadderTownView roots={statsSections} unavailableGroupIds={[]} viewer={ladderViewer} ownGroupId={null} />
+      {/*
+       * Keyed by the jurisdiction's root ids: LadderTownView owns internal
+       * navigation state (which region is entered, which root is selected)
+       * that must reset when the jurisdiction itself changes shape, not
+       * just when a group inside it changes. Without this key, switching
+       * Test Mode role from Regional to Cluster while staying on the Leader
+       * tab left a Cluster Head landed already "inside" the prior Regional
+       * Leader's region instead of on the plain region list (issue #117) --
+       * found during this ticket's own hand-verification.
+       */}
+      <LadderTownView
+        key={scope.rootIds.join(",")}
+        roots={statsSections}
+        unavailableGroupIds={[]}
+        viewer={ladderViewer}
+        ownGroupId={null}
+      />
 
       <section className="admin-scope-card" data-section="admin-scope">
         <div className="admin-scope-header">
