@@ -1,5 +1,6 @@
 import {
   bigserial,
+  boolean,
   char,
   check,
   date,
@@ -83,3 +84,29 @@ export const feedback = readmybible.table(
     index("feedback_rock_person_id_idx").on(table.rockPersonId),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Issue #148: Personal Revelations notebook
+// ---------------------------------------------------------------------------
+
+export const notes = readmybible.table(
+  "notes",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    rockPersonId: integer("rock_person_id").notNull(),
+    groupId: integer("group_id"),
+    page: text("page").notNull(),
+    content: text("content").notNull().default(""),
+    isShared: boolean("is_shared").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("notes_person_page_unique").on(table.rockPersonId, table.page),
+    check("notes_content_length", sql`char_length(${table.content}) <= 1000`),
+    index("notes_rock_person_id_idx").on(table.rockPersonId),
+    index("notes_group_id_idx").on(table.groupId),
+    index("notes_page_idx").on(table.page),
+  ],
+);
+
