@@ -33,15 +33,34 @@ function request(groupId = "23857") {
 }
 
 describe("ladder legend reachability", () => {
-  it("returns HTTP 404 in production before reading session or Rock", async () => {
+  // Issue 151 promotes the town view (and this legend it depends on) to
+  // production for authorized leaders. Gating moved to proxy.ts (see
+  // tests/ladder-gate.test.ts), which runs before this route -- so the
+  // route itself must proceed to session/Rock regardless of NODE_ENV. An
+  // earlier version of this test asserted the opposite (blanket 404 in
+  // production before touching session), which was correct only while the
+  // route was still dev-only.
+  it("reaches session and Rock in production -- gating is proxy.ts's job, not the route's", async () => {
     vi.stubEnv("NODE_ENV", "production");
+    mocks.getSessionContext.mockResolvedValue({ status: "ok", memberships: [] });
+    mocks.getGroupBasic.mockResolvedValue({
+      Id: 23857,
+      Name: "Active Connect",
+      GroupTypeId: 25,
+      CampusId: 1,
+      ParentGroupId: 23856,
+      IsActive: true,
+      IsArchived: false,
+      locality: null,
+    });
+    mocks.resolveAdminScope.mockReturnValue(null);
     try {
-      const response = await GET(request());
-      expect(response.status).toBe(404);
-      expect(mocks.getSessionContext).not.toHaveBeenCalled();
-      expect(mocks.getGroupBasic).not.toHaveBeenCalled();
+      await GET(request());
+      expect(mocks.getSessionContext).toHaveBeenCalledOnce();
+      expect(mocks.getGroupBasic).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllEnvs();
+      vi.clearAllMocks();
     }
   });
 
