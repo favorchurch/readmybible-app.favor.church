@@ -6,12 +6,13 @@ import { z } from "zod";
 import { db } from "@/db";
 import { notifications, nudges } from "@/db/schema";
 import { appNow } from "@/lib/dev-clock";
+import { timezoneForCampus } from "@/lib/campus-timezones";
+import { getRoster } from "@/lib/rock/client";
 import { getSessionContext } from "@/lib/session";
 
 const sendNudgeSchema = z.object({
   targetPersonId: z.number().int().positive(),
   groupId: z.number().int().positive(),
-  timezone: z.string().min(1).optional(),
 });
 
 export type NudgeResult =
@@ -42,15 +43,14 @@ export type DismissNotificationResult =
   | { ok: true }
   | { ok: false; error: string };
 
-function calendarDayString(date: Date, timezone?: string): string {
-  try {
-    if (timezone) {
-      return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(date);
-    }
-  } catch {
-    // Fall back if timezone is unrecognized
-  }
-  return new Intl.DateTimeFormat("en-CA").format(date);
+/**
+ * The rate-limit day must never come from client input -- a forged request
+ * could rotate IANA zones to fabricate a new calendar day and defeat the
+ * once-per-day nudge limit. Always derive it from the sender's own session
+ * campus, the same server-trusted policy used elsewhere for "today".
+ */
+function calendarDayString(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(date);
 }
 
 /**
@@ -99,8 +99,21 @@ export async function sendNudge(input: z.infer<typeof sendNudgeSchema>): Promise
     };
   }
 
+  // The client only supplies the group the sender belongs to -- it never
+  // proves the recipient is also in that group. Check the roster server-side
+  // before sending anything to targetPersonId.
+  const roster = await getRoster(parsed.data.groupId);
+  const recipientIsMember = roster.some((m) => m.PersonId === parsed.data.targetPersonId);
+  if (!recipientIsMember) {
+    return {
+      ok: false,
+      error: "That member is not part of this Connect group.",
+      reason: "not-authorized",
+    };
+  }
+
   const now = appNow();
-  const nudgeDate = calendarDayString(now, parsed.data.timezone);
+  const nudgeDate = calendarDayString(now, timezoneForCampus(session.campusId));
 
   try {
     // Check if already nudged today

@@ -4,6 +4,8 @@ vi.mock("server-only", () => ({}));
 
 const mocks = vi.hoisted(() => ({
   getSessionContext: vi.fn(),
+  getRoster: vi.fn(),
+  appNow: vi.fn(),
   insert: vi.fn(),
   values: vi.fn(),
   select: vi.fn(),
@@ -17,6 +19,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/session", () => ({ getSessionContext: mocks.getSessionContext }));
+vi.mock("@/lib/rock/client", () => ({ getRoster: mocks.getRoster }));
+vi.mock("@/lib/dev-clock", () => ({ appNow: mocks.appNow }));
 
 vi.mock("@/db", () => ({
   db: {
@@ -80,6 +84,10 @@ const regionalLeaderSession = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getSessionContext.mockResolvedValue(memberSession);
+  mocks.appNow.mockReturnValue(new Date());
+  // Default roster covers both the sender (100) and the usual test target
+  // (101) so existing tests don't need to know about the roster check.
+  mocks.getRoster.mockResolvedValue([{ PersonId: 100 }, { PersonId: 101 }]);
 
   mocks.values.mockResolvedValue([{ id: 1 }]);
   mocks.insert.mockReturnValue({ values: mocks.values });
@@ -155,6 +163,49 @@ describe("sendNudge server action", () => {
     expect(notifValues.senderRockPersonId).toBe(100);
     expect(notifValues.type).toBe("nudge");
     expect(notifValues.message).toContain("Jordan nudged you");
+  });
+
+  it("R1: refuses to nudge a target who is not a member of the requested group", async () => {
+    // Recipient 987654 is not in group 501's roster -- only the sender is.
+    mocks.getRoster.mockResolvedValue([{ PersonId: 100 }]);
+
+    const res = await sendNudge({ targetPersonId: 987654, groupId: 501 });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.reason).toBe("not-authorized");
+    }
+    expect(mocks.getRoster).toHaveBeenCalledWith(501);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("R2: the persisted rate-limit day comes from the sender's session campus, not a forged client timezone", async () => {
+    // At this UTC instant Asia/Manila (UTC+8, the memberSession's campus
+    // timezone) has already rolled over to Oct 6, while Pacific/Honolulu
+    // (UTC-10) is still on Oct 5.
+    mocks.appNow.mockReturnValue(new Date("2026-10-05T20:00:00Z"));
+    mocks.limit.mockResolvedValue([]);
+
+    await sendNudge({
+      targetPersonId: 101,
+      groupId: 501,
+      timezone: "Asia/Manila",
+    } as unknown as Parameters<typeof sendNudge>[0]);
+    const firstNudgeDate = mocks.values.mock.calls[0][0].nudgeDate;
+
+    mocks.values.mockClear();
+    mocks.insert.mockClear();
+
+    await sendNudge({
+      targetPersonId: 101,
+      groupId: 501,
+      timezone: "Pacific/Honolulu",
+    } as unknown as Parameters<typeof sendNudge>[0]);
+    const secondNudgeDate = mocks.values.mock.calls[0][0].nudgeDate;
+
+    // A rotated, attacker-supplied timezone must not change the persisted
+    // rate-limit key -- both calls land on the same server-derived day.
+    expect(firstNudgeDate).toBe("2026-10-06");
+    expect(secondNudgeDate).toBe("2026-10-06");
   });
 
   it("Known-Bad 3: refuses a second nudge on the same calendar day non-destructively", async () => {
