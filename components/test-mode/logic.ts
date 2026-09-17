@@ -112,8 +112,8 @@ export type TestModeState = {
  * campus instead -- see `departmentRootForCampus`.
  */
 export const SIMULATED_SECTION_ROOTS = {
-  cluster: 23869, // Cluster // Cielo Pabalan & Peejay Pabalan
-  regional: 23870, // Region // Arnel Guiron & Belle Guiron
+  cluster: 23869, // Cluster // Grace Villanueva & Miguel Villanueva
+  regional: 23870, // Region // Carlo Mendoza & Bianca Mendoza
 } as const;
 
 /**
