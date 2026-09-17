@@ -14,7 +14,7 @@ describe("planPhase", () => {
     expect(planPhase("2026-10-30")).toBe("active");
   });
 
-  it("is review after October 30, 2026 (perpetual Review & Catch Up, no closed state)", () => {
+  it("is review after October 30, 2026 (perpetual Review & Catch Up)", () => {
     expect(planPhase("2026-10-31")).toBe("review");
     expect(planPhase("2026-11-01")).toBe("review");
     expect(planPhase("2026-12-25")).toBe("review");

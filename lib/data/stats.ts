@@ -12,7 +12,7 @@
  */
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { checkins } from "@/db/schema";

@@ -114,7 +114,8 @@ export function ReadingDialog({
   }, [chaptersProp, chapter]);
 
   const [fetchedPassages, setFetchedPassages] = useState<Record<number, PassageState>>({});
-  const [passagesTranslation, setPassagesTranslation] = useState<Translation | null>(null);
+  const [loadedPassageKey, setLoadedPassageKey] = useState<string | null>(null);
+  const passageRequestKey = `${translation}:${resolvedChapters.join(",")}`;
   const bodyStyle = useReadingBodyStyle();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
@@ -146,8 +147,6 @@ export function ReadingDialog({
 
   useEffect(() => {
     let cancelled = false;
-    setFetchedPassages({});
-    setPassagesTranslation(null);
     void Promise.all(
       resolvedChapters.map(async (ch) => {
         const ref = `Matthew ${ch}`;
@@ -161,13 +160,13 @@ export function ReadingDialog({
           nextMap[ch] = res;
         }
         setFetchedPassages(nextMap);
-        setPassagesTranslation(translation);
+        setLoadedPassageKey(passageRequestKey);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [resolvedChapters, translation]);
+  }, [passageRequestKey, resolvedChapters, translation]);
 
   const allResolved = resolvedChapters.every((ch) => {
     const p = fetchedPassages[ch];
@@ -185,7 +184,7 @@ export function ReadingDialog({
   // Arm only once all scripture in the assignment has loaded onto the screen
   const armed =
     mode !== "preview" &&
-    passagesTranslation === translation &&
+    loadedPassageKey === passageRequestKey &&
     allResolved &&
     !isPassageError &&
     allHaveVerses;
@@ -268,7 +267,7 @@ export function ReadingDialog({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };
-  }, [armed, passagesTranslation, translation]);
+  }, [armed, loadedPassageKey, passageRequestKey]);
 
   const primaryRef = passageRef ?? `Matthew ${resolvedChapters[0]}`;
   const parsed = parseReference(primaryRef);
