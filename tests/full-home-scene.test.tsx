@@ -46,7 +46,7 @@ function renderHome(overrides: Partial<React.ComponentProps<typeof FullHome>> = 
   render(
     <FullHome
       onClose={onClose}
-      groupName="Adults // Erwin & Jeric"
+      groupName="Adults // Marco & Denise"
       coins={30}
       groupCheckinCount={3}
       stage={0}
@@ -88,7 +88,7 @@ describe("FullHome scene integration", () => {
       onSelectMember,
       resetKey: 0,
     }));
-    expect(screen.getByRole("heading", { name: "Adults // Erwin & Jeric" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Adults // Marco & Denise" })).toBeTruthy();
     expect(screen.getByText("2 members · Tent")).toBeTruthy();
     expect(screen.getByRole("button", { name: /30 chapter points\. Select to learn more/ })).toBeTruthy();
   });

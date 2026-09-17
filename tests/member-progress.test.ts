@@ -4,11 +4,11 @@ import { PgDialect } from "drizzle-orm/pg-core";
 vi.mock("server-only", () => ({}));
 
 const mockCheckins = [
-  { rockPersonId: 101, groupId: 24077, chapter: 1, readingDate: "2026-10-01" }, // active group
+  { rockPersonId: 101, groupId: 24099, chapter: 1, readingDate: "2026-10-01" }, // active group
   { rockPersonId: 101, groupId: 24001, chapter: 2, readingDate: "2026-10-02" }, // other group
   { rockPersonId: 101, groupId: null,  chapter: 3, readingDate: "2026-10-03" }, // solo read (groupId NULL)
-  { rockPersonId: 102, groupId: 24077, chapter: 1, readingDate: "2026-10-01" }, // active group
-  { rockPersonId: 999, groupId: 24077, chapter: 5, readingDate: "2026-10-05" }, // other member not in roster
+  { rockPersonId: 102, groupId: 24099, chapter: 1, readingDate: "2026-10-01" }, // active group
+  { rockPersonId: 999, groupId: 24099, chapter: 5, readingDate: "2026-10-05" }, // other member not in roster
 ];
 
 const dialect = new PgDialect();
@@ -224,17 +224,17 @@ describe("recentFiveDayStreak", () => {
 
 describe("getGroupMembersReadingHistory", () => {
   it("filters check-ins strictly to the active group, excluding solo (NULL) and other-group rows", async () => {
-    const activeGroupId = 24077;
+    const activeGroupId = 24099;
     const rosterPersonIds = [101, 102, 103];
 
     // member 101 has:
-    // - ch 1 with groupId 24077 (current group)
+    // - ch 1 with groupId 24099 (current group)
     // - ch 2 with groupId 24001 (other group)
     // - ch 3 with groupId NULL (solo read)
     // member 102 has:
-    // - ch 1 with groupId 24077 (current group)
+    // - ch 1 with groupId 24099 (current group)
     // member 103 has no check-ins
-    // person 999 has checkin with groupId 24077 but is not in roster
+    // person 999 has checkin with groupId 24099 but is not in roster
 
     const history = await getGroupMembersReadingHistory(activeGroupId, rosterPersonIds);
 
@@ -261,6 +261,6 @@ describe("getGroupMembersReadingHistory", () => {
 
   it("returns an empty map when groupId is missing or personIds is empty", async () => {
     expect((await getGroupMembersReadingHistory(0, [101])).size).toBe(0);
-    expect((await getGroupMembersReadingHistory(24077, [])).size).toBe(0);
+    expect((await getGroupMembersReadingHistory(24099, [])).size).toBe(0);
   });
 });

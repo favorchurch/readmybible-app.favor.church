@@ -143,7 +143,7 @@ describe("chooseGroup stays blocked in the sandbox state", () => {
     props.needsGroupChoice = true;
     props.memberships = [
       { groupId: SANDBOX, groupName: "TEST // Connect Group", campusId: 5, roleId: 23, isLeader: false },
-      { groupId: 24077, groupName: "Another Group", campusId: 5, roleId: 23, isLeader: false },
+      { groupId: 24099, groupName: "Another Group", campusId: 5, roleId: 23, isLeader: false },
     ];
     render(React.createElement(AppShell, props));
     await assertUnblocked();
