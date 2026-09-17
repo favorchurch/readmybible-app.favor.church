@@ -7,6 +7,18 @@
   justify-content: center;
 }
 
+/* The reading dialog carries the NET licensing attribution (.passage-attribution)
+   and the "You have read" completion pill -- both must stay visible while the
+   save toast (app/styles/toast.css, z-index 200) is showing, not merely
+   present in the DOM underneath it. Elevating the whole dialog above every
+   toast layer (transient save toast 200, persistent notification toast 180,
+   top-right chrome 140) guarantees the toast can never paint over this
+   content, regardless of scroll position -- a fixed-position toast otherwise
+   has no way to know where the attribution has scrolled to. */
+.modal-wrap:has(.reading-dialog-sheet) {
+  z-index: 210;
+}
+
 .modal-backdrop {
   position: absolute;
   inset: 0;
