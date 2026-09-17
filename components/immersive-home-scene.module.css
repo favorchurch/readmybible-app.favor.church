@@ -11,6 +11,7 @@
 
 .scene[data-dragging="camera"] { cursor: grabbing; }
 .scene[data-dragging="person"] { cursor: move; }
+.scene[data-dragging="rotate"] { cursor: ew-resize; }
 
 .canvas {
   display: block;
@@ -82,6 +83,42 @@
   pointer-events: none;
   animation: hint-in .45s ease-out both;
 }
+
+.rotateControls {
+  position: absolute;
+  left: 50%;
+  top: 84px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(8, 27, 25, .72);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+.rotateControls button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #fffdf4;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.rotateControls button:focus-visible {
+  outline: 3px solid #ffd86a;
+  background: rgba(7, 23, 19, .6);
+}
+
+.rotateControls .faceFire { color: #ffe182; }
 
 .fallback {
   position: absolute;

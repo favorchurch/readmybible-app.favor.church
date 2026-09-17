@@ -22,7 +22,7 @@ Actual 3D geometry provides depth and ground-plane raycasting for rearranging pe
 
 The tent is an A-frame prism, rather than a cone: a ridge with depth makes it read as a pitched tent. Warm entrance light and rope stakes establish scale. Layered mountain silhouettes and a deterministic forest add depth without external model downloads.
 
-People originally faced the fire, which hid the faces of foreground members. They now face the camera as it moves, prioritizing the user's request for identifiable faces. Their names are ordinary DOM text projected above their 3D positions, so text stays crisp and keyboard-accessible.
+People face the mode's real fire by default (issue #174). Faces are a graphic 2D treatment -- bold navy ink for eyes, brows, and a smile plus glasses and facial hair, drawn to a canvas texture and decaled just in front of the dimensional head (the approved Option C prototype, `docs/prototypes/3d-character-2d-on-3d.html`). Body, head, and hair stay 3D and keep following the saved avatar configuration. Anyone a viewer may interact with can be yaw-rotated through the turntable ring under a selected person, the ±15° / Face fire controls, or Q/E/F on their label; manual heading persists per device, scoped to mode + roster so it never leaks across people or homes. Their names are ordinary DOM text projected above their 3D positions, so text stays crisp and keyboard-accessible.
 
 The collapsed progress summary protects the view of the gathering. Expanding it reveals the existing reading progress and reading actions. Three.js is lazy-loaded only when an alternate scene is selected.
 
@@ -32,12 +32,15 @@ The collapsed progress summary protects the view of the gathering. Expanding it 
 | --- | --- |
 | `components/full-home.tsx` | Classic/Tent/Campfire choice, sheet, member selection, people/name settings, progress, time, reset |
 | `components/rotatable-home.tsx` + `components/home-model.tsx` | Original Classic renderer and all existing home stages |
-| `components/immersive-home-scene.tsx` | New renderer lifecycle, tent/fire geometry, camera, raycasting, layout, projected name labels |
-| `components/scene-person.ts` | Seated person geometry derived from saved avatar configuration |
+| `components/immersive-home-scene.tsx` | New renderer lifecycle, tent/fire geometry, camera, raycasting, layout, projected name labels, rotation ring + controls |
+| `components/scene-person.ts` | Seated person geometry derived from saved avatar configuration; 2D face decal |
 | `components/scene-landscape.ts` | Sky, mountains, clearing, instanced grass/rocks, stars |
-| `components/immersive-home-scene.module.css` | Canvas, projected labels, hint, fallback |
+| `lib/scene-orientation.ts` | Fire-facing heading math and device-local manual yaw persistence (mode + roster scoped) |
+| `components/immersive-home-scene.module.css` | Canvas, projected labels, hint, fallback, rotation controls |
 | `app/styles/full-home.css` | Shared controls and campsite-specific overlay layout |
 | `tests/full-home-scene.test.tsx` | UI selection and prop forwarding, settings, selection, dismissal, progress |
+| `tests/scene-orientation.test.ts` | Heading math and orientation persistence scoping |
+| `tests/scene-person-face.test.ts` | 2D face decal wiring and avatar identity retention |
 
 ## 3D editing guide
 
@@ -48,8 +51,9 @@ The collapsed progress summary protects the view of the gathering. Expanding it 
 - Models should be grounded at local `y = 0`. Apply scale to their parent group, not an arbitrary world Y offset.
 - The tent group is at `(0, 0, -2.6)` in Tent mode. Campfire places it at `z = -4.8` and scales it by an additional `0.78`.
 - The tent ridge is approximately 4 local units tall. Its parent scale is `0.88`. Roof front/back are near local `z = ±2.74`.
-- The fire is centered at world `x = 0`; `z = 1.15` in Tent and `z = 0.5` in Campfire.
+- The fire is centered at world `x = 0`; `z = 1.15` in Tent and `z = 0.5` in Campfire. `fireFocus(mode)` in `components/scene-home-contract.ts` is the single source for that point; placement validation and default headings both use it.
 - Person head center is local `y = 2.08`; labels project from world `y = 2.8`. Default person group scale is `0.94`, smaller above 14 and 20 people.
+- The face decal is a `CircleGeometry(.27)` disc at local `(0, 2.06, .375)` -- ahead of both the head (`z = .34`) and hair cap (`z = .365`) so the 2D ink never clips. It scales in X with the saved face width like the head.
 
 ### Safe editing sequence
 
@@ -75,11 +79,14 @@ The collapsed progress summary protects the view of the gathering. Expanding it 
 - A person drag captures that pointer and takes priority over camera drag. Wheel/key orbit is ignored during an active drag.
 - Ground dragging uses a horizontal `THREE.Plane`. The initial hit offset is retained so grabbing a face does not teleport the feet to the pointer.
 - Movement begins after a 4px threshold. A tap opens the same member profile; pointer cancellation must not open it.
+- Rotation is yaw-only (#174). A selected person shows a turntable ring (`RingGeometry(.62-.74)` at `y = .025`); dragging it rotates that person horizontally and never triggers a move or a selection. Everyone the viewer may interact with is rotatable, not only their own avatar.
 - Placement is bounded to `x = ±7.2`, `z = -2.8..5.2`, excludes the fire radius, and has a home exclusion in Tent mode. Revisit these bounds for larger models; do not reuse them blindly.
 - Positions are kept in a component-local map per Tent/Campfire mode. Switching those two modes restores each layout. Reset clears both maps. Returning to Classic or closing the sheet unmounts the new renderer and discards custom positions.
-- No canonical member data or server persistence is written by scene dragging.
-- Keyboard users can tab to a member and use arrow keys to move them; Shift increases the step. Enter opens the profile.
-- Saved skin, shirt, hair color, face width, gender silhouette, glasses, and facial hair drive the geometry. Hair styles are approximations, not identical copies of the existing CSS Avatar. Review short/curly/wavy variants before calling avatar parity complete.
+- Headings default toward the mode's real fire after placement resolution. Repositioning -- by drag, arrow keys, or reflow -- preserves the current heading rather than re-facing the fire.
+- Manual yaw persists in `localStorage` (`read-my-bible-scene-orientation`), scoped to mode + roster fingerprint so one person's heading cannot leak onto another person, mode, or home; at most ten scopes are retained. Face fire clears that person's saved heading so the fire-facing default becomes the restored state. Reset view clears the roster's saved headings in both modes. A read-only/visited home renders its own mount, so its rotation is local to the visit and never touches owner or server state.
+- No canonical member data or server persistence is written by scene dragging or rotation.
+- Keyboard users can tab to a member and use arrow keys to move them; Shift increases the step. Enter opens the profile. Q/E rotate ±15°, F faces the fire -- all instant, no animation required (reduced-motion safe).
+- Saved skin, shirt, hair color, face width, gender silhouette, glasses, and facial hair drive the geometry and the 2D face ink. Hair styles are approximations, not identical copies of the existing CSS Avatar. Review short/curly/wavy variants before calling avatar parity complete.
 
 ### Rendering and lifecycle
 

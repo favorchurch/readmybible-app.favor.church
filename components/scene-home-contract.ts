@@ -20,6 +20,9 @@ export const framing = { height: 7.4, radius: 15.6, fov: 46, minYaw: -.72, maxYa
 export const focalPoint = { x: 0, y: 1.75, z: 0 };
 export const homePlacement = (mode: SceneMode) => ({ z: mode === "campfire" ? -4.8 : -2.6, scale: mode === "campfire" ? .78 : 1 });
 
+/** The real fire each mode centers on -- the default heading target for every character (#174). */
+export const fireFocus = (mode: SceneMode) => ({ x: 0, z: mode === "campfire" ? .5 : 1.15 });
+
 /** Keep Three.js behind the renderer's lazy boundary, including model factories. */
 export function modelBuilder(three: typeof THREE) {
   const group = new three.Group();
@@ -64,7 +67,7 @@ export function groundPosition(point: { x: number; z: number }, mode: SceneMode,
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
   let x = clamp(point.x, area.minX, area.maxX);
   let z = clamp(point.z, area.minZ, area.maxZ);
-  const fireZ = mode === "campfire" ? .5 : 1.15;
+  const fireZ = fireFocus(mode).z;
   const insideHome = (px: number, pz: number) => px > footprint.minX && px < footprint.maxX && pz > footprint.minZ && pz < footprint.maxZ;
   const valid = (px: number, pz: number) => px >= area.minX && px <= area.maxX && pz >= area.minZ && pz <= area.maxZ && !insideHome(px, pz) && Math.hypot(px, pz - fireZ) >= 1.65 - 1e-8;
   if (valid(x, z)) return { x, y: 0, z };
