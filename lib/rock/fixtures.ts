@@ -218,6 +218,8 @@ export function fixtureAllCampusNames(): Map<number, string> {
   return new Map(Object.entries(FIXTURE_CAMPUS_NAMES).map(([id, name]) => [Number(id), name]));
 }
 
+// GT24 sections (regions, clusters, departments) have no locality -- that
+// concept only applies to GT25 Connect Groups.
 const FIXTURE_SECTIONS: Record<number, RockGroup> = {
   23870: {
     Id: 23870,
@@ -227,6 +229,7 @@ const FIXTURE_SECTIONS: Record<number, RockGroup> = {
     ParentGroupId: 23869,
     IsActive: true,
     IsArchived: false,
+    locality: null,
   },
   23869: {
     Id: 23869,
@@ -236,6 +239,7 @@ const FIXTURE_SECTIONS: Record<number, RockGroup> = {
     ParentGroupId: 78,
     IsActive: true,
     IsArchived: false,
+    locality: null,
   },
   78: {
     Id: 78,
@@ -245,6 +249,7 @@ const FIXTURE_SECTIONS: Record<number, RockGroup> = {
     ParentGroupId: 39,
     IsActive: true,
     IsArchived: false,
+    locality: null,
   },
   39: {
     Id: 39,
@@ -254,6 +259,7 @@ const FIXTURE_SECTIONS: Record<number, RockGroup> = {
     ParentGroupId: 22464,
     IsActive: true,
     IsArchived: false,
+    locality: null,
   },
   22464: {
     Id: 22464,
@@ -263,6 +269,7 @@ const FIXTURE_SECTIONS: Record<number, RockGroup> = {
     ParentGroupId: null,
     IsActive: true,
     IsArchived: false,
+    locality: null,
   },
 };
 
