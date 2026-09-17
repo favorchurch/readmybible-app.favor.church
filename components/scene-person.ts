@@ -3,6 +3,10 @@ import * as THREE from "three";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { AvatarConfig, UserProfile } from "@/components/avatar";
 
+/** Face ink follows the Read My Bible avatar/peg palette: navy features on skin. */
+const FACE_INK = "#172943";
+const MOUTH_INK = "#8e4d40";
+
 function avatarFor(member: RosterMemberView, profile: UserProfile): AvatarConfig {
   if (!member.isSelf) return member.avatar;
   return {
@@ -29,27 +33,110 @@ function mesh(geometry: THREE.BufferGeometry, color: THREE.ColorRepresentation, 
   return item;
 }
 
-function addEyes(person: THREE.Group, skinColor: string) {
-  for (const side of [-1, 1]) {
-    const eye = mesh(new THREE.SphereGeometry(0.055, 8, 6), 0xfff9e9);
-    eye.position.set(side * 0.125, 2.13, 0.305);
-    person.add(eye);
-    const pupil = mesh(new THREE.SphereGeometry(0.027, 7, 5), 0x172943);
-    pupil.position.set(side * 0.125, 2.13, 0.35);
-    person.add(pupil);
-    const brow = mesh(new THREE.BoxGeometry(0.105, 0.025, 0.025), 0x4a2f25);
-    brow.position.set(side * 0.125, 2.245, 0.32);
-    brow.rotation.z = side * -0.08;
-    person.add(brow);
+/**
+ * Draw the flat graphic face (#174 Option C): bold navy eyes, brows and a
+ * smile in the peg's language, plus glasses and facial hair from the saved
+ * avatar. Everything is sized to read at scene distance, not in close-up.
+ */
+function drawFace(context: CanvasRenderingContext2D, avatar: AvatarConfig) {
+  const eyeY = 104;
+  const eyeX = 44;
+  // Facial hair first so the mouth and eyes stay readable on top of it.
+  if (avatar.facialHair === "stubble" || avatar.facialHair === "beard") {
+    context.fillStyle = avatar.hairColor;
+    context.globalAlpha = avatar.facialHair === "stubble" ? .45 : 1;
+    context.beginPath();
+    context.moveTo(84, 128);
+    context.quadraticCurveTo(74, 176, 128, 206);
+    context.quadraticCurveTo(182, 176, 172, 128);
+    context.quadraticCurveTo(128, 118, 84, 128);
+    context.fill();
+    context.globalAlpha = 1;
   }
-  const nose = mesh(new THREE.SphereGeometry(0.045, 7, 5), skinColor);
-  nose.scale.set(0.75, 1.35, 0.8);
-  nose.position.set(0, 2.06, 0.34);
-  person.add(nose);
-  const mouth = mesh(new THREE.SphereGeometry(.075, 10, 6), 0x8b493a);
-  mouth.position.set(0, 1.96, .32);
-  mouth.scale.set(1, .25, .3);
-  person.add(mouth);
+  context.strokeStyle = MOUTH_INK;
+  context.lineWidth = 12;
+  context.lineCap = "round";
+  context.beginPath();
+  context.arc(128, 120, 46, Math.PI * .22, Math.PI * .78);
+  context.stroke();
+  if (avatar.facialHair === "mustache" || avatar.facialHair === "stubble") {
+    context.strokeStyle = avatar.hairColor;
+    context.lineWidth = 14;
+    context.beginPath();
+    context.moveTo(94, 146);
+    context.quadraticCurveTo(128, 158, 162, 146);
+    context.stroke();
+  }
+  context.fillStyle = FACE_INK;
+  for (const side of [-1, 1]) {
+    context.beginPath();
+    context.arc(128 + side * eyeX, eyeY, 15, 0, Math.PI * 2);
+    context.fill();
+  }
+  // Brows match the peg: stronger on male faces, finer on female faces.
+  context.strokeStyle = avatar.hairColor;
+  context.lineWidth = avatar.gender === "male" ? 11 : 7;
+  for (const side of [-1, 1]) {
+    context.beginPath();
+    context.moveTo(128 + side * eyeX - 22, eyeY - 26);
+    context.quadraticCurveTo(128 + side * eyeX, eyeY - 38, 128 + side * eyeX + 22, eyeY - 24);
+    context.stroke();
+  }
+  if (avatar.glasses !== "none") {
+    context.strokeStyle = FACE_INK;
+    context.fillStyle = "rgba(255,248,231,.16)";
+    context.lineWidth = 7;
+    for (const side of [-1, 1]) {
+      const centerX = 128 + side * eyeX;
+      context.beginPath();
+      if (avatar.glasses === "wayfarer") {
+        context.roundRect(centerX - 28, eyeY - 21, 56, 42, 10);
+        context.fill();
+        context.stroke();
+        context.beginPath();
+        context.moveTo(centerX - 28, eyeY - 21);
+        context.lineTo(centerX + 28, eyeY - 21);
+        context.lineWidth = 10;
+        context.stroke();
+        context.lineWidth = 7;
+      } else {
+        context.arc(centerX, eyeY, 26, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+      }
+    }
+    context.beginPath();
+    context.moveTo(128 - 18, eyeY - 4);
+    context.lineTo(128 + 18, eyeY - 4);
+    context.stroke();
+  }
+}
+
+function createFaceTexture(avatar: AvatarConfig) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const context = canvas.getContext("2d");
+  // Without a 2d context (e.g. jsdom) the decal stays transparent -- the 3D wiring still builds.
+  if (context) drawFace(context, avatar);
+  return texture;
+}
+
+/**
+ * Decal the drawn face just in front of the 3D head. The disc floats ahead of
+ * both the head and hair cap so the graphic treatment reads from any yaw,
+ * while hair, skin and body stay dimensional.
+ */
+function addFaceDecal(person: THREE.Group, avatar: AvatarConfig, faceScale: number) {
+  const decal = new THREE.Mesh(
+    new THREE.CircleGeometry(.27, 32),
+    new THREE.MeshBasicMaterial({ map: createFaceTexture(avatar), transparent: true, depthWrite: false }),
+  );
+  decal.name = "face-decal";
+  decal.position.set(0, 2.06, .375);
+  decal.scale.x = faceScale;
+  person.add(decal);
 }
 
 function addHair(person: THREE.Group, avatar: AvatarConfig) {
@@ -78,36 +165,6 @@ function addHair(person: THREE.Group, avatar: AvatarConfig) {
   }
 }
 
-function addFaceDetails(person: THREE.Group, avatar: AvatarConfig) {
-  if (avatar.facialHair === "none") return;
-  if (avatar.facialHair === "mustache" || avatar.facialHair === "stubble") {
-    const moustache = mesh(new THREE.SphereGeometry(0.09, 8, 6), avatar.hairColor);
-    moustache.scale.set(1.35, 0.42, 0.45);
-    moustache.position.set(0, 1.98, 0.34);
-    person.add(moustache);
-  }
-  if (avatar.facialHair === "stubble" || avatar.facialHair === "beard") {
-    const beard = mesh(new THREE.SphereGeometry(0.23, 10, 7), avatar.hairColor);
-    beard.scale.set(0.82, 0.58, 0.52);
-    beard.position.set(0, 1.91, 0.22);
-    person.add(beard);
-  }
-}
-
-function addGlasses(person: THREE.Group, style: AvatarConfig["glasses"]) {
-  if (style === "none") return;
-  const width = style === "wayfarer" ? 0.13 : 0.115;
-  for (const side of [-1, 1]) {
-    const lens = mesh(new THREE.TorusGeometry(width, 0.018, 6, 12), 0x243033, 0.5);
-    lens.position.set(side * 0.125, 2.13, 0.36);
-    lens.scale.y = style === "wayfarer" ? 0.72 : 1;
-    person.add(lens);
-  }
-  const bridge = mesh(new THREE.BoxGeometry(0.1, 0.018, 0.018), 0x243033, 0.5);
-  bridge.position.set(0, 2.13, 0.36);
-  person.add(bridge);
-}
-
 /** Build a small seated human while retaining the full saved avatar identity. */
 export function createPerson(member: RosterMemberView, profile: UserProfile) {
   const avatar = avatarFor(member, profile);
@@ -123,10 +180,8 @@ export function createPerson(member: RosterMemberView, profile: UserProfile) {
   head.position.y = 2.08;
   head.scale.x = faceScale;
   person.add(head);
-  addEyes(person, avatar.skinColor);
+  addFaceDecal(person, avatar, faceScale);
   addHair(person, avatar);
-  addFaceDetails(person, avatar);
-  addGlasses(person, avatar.glasses);
 
   for (const side of [-1, 1]) {
     const arm = mesh(new THREE.CapsuleGeometry(0.09, 0.48, 4, 7), avatar.skinColor);

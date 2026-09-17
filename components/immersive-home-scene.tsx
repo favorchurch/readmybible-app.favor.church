@@ -7,8 +7,18 @@ import type { RosterMemberView } from "@/components/app-shell";
 import type { UserProfile } from "@/components/avatar";
 import { createPerson } from "./scene-person";
 import { addLandscape } from "./scene-landscape";
-import { groundPosition, homePlacement } from "./scene-home-contract";
+import { fireFocus, groundPosition, homePlacement } from "./scene-home-contract";
 import { modelFor } from "./scene-home-registry";
+import {
+  clearAllSceneOrientations,
+  clearSceneOrientation,
+  headingToward,
+  loadSceneOrientations,
+  normalizeAngle,
+  orientationScope,
+  ROTATE_STEP,
+  saveSceneOrientation,
+} from "@/lib/scene-orientation";
 import styles from "./immersive-home-scene.module.css";
 
 type SceneMode = "tent" | "campfire";
@@ -29,7 +39,8 @@ type ImmersiveHomeSceneProps = {
 
 type DragState =
   | { kind: "camera"; pointerId: number; startX: number; startYaw: number }
-  | { kind: "person"; pointerId: number; memberId: number; startX: number; startY: number; moved: boolean; offset: THREE.Vector3 };
+  | { kind: "person"; pointerId: number; memberId: number; startX: number; startY: number; moved: boolean; offset: THREE.Vector3 }
+  | { kind: "rotate"; pointerId: number; memberId: number; startX: number; startYaw: number };
 
 type SceneRuntime = {
   camera: THREE.PerspectiveCamera;
@@ -127,9 +138,8 @@ function defaultPersonPosition(index: number, count: number, mode: SceneMode) {
   const angle = index / Math.min(safeCount, 14) * Math.PI * 2 + (layer ? .2 : 0);
   const radiusX = (mode === "campfire" ? 3.7 : 4.3) + layer * 1.05;
   const radiusZ = (mode === "campfire" ? 2.55 : 2.9) + layer * .7;
-  const focusX = 0;
-  const focusZ = mode === "campfire" ? .5 : 1.15;
-  return new THREE.Vector3(focusX + Math.cos(angle) * radiusX, 0, focusZ + Math.sin(angle) * radiusZ);
+  const focus = fireFocus(mode);
+  return new THREE.Vector3(focus.x + Math.cos(angle) * radiusX, 0, focus.z + Math.sin(angle) * radiusZ);
 }
 
 function validGroundPosition(point: THREE.Vector3, mode: SceneMode, stage: number) {
@@ -145,7 +155,11 @@ function disposeScene(scene: THREE.Scene) {
     if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
       object.geometry.dispose();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
-      for (const item of materials) item.dispose();
+      for (const item of materials) {
+        const map = (item as THREE.MeshBasicMaterial).map;
+        if (map) map.dispose();
+        item.dispose();
+      }
     }
   });
 }
@@ -167,12 +181,14 @@ export function ImmersiveHomeScene({
   const runtimeRef = useRef<SceneRuntime | null>(null);
   const labelRefs = useRef(new Map<number, HTMLButtonElement>());
   const positionsRef = useRef(new Map<SceneMode, Map<number, THREE.Vector3>>());
+  const yawsRef = useRef(new Map<SceneMode, Map<number, number>>());
   const selectedRef = useRef(selectedMemberId);
   const selectRef = useRef(onSelectMember);
   const rosterRef = useRef(roster);
   const [webGlFailed, setWebGlFailed] = useState(false);
   const [showHint, setShowHint] = useState(true);
   const model = modelFor(stage);
+  const selectedMember = roster.find(member => member.personId === selectedMemberId) ?? null;
 
   useEffect(() => {
     selectedRef.current = selectedMemberId;
@@ -183,6 +199,12 @@ export function ImmersiveHomeScene({
   useEffect(() => {
     positionsRef.current.clear();
   }, [resetKey, stage]);
+
+  // Reset view returns everyone to their default fire-facing heading (#174).
+  useEffect(() => {
+    yawsRef.current.clear();
+    clearAllSceneOrientations(rosterRef.current);
+  }, [resetKey]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -268,10 +290,17 @@ export function ImmersiveHomeScene({
     }
 
     const personGroups = new Map<number, THREE.Group>();
+    const focus = fireFocus(mode);
+    const scope = orientationScope(mode, roster);
     let positions = positionsRef.current.get(mode);
     if (!positions) {
       positions = new Map();
       positionsRef.current.set(mode, positions);
+    }
+    let yaws = yawsRef.current.get(mode);
+    if (!yaws) {
+      yaws = loadSceneOrientations(scope);
+      yawsRef.current.set(mode, yaws);
     }
     if (people) {
       roster.forEach((member, index) => {
@@ -294,12 +323,23 @@ export function ImmersiveHomeScene({
           }
         }
         person.position.copy(position);
-        person.rotation.y = Math.atan2((isCampfire ? 0 : 1.25) - position.x, (isCampfire ? .5 : 1.15) - position.z);
+        // Manual yaw survives; otherwise face this mode's real fire from the final placed spot.
+        person.rotation.y = yaws?.get(member.personId) ?? headingToward(position, focus);
         person.scale.setScalar(roster.length > 20 ? .77 : roster.length > 14 ? .86 : .94);
         scene.add(person);
         personGroups.set(member.personId, person);
       });
     }
+
+    // Turntable ring under the selected character -- dragging it rotates yaw only (#174).
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(.62, .74, 40),
+      new THREE.MeshBasicMaterial({ color: 0xe7a72f, side: THREE.DoubleSide, transparent: true, opacity: .95 }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = .025;
+    ring.visible = false;
+    scene.add(ring);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -372,13 +412,14 @@ export function ImmersiveHomeScene({
         const pulse = 1 + Math.sin(timestamp * .009) * .08 + Math.sin(timestamp * .017) * .035;
         flame.scale.set(1 / pulse, pulse, 1 / pulse);
       }
+      const selectedPerson = selectedRef.current === null ? undefined : personGroups.get(selectedRef.current);
       for (const [memberId, person] of personGroups) {
         const selected = selectedRef.current === memberId;
         const base = roster.length > 20 ? .77 : roster.length > 14 ? .86 : .94;
         person.scale.setScalar(selected ? base * 1.12 : base);
-        // Keep the saved face readable as the viewer looks around the clearing.
-        person.rotation.y = Math.atan2(camera.position.x - person.position.x, camera.position.z - person.position.z);
       }
+      ring.visible = !!selectedPerson;
+      if (selectedPerson) ring.position.set(selectedPerson.position.x, .025, selectedPerson.position.z);
       projectLabels();
       render();
       animationFrame = requestAnimationFrame(animate);
@@ -386,8 +427,16 @@ export function ImmersiveHomeScene({
     const start = (event: PointerEvent) => {
       if (!event.isPrimary || event.button !== 0) return;
       setPointer(event);
-      const memberId = memberAtPointer();
-      if (memberId !== null) {
+      const selectedId = selectedRef.current;
+      // The turntable ring only wins when it is the nearest hit, so rotation never fights repositioning (#101).
+      const ringFirst = selectedId !== null && ring.visible
+        && raycaster.intersectObjects([ring, ...Array.from(personGroups.values())], true)[0]?.object === ring;
+      const memberId = ringFirst ? null : memberAtPointer();
+      if (ringFirst && selectedId !== null) {
+        const person = personGroups.get(selectedId);
+        drag = { kind: "rotate", pointerId: event.pointerId, memberId: selectedId, startX: event.clientX, startYaw: person?.rotation.y ?? 0 };
+        root.dataset.dragging = "rotate";
+      } else if (memberId !== null) {
         const offset = new THREE.Vector3();
         const person = personGroups.get(memberId);
         if (person && raycaster.ray.intersectPlane(dragPlane, planeHit)) offset.copy(person.position).sub(planeHit);
@@ -406,6 +455,9 @@ export function ImmersiveHomeScene({
       if (drag.kind === "camera") {
         yaw = clamp(drag.startYaw - (event.clientX - drag.startX) * .0048, minYaw, maxYaw);
         updateCamera();
+      } else if (drag.kind === "rotate") {
+        const person = personGroups.get(drag.memberId);
+        if (person) person.rotation.y = normalizeAngle(drag.startYaw + (event.clientX - drag.startX) * .012);
       } else {
         drag.moved ||= Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 4;
         if (!drag.moved) return;
@@ -414,7 +466,7 @@ export function ImmersiveHomeScene({
         if (person && raycaster.ray.intersectPlane(dragPlane, planeHit)) {
           const position = validGroundPosition(planeHit.clone().add(drag.offset), mode, stage);
           person.position.copy(position);
-          person.rotation.y = Math.atan2((isCampfire ? 0 : 1.25) - position.x, (isCampfire ? .5 : 1.15) - position.z);
+          // Repositioning preserves the current heading; only placement sets the default.
           positions?.set(drag.memberId, position.clone());
           drag.moved ||= Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 4;
         }
@@ -424,6 +476,14 @@ export function ImmersiveHomeScene({
     };
     const end = (event: PointerEvent) => {
       if (!drag || drag.pointerId !== event.pointerId) return;
+      if (drag.kind === "rotate") {
+        const person = personGroups.get(drag.memberId);
+        if (person) {
+          const yawValue = normalizeAngle(person.rotation.y);
+          yaws?.set(drag.memberId, yawValue);
+          saveSceneOrientation(scope, drag.memberId, yawValue);
+        }
+      }
       if (event.type === 'pointerup' && drag.kind === "person" && !drag.moved) {
         const memberId = drag.memberId;
         const member = rosterRef.current.find(candidate => candidate.personId === memberId);
@@ -499,6 +559,32 @@ export function ImmersiveHomeScene({
     runtimeRef.current?.render();
   }
 
+  /** Yaw-only rotation, reachable without dragging (#174). Everyone interactive is rotatable. */
+  function rotateMember(memberId: number, delta: number) {
+    const person = runtimeRef.current?.people.get(memberId);
+    if (!person) return;
+    const yaw = normalizeAngle(person.rotation.y + delta);
+    person.rotation.y = yaw;
+    let yaws = yawsRef.current.get(mode);
+    if (!yaws) {
+      yaws = new Map();
+      yawsRef.current.set(mode, yaws);
+    }
+    yaws.set(memberId, yaw);
+    saveSceneOrientation(orientationScope(mode, rosterRef.current), memberId, yaw);
+    runtimeRef.current?.render();
+  }
+
+  /** Restore the exact bonfire heading and make it the locally restored state. */
+  function faceMemberToFire(memberId: number) {
+    const person = runtimeRef.current?.people.get(memberId);
+    if (!person) return;
+    person.rotation.y = headingToward(person.position, fireFocus(mode));
+    yawsRef.current.get(mode)?.delete(memberId);
+    clearSceneOrientation(orientationScope(mode, rosterRef.current), memberId);
+    runtimeRef.current?.render();
+  }
+
   return (
     <div
       ref={rootRef}
@@ -513,10 +599,17 @@ export function ImmersiveHomeScene({
         ref={canvasRef}
         className={styles.canvas}
         tabIndex={0}
-        aria-label={`Interactive 3D ${model?.name}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering.`}
+        aria-label={`Interactive 3D ${model?.name}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering, or drag the ring under a selected person to rotate them toward the fire.`}
       />
       {webGlFailed && <div className={styles.fallback} role="status">3D is unavailable on this device. Choose Classic to explore your home, or People to view your group.</div>}
-      {showHint && !webGlFailed && <p className={styles.hint}>Drag to look around · drag a person to move them</p>}
+      {showHint && !webGlFailed && !selectedMember && <p className={styles.hint}>Drag to look around · drag a person to move them · drag their ring to rotate</p>}
+      {people && !webGlFailed && selectedMember && (
+        <div className={styles.rotateControls} role="group" aria-label={`Rotate ${selectedMember.name}`}>
+          <button type="button" onClick={() => rotateMember(selectedMember.personId, -ROTATE_STEP)} aria-label={`Rotate ${selectedMember.name} 15 degrees counter-clockwise`}>↺ 15°</button>
+          <button type="button" onClick={() => rotateMember(selectedMember.personId, ROTATE_STEP)} aria-label={`Rotate ${selectedMember.name} 15 degrees clockwise`}>↻ 15°</button>
+          <button type="button" className={styles.faceFire} onClick={() => faceMemberToFire(selectedMember.personId)} aria-label={`Face ${selectedMember.name} toward the bonfire`}>Face fire</button>
+        </div>
+      )}
       {people && !webGlFailed && (
         <div className={styles.labels} aria-label="Group members">
           {roster.map(member => (
@@ -529,7 +622,7 @@ export function ImmersiveHomeScene({
               type="button"
               title={member.name}
               className={`${styles.memberLabel} ${selectedMemberId === member.personId ? styles.selected : ""}`}
-              aria-label={`${member.name}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person.`}
+              aria-label={`${member.name}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person; Q and E rotate them; F faces them toward the fire.`}
               onClick={() => onSelectMember(member)}
               onKeyDown={event => {
                 const amount = event.shiftKey ? .8 : .35;
@@ -537,6 +630,9 @@ export function ImmersiveHomeScene({
                 else if (event.key === "ArrowRight") moveMemberWithKeyboard(member.personId, amount, 0);
                 else if (event.key === "ArrowUp") moveMemberWithKeyboard(member.personId, 0, -amount);
                 else if (event.key === "ArrowDown") moveMemberWithKeyboard(member.personId, 0, amount);
+                else if (event.key === "q" || event.key === "Q") rotateMember(member.personId, -ROTATE_STEP);
+                else if (event.key === "e" || event.key === "E") rotateMember(member.personId, ROTATE_STEP);
+                else if (event.key === "f" || event.key === "F") faceMemberToFire(member.personId);
                 else return;
                 event.preventDefault();
               }}
