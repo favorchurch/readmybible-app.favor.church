@@ -106,36 +106,17 @@ function renderLeader(
 describe("LeaderScreen", () => {
   afterEach(() => cleanup());
 
-  it("shows stage icons by default, grouped by locality, without group names", () => {
+  it("no longer renders the retired Other Connects card list -- the town view supersedes it (issue #171)", () => {
     const { container } = renderLeader();
 
     expect(container.querySelector(".leader-screen")).not.toBeNull();
-    expect(container.querySelector('[data-section="other-connects"]')).not.toBeNull();
-    expect(screen.getByRole("heading", { name: /Ortigas Center/i }).textContent).toContain("2 groups");
-    expect(screen.getByRole("heading", { name: /Pasig/i }).textContent).toContain("1 group");
-    expect(screen.getByRole("heading", { name: /Unknown/i }).textContent).toContain("1 group");
-    expect(container.querySelectorAll(".locality-stage-mini")).toHaveLength(4);
-    expect(container.querySelector(".locality-icon-own")).not.toBeNull();
-    expect(container.textContent).not.toContain("Ortigas Alpha");
-    expect(container.textContent).not.toContain("Pasig One");
-    expect(screen.getByLabelText("Ortigas Alpha — Mansion (your group)")).toBeTruthy();
+    expect(container.querySelector('[data-section="other-connects"]')).toBeNull();
   });
 
   it("uses the paper token for the leader surface light mode", () => {
     const css = readFileSync("app/styles/leader.css", "utf8");
     const leaderBlock = css.slice(css.indexOf(".leader-screen {"), css.indexOf("}", css.indexOf(".leader-screen {")));
     expect(leaderBlock).toContain("background: var(--paper)");
-  });
-
-  it("reveals names, stage, and percent after the toggle", () => {
-    const { container } = renderLeader();
-    fireEvent.click(screen.getByRole("button", { name: "Show names" }));
-
-    expect(screen.getByRole("button", { name: "Show icons" }).getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelectorAll(".campus-group-card")).toHaveLength(4);
-    expect(container.textContent).toContain("Ortigas Alpha");
-    expect(container.textContent).toContain("85% complete · Mansion");
-    expect(container.textContent).toContain("Unknown One");
   });
 
   it("only shows the still-reading nudge during the active phase", () => {
@@ -288,5 +269,81 @@ describe("AppShell leader role guard and paper noise", () => {
     await waitFor(() => expect(container.querySelector('.bottom-nav [data-tab="today"]')?.classList.contains("active")).toBe(true));
     expect(container.querySelector(".leader-screen")).toBeNull();
     expect(container.querySelector(".paper-noise")).not.toBeNull();
+  });
+});
+
+describe("AppShell -- upstream/Connect scenario composition", () => {
+  beforeEach(() => {
+    navigation.refresh.mockClear();
+    vi.stubGlobal("scrollTo", vi.fn());
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  function renderShellForScenario() {
+    const { container } = render(
+      React.createElement(AppShell, {
+        displayName: "Alex",
+        avatar: { ...defaultAvatarConfig },
+        avatarCustomized: true,
+        translation: "NIV",
+        memberships: [],
+        activeGroup: null,
+        needsGroupChoice: false,
+        campusGroups: [],
+        testModeAuthorized: true,
+        testWritableGroupId: null,
+        isLeader: false,
+        isAdminScope: false,
+        campusName: "Manila",
+        roster: [],
+        chapters: [],
+        readingDates: [],
+        groupStats: null,
+        campusBoard,
+        appBaseUrl: "http://localhost:3000",
+        devMockToday: "2026-10-05",
+        sectionSlot: React.createElement("div", { "data-testid": "section-dashboard-stub" }, "Section Dashboard"),
+      }),
+    );
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
+    return container;
+  }
+
+  function selectScenario(value: string) {
+    fireEvent.change(screen.getByRole("combobox", { name: "Scenario" }), { target: { value } });
+  }
+
+  // Known-bad behavior 2: a Regional Leader who is also a genuine Connect
+  // member keeps their Connect experience -- the own-Connect surface and the
+  // upstream jurisdiction surface (sectionSlot) render together, not one in
+  // place of the other.
+  it("keeps the Connect experience AND the upstream surface for a leader who is both (#2)", async () => {
+    const container = renderShellForScenario();
+    selectScenario("connect-and-upstream-leader");
+    fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
+
+    await waitFor(() => expect(container.querySelector(".leader-screen")).not.toBeNull());
+    expect(container.querySelector('[data-section="group-pulse"]')).not.toBeNull();
+    expect(container.querySelector('[data-section="bring-someone-in"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull();
+  });
+
+  // Known-bad behaviors 1 and 4: an upstream leader with no genuine Connect
+  // membership is never given a fabricated Home, and a section-only user
+  // sees Leader (here, the section slot) with no member-style scaffolding.
+  it("shows no fabricated Home for an upstream leader with no Connect membership (#1, #4)", async () => {
+    const container = renderShellForScenario();
+    selectScenario("upstream-leader-no-connect");
+    fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
+
+    await waitFor(() => expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull());
+    expect(container.querySelector('[data-section="group-pulse"]')).toBeNull();
+    expect(container.querySelector('[data-section="bring-someone-in"]')).toBeNull();
+    expect(container.querySelector('[data-section="other-connects"]')).toBeNull();
   });
 });

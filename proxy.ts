@@ -14,7 +14,13 @@ import { isLadderPrototypeEnabled } from "@/lib/ladder/dev-gate";
  * unreachable. The page keeps its own `notFound()` as a second layer.
  */
 function ladderBlocked(request: NextRequest): boolean {
-  return !isLadderPrototypeEnabled() && request.nextUrl.pathname.startsWith("/ladder");
+  if (isLadderPrototypeEnabled()) return false;
+  // The town view is promoted to production for authorized leaders.
+  // /ladder/legend is ungated so authorized viewers can fetch member streak legends.
+  if (request.nextUrl.pathname === "/ladder/legend" || request.nextUrl.pathname.startsWith("/ladder/legend/")) {
+    return false;
+  }
+  return request.nextUrl.pathname.startsWith("/ladder");
 }
 
 export async function proxy(request: NextRequest) {

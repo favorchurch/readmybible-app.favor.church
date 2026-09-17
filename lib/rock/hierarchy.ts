@@ -68,6 +68,7 @@ type RawGroup = {
   ParentGroupId: number | null;
   IsActive: boolean;
   IsArchived: boolean;
+  locality?: string | null;
 };
 
 type RawGroupMember = {
@@ -84,6 +85,7 @@ export type HierarchyGroupNode = {
   campusId: number | null;
   memberCount: number;
   leaders: string[];
+  locality?: string | null;
 };
 
 /** A GT24 section, with its GT25 groups and any child sections. */
@@ -209,6 +211,7 @@ async function buildSubtreeForRoot(rootId: number): Promise<HierarchySectionNode
           campusId: child.CampusId,
           memberCount: 0,
           leaders: [],
+          locality: child.locality ?? null,
         });
         allLeafGroupIds.push(child.Id);
       }
