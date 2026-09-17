@@ -99,7 +99,7 @@ function renderPortalMarkup(element: React.ReactElement): string {
 }
 
 describe("MemberProfileSheet", () => {
-  it("renders an accessible modal dialog with first name, avatar, 5-day streak, and 28-day calendar", () => {
+  it("renders an accessible modal dialog with first name, avatar, 5-day streak, and 20-assignment calendar", () => {
     const html = renderPortalMarkup(
       React.createElement(MemberProfileSheet, {
         open: true,
@@ -121,12 +121,14 @@ describe("MemberProfileSheet", () => {
     expect(html).toContain('aria-label="Recent 5-day streak status"');
     expect(html).toContain("Oct 1");
     expect(html).toContain("Oct 5");
-    expect(html).toContain("5 of 28 chapters read");
+    // R5: chapters [1,2,3,4,5] complete 3 assignments (Day 1: 1-2, Day 2:
+    // 3-4, Day 3: 5), not 5 distinct chapters read.
+    expect(html).toContain("3 of 20 assignments read");
 
-    // 28-day October progress calendar
+    // 20-assignment October progress calendar
     expect(html).toContain('aria-label="Jordan\'s October reading calendar"');
     expect(html).toContain("Matthew · October 2026");
-    expect(html).toContain("5/28 complete");
+    expect(html).toContain("3/20 complete");
 
     // Privacy note
     expect(html).toContain("Reading check-ins only. Private notes, verse bookmarks, and personal metadata are never shared.");
@@ -143,8 +145,8 @@ describe("MemberProfileSheet", () => {
     );
 
     expect(html).toContain("Sam</h2>");
-    expect(html).toContain("0 of 28 chapters read");
-    expect(html).toContain("0/28 complete");
+    expect(html).toContain("0 of 20 assignments read");
+    expect(html).toContain("0/20 complete");
     expect(html).not.toContain("mini-grid-cell read");
   });
 
@@ -175,8 +177,12 @@ describe("MemberProfileSheet", () => {
     );
 
     expect(html).toContain("Taylor</h2>");
-    expect(html).toContain("8 of 28 chapters read");
-    expect(html).toContain("8/28 complete");
+    // R5: chapters 1-8 complete only 5 assignments (Days 1-5); Day 6 needs
+    // both chapters 8 and 9, and only 8 has landed, so it does not count as
+    // complete -- a partial row on a two-chapter assignment must not paint
+    // it done.
+    expect(html).toContain("5 of 20 assignments read");
+    expect(html).toContain("5/20 complete");
   });
 
   it("labels launch-week dates that have not happened yet as upcoming", () => {
