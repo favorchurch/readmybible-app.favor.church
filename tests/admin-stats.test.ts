@@ -16,9 +16,9 @@ function group(overrides: Partial<HierarchyGroupNode>): HierarchyGroupNode {
 describe("statForGroup", () => {
   it("matches lib/game.ts groupRatio/stageFor", () => {
     const g = group({ id: 1, memberCount: 10 });
-    // 28 checkins / (10 members * 28 chapters) = 0.1 -> Trailer
+    // 28 assignments / (10 members * 20 assignments) = 0.14 -> Trailer
     const stat = statForGroup(g, 28, 3);
-    expect(stat.ratio).toBeCloseTo(0.1);
+    expect(stat.ratio).toBeCloseTo(0.14);
     expect(stat.stage).toBe("Trailer");
     expect(stat.checkins).toBe(28);
     expect(stat.readersToday).toBe(3);
@@ -38,15 +38,15 @@ describe("buildDailyCumulativeSeries", () => {
         { date: "2026-10-01", count: 5 },
         { date: "2026-10-03", count: 3 },
       ],
-      1, // memberCount 1 => denominator 28
+      1, // memberCount 1 => denominator 20
       "2026-10-01",
       "2026-10-04",
     );
     expect(points.map((p) => p.date)).toEqual(["2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"]);
-    expect(points[0].ratio).toBeCloseTo(5 / 28);
-    expect(points[1].ratio).toBeCloseTo(5 / 28); // no new checkins on the 2nd
-    expect(points[2].ratio).toBeCloseTo(8 / 28); // cumulative 5 + 3
-    expect(points[3].ratio).toBeCloseTo(8 / 28);
+    expect(points[0].ratio).toBeCloseTo(5 / 20);
+    expect(points[1].ratio).toBeCloseTo(5 / 20); // no new assignments on the 2nd
+    expect(points[2].ratio).toBeCloseTo(8 / 20); // cumulative 5 + 3
+    expect(points[3].ratio).toBeCloseTo(8 / 20);
   });
 
   it("clamps the ratio at 1 even if cumulative checkins exceed the denominator", () => {

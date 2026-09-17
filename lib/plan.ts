@@ -193,6 +193,12 @@ export function dayOfOctober(todayLocal: string): number {
   return Number(todayLocal.slice(8, 10));
 }
 
+/** Number of leading Sunday-first calendar cells before the plan month starts. */
+export function calendarLeadingBlankCount(): number {
+  const [year, month] = PLAN_START.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+}
+
 /**
  * Today's plan entry, if any -- null before Oct 5, on weekend review days,
  * and after Oct 30 (which surfaces through Review & Catch Up forever).

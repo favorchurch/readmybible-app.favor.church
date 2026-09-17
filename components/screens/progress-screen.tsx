@@ -14,18 +14,17 @@ import { nextMedal } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
 import {
   assignmentReference,
+  calendarLeadingBlankCount,
   dayState,
   isAssignmentCompleted,
   PLAN,
-  PLAN_START,
   REVIEW_DATES,
   TOTAL_ASSIGNMENTS,
   type DayState,
   type PlanEntry,
 } from "@/lib/plan";
 
-const CALENDAR_START = `${PLAN_START.slice(0, 7)}-01`;
-const CALENDAR_LEADING_BLANKS = new Date(`${CALENDAR_START}T00:00:00Z`).getUTCDay();
+const CALENDAR_LEADING_BLANKS = calendarLeadingBlankCount();
 const CALENDAR_DAYS = [
   ...PLAN.map((entry) => ({ kind: "assignment" as const, date: entry.date, entry })),
   ...REVIEW_DATES.map((date) => ({ kind: "review" as const, date })),
