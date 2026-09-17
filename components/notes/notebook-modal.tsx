@@ -33,7 +33,7 @@ export function NotebookModal({
   const [isShared, setIsShared] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  const [loadedForPage, setLoadedForPage] = useState<string | null>(null);
   const [noteView, setNoteView] = useState<NoteView | null>(null);
 
   const testMode = useTestMode(true);
@@ -45,28 +45,33 @@ export function NotebookModal({
   );
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const latestDraftRef = useRef({ content, isShared, page: currentPageId });
-  latestDraftRef.current = { content, isShared, page: currentPageId };
 
   const isOwner = !authorPersonId || noteView?.isOwner !== false;
+  const loading = loadedForPage !== currentPageId;
 
   useEscapeToClose(onClose, open);
 
-  // Sync initial page when modal opens
-  useEffect(() => {
-    if (open && initialPage) {
+  // Reset to the initial page and status each time the modal opens. Adjusted
+  // during render (not an effect) per https://react.dev/learn/you-might-not-need-an-effect.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
       setCurrentPageId(initialPage);
-    }
-  }, [open, initialPage]);
-
-  // Load note for current page
-  const loadPageNote = useCallback(
-    async (pageId: string) => {
-      setLoading(true);
       setSaveStatus("idle");
       setStatusMessage("");
-      try {
-        const res = await getNote({ page: pageId, authorPersonId });
+    }
+  }
+
+  // Load note for current page. setState calls live inside the `.then`, never
+  // synchronously in the effect body, matching the pattern in
+  // components/reading-dialog.tsx's passage-fetch effect.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void getNote({ page: currentPageId, authorPersonId })
+      .then((res) => {
+        if (cancelled) return;
         if (res.ok) {
           setNoteView(res.note);
           setContent(res.note.content ?? "");
@@ -77,20 +82,17 @@ export function NotebookModal({
           setIsShared(false);
           setStatusMessage(res.error);
         }
-      } catch {
+        setLoadedForPage(currentPageId);
+      })
+      .catch(() => {
+        if (cancelled) return;
         setStatusMessage("Failed to load note.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [authorPersonId],
-  );
-
-  useEffect(() => {
-    if (open) {
-      void loadPageNote(currentPageId);
-    }
-  }, [open, currentPageId, loadPageNote]);
+        setLoadedForPage(currentPageId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currentPageId, authorPersonId]);
 
   // Debounced autosave
   const triggerAutosave = useCallback(
@@ -160,6 +162,8 @@ export function NotebookModal({
       clearTimeout(debounceTimerRef.current);
     }
     setCurrentPageId(targetId);
+    setSaveStatus("idle");
+    setStatusMessage("");
   }
 
   if (!open) return null;
@@ -168,14 +172,9 @@ export function NotebookModal({
   const isSomeoneElsesPrivateNote = !isOwner && noteView && !noteView.isShared;
 
   return (
-    <div className="notebook-overlay" role="presentation" onClick={onClose}>
-      <div
-        className="notebook-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="notebook-dialog-title"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="notebook-overlay" role="dialog" aria-modal="true" aria-labelledby="notebook-dialog-title">
+      <button type="button" className="notebook-backdrop" onClick={onClose} aria-label="Close notes" tabIndex={-1} />
+      <div className="notebook-dialog">
         {/* Header */}
         <div className="notebook-header">
           <div className="notebook-header-title">

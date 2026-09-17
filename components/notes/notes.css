@@ -7,13 +7,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-4);
+}
+
+.notebook-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  margin: 0;
+  padding: 0;
   background: rgba(23, 41, 67, 0.6);
   backdrop-filter: blur(4px);
-  padding: var(--space-4);
+  cursor: pointer;
 }
 
 .notebook-dialog {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 580px;
   max-height: 90vh;
@@ -359,6 +371,16 @@
 
 .note-indicator-btn:hover {
   background: rgba(23, 41, 67, 0.08);
+}
+
+/* Calendar cell indicator: anchored to the already-positioned .calendar-cell
+   from app/styles/progress.css, kept scoped here since components/notes owns
+   this badge's presentation. */
+.calendar-note-indicator {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 1px;
 }
 
 /* Read-only Shared Note Viewer */

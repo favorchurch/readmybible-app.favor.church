@@ -5,21 +5,11 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import { notes, profiles } from "@/db/schema";
+import { isValidNotebookPage } from "@/components/notes/pages";
 import { flattenGroupNodes } from "@/lib/admin/stats";
-import { PLAN_END, PLAN_START } from "@/lib/plan";
 import { getMemberships } from "@/lib/rock/client";
 import { loadSectionSubtree } from "@/lib/rock/hierarchy";
 import { getSessionContext, type SessionContext } from "@/lib/session";
-
-/**
- * Valid notebook pages: "general" plus campaign calendar dates (Oct 5–30, 2026).
- * No endless dated pages after Oct 30.
- */
-export function isValidNotebookPage(page: string): boolean {
-  if (page === "general") return true;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(page)) return false;
-  return page >= PLAN_START && page <= PLAN_END;
-}
 
 const saveNoteSchema = z
   .object({

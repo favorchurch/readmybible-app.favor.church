@@ -61,3 +61,12 @@ export function getPageMeta(pageId: string): NotebookPageMeta {
   }
   return { id: pageId, title: pageId, isGeneral: false };
 }
+
+/**
+ * Valid notebook pages: "general" plus the defined campaign-calendar dates.
+ * No endless dated pages after the campaign ends -- driven off the same
+ * `NOTEBOOK_PAGES` list the modal navigates, so the two can never drift.
+ */
+export function isValidNotebookPage(page: string): boolean {
+  return page === "general" || NOTEBOOK_PAGES.some((p) => p.id === page);
+}
