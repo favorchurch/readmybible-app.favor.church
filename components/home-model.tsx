@@ -66,7 +66,7 @@ export function HomeModel({ stageClassName }: { stageClassName: string }) {
         <span className="cabin-roof-plane cabin-roof-left" />
         <span className="cabin-roof-plane cabin-roof-right" />
       </div>
-      <div className="apartment-detail">
+      <div className="condo-detail">
         <span />
         <span />
         <span />

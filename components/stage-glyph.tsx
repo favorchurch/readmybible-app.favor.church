@@ -24,7 +24,7 @@ export const STAGE_ORDER: readonly Stage[] = [
   "Tent",
   "Trailer",
   "Cabin",
-  "Apartment",
+  "Condo",
   "House",
   "Mansion",
 ];
@@ -73,7 +73,7 @@ const SHAPES: Record<Stage, React.ReactNode> = {
       <polygon points="-42.2,5.8 -12.2,8.3 -12.2,62.6 -42.2,60.1" fill="#e4a94e" stroke="#26364a" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
     </>
   ),
-  Apartment: (
+  Condo: (
     <>
       <polygon points="-37.3,-99.6 88,-89.2 37.3,-74.2 -88,-84.7" fill="#776d84" stroke="#172943" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
       <polygon points="37.3,-74.2 88,-89.2 88,84.7 37.3,99.6" fill="#b4a2bd" stroke="#172943" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />

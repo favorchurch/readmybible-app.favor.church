@@ -22,7 +22,7 @@
 .home3d-sky i + i { width: 53px; left: auto; right: 26%; top: 92px; opacity: .7; }
 .home3d-sky > span { position: absolute; inset: auto -10% 0; height: 31%; border-radius: 50% 50% 0 0; background: #789471; }
 .home3d-viewport { position: absolute; inset: 0; perspective: 850px; cursor: grab; touch-action: pan-y; user-select: none; outline: none; }
-.home3d-wrap.stage-apartment,
+.home3d-wrap.stage-condo,
 .home3d-wrap.stage-mansion { --model-scale: .9; }
 .home3d-viewport:active { cursor: grabbing; }
 .home3d-viewport:focus-visible { box-shadow: inset 0 0 0 3px var(--gold); }
@@ -85,7 +85,7 @@
 .balcony3d { display: none; position: absolute; width: 110px; height: 35px; left: 50%; top: 47%; transform: translateX(-50%) translateZ(calc(var(--d) / 2 + 9px)); border: 3px solid #26364a; border-top: 0; }.balcony3d span { position: absolute; left: -7px; right: -7px; bottom: -8px; height: 9px; background: #d29b57; border: 2px solid #26364a; }
 .home3d-model.tent { --w: 132px; --h: 64px; --d: 108px; }.tent .building-face { opacity: 0; }.tent .roof3d > span { display: block; height: 112px; top: -53px; background: #d28d55; }.tent .roof-front { transform: translateX(-50%) rotateX(57deg) translateZ(19px); }.tent .roof-back { transform: translateX(-50%) rotateX(-57deg) translateZ(-19px); background: #b86c50 !important; }.tent .chimney3d { display: none; }
 .home3d-model.trailer { --w: 174px; --h: 76px; --d: 82px; --wall-front: #d7c395; --wall-side: #aaae99; --wall-light: #e7d4a9; }.trailer .roof3d, .trailer .chimney3d { display: none; }.trailer .face-top { background: #b8b59e; }.trailer:after, .trailer:before { content: ""; position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #26364a; border: 6px solid #d9d1bf; bottom: -20px; transform: translateZ(22px); }.trailer:before { left: 16px; }.trailer:after { right: 16px; }
-.home3d-model.apartment { --w: 136px; --h: 170px; --d: 105px; --wall-front: #a28eaf; --wall-side: #796e89; --wall-light: #b4a2bd; }.apartment .roof3d, .apartment .chimney3d { display: none; }.apartment .upper-windows { display: block; }.apartment .window3d { top: 112px; }.apartment .side-window { top: 95px; }.apartment .face-top { background: #776d84; }
+.home3d-model.condo { --w: 136px; --h: 170px; --d: 105px; --wall-front: #a28eaf; --wall-side: #796e89; --wall-light: #b4a2bd; }.condo .roof3d, .condo .chimney3d { display: none; }.condo .upper-windows { display: block; }.condo .window3d { top: 112px; }.condo .side-window { top: 95px; }.condo .face-top { background: #776d84; }
 .home3d-model.house3d { --w: 170px; --h: 115px; --d: 118px; --wall-front: #d2ad70; --wall-side: #a57e55; --wall-light: #e1bd80; }.house3d .roof3d > span { width: calc(var(--w) + 30px); }
 .home3d-model.mansion { --w: 212px; --h: 140px; --d: 126px; --wall-front: #d8c89d; --wall-side: #a99b7d; --wall-light: #eadcaf; }.mansion .roof3d > span { width: calc(var(--w) + 34px); background: #7f718c; }.mansion .roof-back { background: #675e73 !important; }.mansion .upper-windows, .mansion .balcony3d { display: block; }.mansion .window3d { top: 88px; }.mansion .side-window { top: 64px; }.mansion .chimney3d { right: 28px; }
 .rotate-hint { position: absolute; z-index: 5; left: 14px; right: 14px; bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--navy); font-size: 12px; background: rgba(255,250,240,.85); border-radius: var(--radius-sm); padding: 6px 8px; }
@@ -199,7 +199,7 @@
 .tent-detail,
 .trailer-detail,
 .cabin-detail,
-.apartment-detail,
+.condo-detail,
 .house-detail,
 .mansion-detail { display: none; }
 
@@ -259,13 +259,13 @@
 .cabin3d .face-back:after { content: ""; position: absolute; width: 25px; height: 29px; top: 31px; background: #f6dda0; border: 3px solid #26364a; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
 .cabin3d .face-back:before { left: 22px; }.cabin3d .face-back:after { right: 22px; }
 
-/* Apartment: tall urban block with stacked projecting balconies. */
-.home3d-model.apartment { --w: 142px; --h: 176px; --d: 108px; }
-.apartment .apartment-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
-.apartment .apartment-detail span { position: absolute; display: block; width: 118px; height: 9px; left: 50%; transform: translateX(-50%) translateZ(63px); background: #e4d7b9; border: 2px solid #26364a; }
-.apartment .apartment-detail span:nth-child(1) { top: 39px; }.apartment .apartment-detail span:nth-child(2) { top: 78px; }.apartment .apartment-detail span:nth-child(3) { top: 117px; }
-.apartment .face-front { background: linear-gradient(90deg,#9485a3 0 12%,#aa98b5 12% 88%,#887a97 88%); }
-.apartment .face-back:before { content: ""; position: absolute; width: 22px; height: 24px; left: 25px; top: 24px; background: #f6dda0; border: 3px solid #26364a; box-shadow: 64px 0 0 -3px #f6dda0,64px 0 0 0 #26364a,0 48px 0 -3px #f6dda0,0 48px 0 0 #26364a,64px 48px 0 -3px #f6dda0,64px 48px 0 0 #26364a,0 96px 0 -3px #f6dda0,0 96px 0 0 #26364a,64px 96px 0 -3px #f6dda0,64px 96px 0 0 #26364a; }
+/* Condo: tall urban block with stacked projecting balconies. */
+.home3d-model.condo { --w: 142px; --h: 176px; --d: 108px; }
+.condo .condo-detail { display: block; position: absolute; inset: 0; transform-style: preserve-3d; }
+.condo .condo-detail span { position: absolute; display: block; width: 118px; height: 9px; left: 50%; transform: translateX(-50%) translateZ(63px); background: #e4d7b9; border: 2px solid #26364a; }
+.condo .condo-detail span:nth-child(1) { top: 39px; }.condo .condo-detail span:nth-child(2) { top: 78px; }.condo .condo-detail span:nth-child(3) { top: 117px; }
+.condo .face-front { background: linear-gradient(90deg,#9485a3 0 12%,#aa98b5 12% 88%,#887a97 88%); }
+.condo .face-back:before { content: ""; position: absolute; width: 22px; height: 24px; left: 25px; top: 24px; background: #f6dda0; border: 3px solid #26364a; box-shadow: 64px 0 0 -3px #f6dda0,64px 0 0 0 #26364a,0 48px 0 -3px #f6dda0,0 48px 0 0 #26364a,64px 48px 0 -3px #f6dda0,64px 48px 0 0 #26364a,0 96px 0 -3px #f6dda0,0 96px 0 0 #26364a,64px 96px 0 -3px #f6dda0,64px 96px 0 0 #26364a; }
 
 /* House: broad suburban frontage with garage and porch. */
 .home3d-model.house3d { --w: 188px; --h: 116px; --d: 120px; }
@@ -466,7 +466,7 @@
 .stage-mini .home3d-model.tent,
 .stage-mini .home3d-model.trailer,
 .stage-mini .home3d-model.cabin3d,
-.stage-mini .home3d-model.apartment,
+.stage-mini .home3d-model.condo,
 .stage-mini .home3d-model.house3d,
 .stage-mini .home3d-model.mansion {
   top: 50%;

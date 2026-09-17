@@ -12,7 +12,7 @@
 .full-home .home3d-immersive.stage-tent { --model-scale: 1.85; }
 .full-home .home3d-immersive.stage-trailer { --model-scale: 1.6; }
 .full-home .home3d-immersive.stage-cabin3d { --model-scale: 1.55; }
-.full-home .home3d-immersive.stage-apartment { --model-scale: 1.25; }
+.full-home .home3d-immersive.stage-condo { --model-scale: 1.25; }
 .full-home .home3d-immersive.stage-house3d { --model-scale: 1.45; }
 .full-home .home3d-immersive.stage-mansion { --model-scale: 1.18; }
 .full-home .home3d-sky:before { top: 20%; right: 14%; }
@@ -117,7 +117,7 @@
   .full-home .home3d-immersive.stage-tent { --model-scale: 1.7; }
   .full-home .home3d-immersive.stage-trailer { --model-scale: 1.55; }
   .full-home .home3d-immersive.stage-cabin3d { --model-scale: 1.5; }
-  .full-home .home3d-immersive.stage-apartment { --model-scale: 1.05; }
+  .full-home .home3d-immersive.stage-condo { --model-scale: 1.05; }
   .full-home .home3d-immersive.stage-house3d { --model-scale: 1.3; }
   .full-home .home3d-immersive.stage-mansion { --model-scale: .95; }
 }
@@ -129,7 +129,7 @@
   .full-home .home3d-immersive.stage-tent { --model-scale: 2.5; }
   .full-home .home3d-immersive.stage-trailer { --model-scale: 2.2; }
   .full-home .home3d-immersive.stage-cabin3d { --model-scale: 2.15; }
-  .full-home .home3d-immersive.stage-apartment { --model-scale: 1.7; }
+  .full-home .home3d-immersive.stage-condo { --model-scale: 1.7; }
   .full-home .home3d-immersive.stage-house3d { --model-scale: 1.95; }
   .full-home .home3d-immersive.stage-mansion { --model-scale: 1.55; }
 }

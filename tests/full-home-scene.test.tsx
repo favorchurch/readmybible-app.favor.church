@@ -50,8 +50,8 @@ function renderHome(overrides: Partial<React.ComponentProps<typeof FullHome>> = 
       coins={30}
       groupCheckinCount={3}
       stage={0}
-      progress={{ pct: 40, stage: "Apartment" }}
-      milestone={{ pct: 45, stage: "Apartment" }}
+      progress={{ pct: 40, stage: "Condo" }}
+      milestone={{ pct: 45, stage: "Condo" }}
       overallPct={40}
       today={today}
       roster={roster}
@@ -137,9 +137,9 @@ describe("FullHome scene integration", () => {
   it("exposes progress details and the active reading action", () => {
     const onViewReading = vi.fn();
     renderHome({ onViewReading });
-    fireEvent.click(screen.getByText("Chapter 2 · 40% to Apartment"));
+    fireEvent.click(screen.getByText("Chapter 2 · 40% to Condo"));
     expect(screen.getByText("40% of Matthew complete")).toBeTruthy();
-    expect(screen.getByText("40% through this stage · Apartment unlocks at 45% overall")).toBeTruthy();
+    expect(screen.getByText("40% through this stage · Condo unlocks at 45% overall")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Read Matthew 2/ }));
     expect(onViewReading).toHaveBeenCalledTimes(1);
   });

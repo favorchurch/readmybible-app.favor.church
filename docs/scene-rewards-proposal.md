@@ -24,7 +24,7 @@ A preserves belonging and avoids daily disappearance. B adds anticipation withou
 
 ## Existing evidence and proposed boundaries
 
-The completion signal is the existing honor-based chapter check-in. It is unique per person and chapter forever. Opening or scrolling the reader is not an independent completion signal for these rules. Coins are derived display values (10 per chapter); medals remain the personal 3/7/14/21/28 chapter ladder. Home stages remain Tent → Trailer → Cabin → Apartment → House → Mansion under the existing overall group ratio.
+The completion signal is the existing honor-based chapter check-in. It is unique per person and chapter forever. Opening or scrolling the reader is not an independent completion signal for these rules. Coins are derived display values (10 per chapter); medals remain the personal 3/7/14/21/28 chapter ladder. Home stages remain Tent → Trailer → Cabin → Condo → House → Mansion under the existing overall group ratio.
 
 For B, use the current group's authoritative chapter total, not local storage. Reload reconstructs the same state. Switching groups evaluates the destination group's total; it does not carry access from another group. Catch-up chapters count. A zero-contribution destination group shows the teaser. No permanently stored unlock is proposed.
 

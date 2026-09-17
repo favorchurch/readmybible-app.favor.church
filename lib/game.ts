@@ -11,12 +11,12 @@ export const COINS_PER_CHAPTER = 10;
 export const TOTAL_CHAPTERS = 28;
 export const MEDAL_THRESHOLDS = [3, 7, 14, 15, 20] as const;
 
-export type Stage = "Tent" | "Trailer" | "Cabin" | "Apartment" | "House" | "Mansion";
+export type Stage = "Tent" | "Trailer" | "Cabin" | "Condo" | "House" | "Mansion";
 
 const STAGE_THRESHOLDS: Array<{ stage: Stage; ratio: number }> = [
   { stage: "Mansion", ratio: 0.85 },
   { stage: "House", ratio: 0.65 },
-  { stage: "Apartment", ratio: 0.45 },
+  { stage: "Condo", ratio: 0.45 },
   { stage: "Cabin", ratio: 0.25 },
   { stage: "Trailer", ratio: 0.1 },
   { stage: "Tent", ratio: 0 },

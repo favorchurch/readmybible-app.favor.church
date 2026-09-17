@@ -44,7 +44,7 @@ describe("ladder ratio tuning", () => {
   });
 
   it("gives a 4-connect region four distinct stages", () => {
-    expect(stagesOf(section(1000, 4))).toEqual(["Tent", "Cabin", "Apartment", "Mansion"]);
+    expect(stagesOf(section(1000, 4))).toEqual(["Tent", "Cabin", "Condo", "Mansion"]);
   });
 
   it("does not put every 1-connect region at the same stage", () => {

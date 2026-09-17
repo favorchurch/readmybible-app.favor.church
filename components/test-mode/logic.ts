@@ -365,7 +365,7 @@ export const STAGE_PRESETS: ReadonlyArray<{ stage: string; pct: number; threshol
   { stage: "Tent", pct: 0, threshold: 0 },
   { stage: "Trailer", pct: 15, threshold: 10 },
   { stage: "Cabin", pct: 35, threshold: 25 },
-  { stage: "Apartment", pct: 55, threshold: 45 },
+  { stage: "Condo", pct: 55, threshold: 45 },
   { stage: "House", pct: 75, threshold: 65 },
   { stage: "Mansion", pct: 95, threshold: 85 },
 ];

@@ -226,12 +226,12 @@ describe("css-rules", () => {
   it("seats every home stage on the shared ground plane instead of a per-stage top", () => {
     const home = loadAll().find(({ path }) => path === "app/styles/home3d.css");
     const full = loadAll().find(({ path }) => path === "app/styles/full-home.css");
-    // A per-stage `top` is what left the tent, house and apartment floating:
+    // A per-stage `top` is what left the tent, house and condo floating:
     // every stage has a different --h, so a centre anchor lands its base
     // somewhere different. The base anchor in .home3d-model replaces them all.
     const perStageTop = [...(home?.rules ?? []), ...(full?.rules ?? [])].filter(
       ({ selector, decls }) =>
-        /\.home3d-model\.(tent|trailer|cabin3d|apartment|house3d|mansion)\b/.test(selector) &&
+        /\.home3d-model\.(tent|trailer|cabin3d|condo|house3d|mansion)\b/.test(selector) &&
         !selector.includes(".stage-mini") &&
         /(^|;)\s*top\s*:/.test(decls),
     );
