@@ -85,7 +85,7 @@ describe("resolveScopeRole", () => {
   it("identifies sections with Cluster in name as Cluster Head even if empty children", () => {
     const role = resolveScopeRole(
       { kind: "sections", rootIds: [23869] },
-      [{ name: "Cluster // Cielo & Peejay", children: [] }],
+      [{ name: "Cluster // Grace & Miguel", children: [] }],
     );
     expect(role).toBe("Cluster Head");
   });
@@ -93,7 +93,7 @@ describe("resolveScopeRole", () => {
   it("identifies leaf sections as Regional Leader", () => {
     const role = resolveScopeRole(
       { kind: "sections", rootIds: [23870] },
-      [{ name: "Region // Arnel & Belle", children: [] }],
+      [{ name: "Region // Carlo & Bianca", children: [] }],
     );
     expect(role).toBe("Regional Leader");
   });

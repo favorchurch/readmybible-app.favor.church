@@ -48,7 +48,7 @@ vi.mock("next/navigation", () => ({
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
 import { defaultAvatarConfig } from "@/components/avatar";
 
-const GROUP = 24077;
+const GROUP = 24099;
 
 /**
  * jsdom has no IntersectionObserver and no layout. This stub reports whatever

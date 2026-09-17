@@ -35,10 +35,10 @@ describe("resolveUpwardScope", () => {
     vi.stubEnv("ROCK_API_KEY", "");
     vi.stubEnv("NODE_ENV", "test");
 
-    // 31192's ParentGroupId (24021) is not itself a known fixture section.
-    const chain = await resolveUpwardScope(31192);
+    // 31292's ParentGroupId (24029) is not itself a known fixture section.
+    const chain = await resolveUpwardScope(31292);
 
-    expect(chain.map((node) => node.Id)).toEqual([31192]);
+    expect(chain.map((node) => node.Id)).toEqual([31292]);
   });
 });
 
