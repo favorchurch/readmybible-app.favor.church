@@ -15,6 +15,13 @@
       "when": 1789550687368,
       "tag": "0001_add_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789618959165,
+      "tag": "0002_mighty_skullbuster",
+      "breakpoints": true
     }
   ]
 }

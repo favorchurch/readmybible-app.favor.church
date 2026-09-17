@@ -9,6 +9,7 @@ import { StageMini } from "@/components/stage-mini";
 import { ProgressBar } from "@/components/progress-bar";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
+import { MyNotesButton, NotebookModal } from "@/components/notes";
 import { PrototypeSwitcher } from "@/components/prototype-switcher";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
@@ -281,6 +282,7 @@ export function TodayScreen({
   const [selectedMember, setSelectedMember] = useState<RosterMemberView | null>(null);
   const [profileSheetOpen, setProfileSheetOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [syncedChapter, setSyncedChapter] = useState(entry?.chapter ?? 1);
   const [viewed, setViewed] = useState(() => entry?.chapter ?? 1);
 
@@ -507,6 +509,9 @@ export function TodayScreen({
                 ))}
               </ul>
             )}
+            <div style={{ marginTop: "var(--space-3)", marginBottom: "var(--space-2)" }}>
+              <MyNotesButton onClick={() => setNotesOpen(true)} />
+            </div>
           </div>
 
           <div style={{ marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--line)" }}>
@@ -540,6 +545,13 @@ export function TodayScreen({
             </div>
           )}
         </section>
+        {notesOpen && (
+          <NotebookModal
+            open
+            initialPage={today.todayLocal <= PLAN_END && today.todayLocal >= PLAN_START ? today.todayLocal : "general"}
+            onClose={() => setNotesOpen(false)}
+          />
+        )}
       </main>
     );
   }
@@ -785,6 +797,13 @@ export function TodayScreen({
         />
       )}
       {!homeOpen && <PrototypeSwitcher />}
+      {notesOpen && (
+        <NotebookModal
+          open
+          initialPage={viewedEntry?.date ?? (today.todayLocal <= PLAN_END && today.todayLocal >= PLAN_START ? today.todayLocal : "general")}
+          onClose={() => setNotesOpen(false)}
+        />
+      )}
     </main>
   );
 }

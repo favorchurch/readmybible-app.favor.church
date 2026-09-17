@@ -6,10 +6,11 @@ import type { CheckInGroupState } from "@/app/actions/checkIn";
 import { SplashCompanion } from "@/components/app-splash";
 import type { Translation } from "@/components/avatar";
 import { Celebration } from "@/components/celebration";
+import { MyNotesButton, NotebookModal } from "@/components/notes";
 import { ReadingBodySwitch, useReadingBodyStyle } from "@/components/reading-body-switch";
 import { Sheet } from "@/components/sheet";
 import { appsLinkGroup, commentaryLinkGroup, parseReference, bibleComUrl } from "@/lib/scripture/reference";
-import { chapterReference } from "@/lib/plan";
+import { chapterReference, planEntryForChapter } from "@/lib/plan";
 import {
   BOTTOM_ELIGIBLE_DELAY_MS,
   MIN_READING_TIME_MS,
@@ -119,6 +120,15 @@ export function ReadingDialog({
   const [replayKey, setReplayKey] = useState(0);
   // Collapsed under the "You have read" summary by default to minimise reading distraction
   const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const notePage = useMemo(() => {
+    const primaryChapter = resolvedChapters[0];
+    if (primaryChapter) {
+      const entry = planEntryForChapter(primaryChapter);
+      if (entry?.date) return entry.date;
+    }
+    return "general";
+  }, [resolvedChapters]);
 
   // Key passage verse numbers per chapter for tinted highlight
   const keyVerseNumbersMap = useMemo(() => {
@@ -371,6 +381,10 @@ export function ReadingDialog({
 
       {attribution && <p className="passage-attribution">{attribution}</p>}
 
+      <div className="reading-notes-wrap" data-section="reading-notes" style={{ display: "flex", justifyContent: "center", margin: "var(--space-4) 0" }}>
+        <MyNotesButton onClick={() => setNotesOpen(true)} />
+      </div>
+
       {mode === "preview" && (
         <p className="honor-note" data-section="preview-note">
           Reading counts from October 5. Reach the end of a chapter and your day is marked for you.
@@ -437,6 +451,14 @@ export function ReadingDialog({
             replayKey={replayKey}
           />
         </div>
+      )}
+
+      {notesOpen && (
+        <NotebookModal
+          open
+          initialPage={notePage}
+          onClose={() => setNotesOpen(false)}
+        />
       )}
     </Sheet>
   );

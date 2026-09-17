@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Avatar, type FacialHair, type FaceShape, type Gender, type GlassesStyle, type HairStyle, type UserProfile } from "@/components/avatar";
 import { FeedbackSheet } from "@/components/feedback-sheet";
+import { MyNotesButton, NotebookModal } from "@/components/notes";
 import { Sheet } from "@/components/sheet";
 import { TRANSLATIONS } from "@/lib/scripture/types";
 
@@ -78,6 +79,7 @@ export function ProfileEditor({
 }) {
   const [draft, setDraft] = useState(profile);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   function update<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -327,6 +329,7 @@ export function ProfileEditor({
           </p>
         </details>
         <div className="profile-account-actions">
+          <MyNotesButton onClick={() => setNotesOpen(true)} />
           <button type="button" className="profile-feedback-trigger" onClick={() => setFeedbackOpen(true)}>
             <span>Add your Feedback</span>
             <span aria-hidden="true">→</span>
@@ -334,6 +337,7 @@ export function ProfileEditor({
           <a href="/auth/logout">Log out</a>
         </div>
       </Sheet>
+      {notesOpen && <NotebookModal open onClose={() => setNotesOpen(false)} />}
       {feedbackOpen && <FeedbackSheet open onClose={() => setFeedbackOpen(false)} />}
     </>
   );
