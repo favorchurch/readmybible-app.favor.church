@@ -83,3 +83,51 @@ export const feedback = readmybible.table(
     index("feedback_rock_person_id_idx").on(table.rockPersonId),
   ],
 );
+
+// ============================================================================
+// Issue 152: Notifications & Nudges
+// ============================================================================
+
+export const notifications = readmybible.table(
+  "notifications",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    rockPersonId: integer("rock_person_id").notNull(),
+    senderRockPersonId: integer("sender_rock_person_id"),
+    groupId: integer("group_id"),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    metadata: jsonb("metadata"),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("notifications_rock_person_id_idx").on(table.rockPersonId),
+    index("notifications_dismissed_idx").on(table.rockPersonId, table.dismissedAt),
+    index("notifications_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const nudges = readmybible.table(
+  "nudges",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    senderRockPersonId: integer("sender_rock_person_id").notNull(),
+    recipientRockPersonId: integer("recipient_rock_person_id").notNull(),
+    groupId: integer("group_id").notNull(),
+    nudgeDate: date("nudge_date").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("nudges_sender_recipient_date_unique").on(
+      table.senderRockPersonId,
+      table.recipientRockPersonId,
+      table.nudgeDate,
+    ),
+    index("nudges_sender_rock_person_id_idx").on(table.senderRockPersonId),
+    index("nudges_recipient_rock_person_id_idx").on(table.recipientRockPersonId),
+    index("nudges_group_id_idx").on(table.groupId),
+  ],
+);
+

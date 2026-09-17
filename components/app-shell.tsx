@@ -9,7 +9,17 @@ import { getJoinCodeForGroup } from "@/app/actions/getJoinCodeForGroup";
 import { getOrCreateJoinCode, type JoinCodeResult } from "@/app/actions/getOrCreateJoinCode";
 import { getTestGroupSnapshot } from "@/app/actions/getTestGroupSnapshot";
 import { joinByCode } from "@/app/actions/joinByCode";
+import {
+  dismissAllNotifications,
+  dismissNotification,
+  sendNudge,
+} from "@/app/actions/notifications";
 import { saveProfile } from "@/app/actions/saveProfile";
+import {
+  NotificationInbox,
+  NotificationProvider,
+  NotificationToast,
+} from "@/components/notifications";
 import {
   defaultAvatarConfig,
   type AvatarConfig,
@@ -179,6 +189,25 @@ function AppShellInner(props: AppShellProps) {
     () => guardWrite(testMode.active, getOrCreateJoinCode),
     [testMode.active],
   );
+  const guardedSendNudge = useMemo(
+    () => guardWrite(testMode.active, sendNudge),
+    [testMode.active],
+  );
+  const guardedDismissNotification = useMemo(
+    () => guardWrite(testMode.active, dismissNotification),
+    [testMode.active],
+  );
+  const guardedDismissAllNotifications = useMemo(
+    () => guardWrite(testMode.active, dismissAllNotifications),
+    [testMode.active],
+  );
+  const viewerIsConnectMember = useMemo(() => {
+    const effectiveGroupId = testMode.active
+      ? (testMode.state.groupId ?? props.activeGroup?.groupId ?? null)
+      : (props.activeGroup?.groupId ?? null);
+    if (!effectiveGroupId) return false;
+    return props.memberships.some((m) => m.groupId === effectiveGroupId) || props.isLeader;
+  }, [testMode.active, testMode.state.groupId, props.activeGroup, props.memberships, props.isLeader]);
   // The simulated group the panel has selected, falling back to the reader's
   // real active group when nothing is picked -- same resolution TestModePanel
   // already uses for its own "Join code: ..." preview (`simulatedGroupId`
@@ -633,21 +662,45 @@ function AppShellInner(props: AppShellProps) {
 
   if (testMode.active && !simulatedScope.hasGroup) {
     return (
-      <div className="app-shell">
-        <div className="paper-noise" />
-        {testModePanel}
-        <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
-      </div>
+      <NotificationProvider
+        guardedSendNudge={guardedSendNudge}
+        guardedDismissNotification={guardedDismissNotification}
+        guardedDismissAllNotifications={guardedDismissAllNotifications}
+        viewerIsConnectMember={viewerIsConnectMember}
+        activeGroupId={props.activeGroup?.groupId ?? null}
+      >
+        <div className="app-shell">
+          <div className="paper-noise" />
+          {testModePanel}
+          <div className="top-right-chrome" data-testid="top-right-chrome">
+            <NotificationInbox />
+          </div>
+          <NotificationToast />
+          <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
+        </div>
+      </NotificationProvider>
     );
   }
 
   if (props.needsGroupChoice && !syntheticView) {
     return (
-      <div className="app-shell">
-        <div className="paper-noise" />
-        {testModePanel}
-        <GroupPickerScreen memberships={props.memberships} pending={pending} error={chooseGroupError} onChoose={handleChooseGroup} />
-      </div>
+      <NotificationProvider
+        guardedSendNudge={guardedSendNudge}
+        guardedDismissNotification={guardedDismissNotification}
+        guardedDismissAllNotifications={guardedDismissAllNotifications}
+        viewerIsConnectMember={viewerIsConnectMember}
+        activeGroupId={props.activeGroup?.groupId ?? null}
+      >
+        <div className="app-shell">
+          <div className="paper-noise" />
+          {testModePanel}
+          <div className="top-right-chrome" data-testid="top-right-chrome">
+            <NotificationInbox />
+          </div>
+          <NotificationToast />
+          <GroupPickerScreen memberships={props.memberships} pending={pending} error={chooseGroupError} onChoose={handleChooseGroup} />
+        </div>
+      </NotificationProvider>
     );
   }
 
@@ -662,19 +715,42 @@ function AppShellInner(props: AppShellProps) {
   // Connect Group of their own. Everyone else with no group is solo.
   if (!effectiveHasGroup && !isAdminScope) {
     return (
-      <div className="app-shell">
-        <div className="paper-noise" />
-        {testModePanel}
-        <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
-      </div>
+      <NotificationProvider
+        guardedSendNudge={guardedSendNudge}
+        guardedDismissNotification={guardedDismissNotification}
+        guardedDismissAllNotifications={guardedDismissAllNotifications}
+        viewerIsConnectMember={viewerIsConnectMember}
+        activeGroupId={props.activeGroup?.groupId ?? null}
+      >
+        <div className="app-shell">
+          <div className="paper-noise" />
+          {testModePanel}
+          <div className="top-right-chrome" data-testid="top-right-chrome">
+            <NotificationInbox />
+          </div>
+          <NotificationToast />
+          <SoloScreen error={joinError} pending={pending} onJoin={handleJoinCode} />
+        </div>
+      </NotificationProvider>
     );
   }
 
   return (
-    <div className="app-shell">
-      {activeTab !== "leader" && <div className="paper-noise" />}
-      {testModePanel}
-      <TestModeEntry visible={isAdminScope} />
+    <NotificationProvider
+      guardedSendNudge={guardedSendNudge}
+      guardedDismissNotification={guardedDismissNotification}
+      guardedDismissAllNotifications={guardedDismissAllNotifications}
+      viewerIsConnectMember={viewerIsConnectMember}
+      activeGroupId={props.activeGroup?.groupId ?? null}
+    >
+      <div className="app-shell">
+        {activeTab !== "leader" && <div className="paper-noise" />}
+        {testModePanel}
+        <div className="top-right-chrome" data-testid="top-right-chrome">
+          <NotificationInbox />
+        </div>
+        <NotificationToast />
+        <TestModeEntry visible={isAdminScope} />
       {activeTab === "today" && (
         <TodayScreen
           avatarCustomized={avatarSaved || props.avatarCustomized}
@@ -795,5 +871,6 @@ function AppShellInner(props: AppShellProps) {
         />
       )}
     </div>
+    </NotificationProvider>
   );
 }
