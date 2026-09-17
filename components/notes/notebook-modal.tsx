@@ -1,41 +1,62 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { QueryClientProvider, useIsFetching, useQueryClient } from "@tanstack/react-query";
 
-import { getNote, saveNote, type NoteView } from "@/app/actions/notes";
+import { getNote, saveNote, type GetNoteResult, type NoteView } from "@/app/actions/notes";
+import { getFallbackQueryClient, useSafeQueryClient } from "@/components/providers/query-provider";
 import { guardWrite, useTestMode } from "@/components/test-mode";
 import { useEscapeToClose } from "@/components/use-escape-to-close";
 
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, LockIcon, ScrollIcon, SpinnerIcon } from "./icons";
+import { mergeNoteContents } from "./merge-notes";
+import { NotesEditor } from "./notes-editor";
 import { getPageMeta, NOTEBOOK_PAGES, type NotebookPageId } from "./pages";
+import { normalizeContentToHtml } from "./sanitize";
 
 import "./notes.css";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "blocked";
 
-export function NotebookModal({
-  open,
-  initialPage = "general",
-  authorPersonId,
-  isBlocked,
-  onClose,
-  onNoteSaved,
-}: {
+export interface NotebookModalProps {
   open: boolean;
   initialPage?: string;
   authorPersonId?: number;
   isBlocked?: boolean;
   onClose: () => void;
   onNoteSaved?: (page: string, isShared: boolean) => void;
-}) {
+}
+
+export function NotebookModal(props: NotebookModalProps) {
+  const queryClient = useSafeQueryClient();
+
+  if (!queryClient) {
+    return (
+      <QueryClientProvider client={getFallbackQueryClient()}>
+        <NotebookModalInner {...props} />
+      </QueryClientProvider>
+    );
+  }
+
+  return <NotebookModalInner {...props} />;
+}
+
+function NotebookModalInner({
+  open,
+  initialPage = "general",
+  authorPersonId,
+  isBlocked,
+  onClose,
+  onNoteSaved,
+}: NotebookModalProps) {
   const [currentPageId, setCurrentPageId] = useState<NotebookPageId>(initialPage);
   const [content, setContent] = useState("");
   const [isShared, setIsShared] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [loadedForPage, setLoadedForPage] = useState<string | null>(null);
   const [noteView, setNoteView] = useState<NoteView | null>(null);
 
+  const queryClient = useQueryClient();
   const testMode = useTestMode(true);
   const blocked = isBlocked ?? testMode.active;
 
@@ -46,13 +67,15 @@ export function NotebookModal({
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Track user edits per page to guard late-fetch merge vs background revalidation
+  const userTypedPagesRef = useRef<Set<string>>(new Set());
+  const loadedPayloadForPageRef = useRef<Map<string, string>>(new Map());
+
   const isOwner = !authorPersonId || noteView?.isOwner !== false;
-  const loading = loadedForPage !== currentPageId;
 
   useEscapeToClose(onClose, open);
 
-  // Reset to the initial page and status each time the modal opens. Adjusted
-  // during render (not an effect) per https://react.dev/learn/you-might-not-need-an-effect.
+  // Reset to initial page and status each time modal opens
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -63,36 +86,13 @@ export function NotebookModal({
     }
   }
 
-  // Load note for current page. setState calls live inside the `.then`, never
-  // synchronously in the effect body, matching the pattern in
-  // components/reading-dialog.tsx's passage-fetch effect.
+  // Clear session tracking when modal open state changes
   useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    void getNote({ page: currentPageId, authorPersonId })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.ok) {
-          setNoteView(res.note);
-          setContent(res.note.content ?? "");
-          setIsShared(res.note.isShared);
-        } else {
-          setNoteView(null);
-          setContent("");
-          setIsShared(false);
-          setStatusMessage(res.error);
-        }
-        setLoadedForPage(currentPageId);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setStatusMessage("Failed to load note.");
-        setLoadedForPage(currentPageId);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, currentPageId, authorPersonId]);
+    if (open) {
+      userTypedPagesRef.current.clear();
+      loadedPayloadForPageRef.current.clear();
+    }
+  }, [open]);
 
   // Debounced autosave
   const triggerAutosave = useCallback(
@@ -117,6 +117,8 @@ export function NotebookModal({
           if (res.ok) {
             setSaveStatus("saved");
             setStatusMessage("Saved");
+            // Update React Query cache so subsequent operations have the latest note
+            queryClient.setQueryData(["note", currentPageId, authorPersonId], res);
             onNoteSaved?.(currentPageId, nextShared);
           } else {
             // NEVER paint a saved checkmark for a write that was blocked or failed
@@ -129,8 +131,103 @@ export function NotebookModal({
         }
       }, 700);
     },
-    [currentPageId, isOwner, guardedSaveNote, blocked, onNoteSaved],
+    [currentPageId, isOwner, guardedSaveNote, blocked, onNoteSaved, queryClient, authorPersonId],
   );
+
+  // Background fetch using TanStack React Query cache (Issue 183: Part 1)
+  const queryKey = useMemo(
+    () => ["note", currentPageId, authorPersonId],
+    [currentPageId, authorPersonId],
+  );
+
+  const isFetching = useIsFetching({ queryKey }) > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+
+    // Check if query cache already has note to paint immediately (in microtask to avoid cascading render)
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      const cached = queryClient.getQueryData<GetNoteResult>(queryKey);
+      if (cached?.ok && cached.note && !loadedPayloadForPageRef.current.has(currentPageId)) {
+        const cachedContent = cached.note.content ?? "";
+        if (!userTypedPagesRef.current.has(currentPageId)) {
+          setContent(cachedContent);
+          setIsShared(cached.note.isShared);
+          setNoteView(cached.note);
+          loadedPayloadForPageRef.current.set(currentPageId, cachedContent);
+        }
+      }
+    });
+
+    void queryClient
+      .fetchQuery({
+        queryKey,
+        queryFn: () => getNote({ page: currentPageId, authorPersonId }),
+        staleTime: 30_000,
+      })
+      .then((res) => {
+        if (cancelled) return;
+
+
+        if (res.ok) {
+          const fetchedNote = res.note;
+          const fetchedContent = fetchedNote.content ?? "";
+          const fetchedShared = fetchedNote.isShared;
+
+          setNoteView(fetchedNote);
+
+          const hasLoadedThisPage = loadedPayloadForPageRef.current.has(currentPageId);
+          const prevLoadedPayload = loadedPayloadForPageRef.current.get(currentPageId);
+          const userHasTypedOnPage = userTypedPagesRef.current.has(currentPageId);
+
+          if (!hasLoadedThisPage) {
+            // First time fetched notes arrive for this page
+            if (!userHasTypedOnPage) {
+              setContent(fetchedContent);
+              setIsShared(fetchedShared);
+              loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
+            } else {
+              // Late-fetch merge rule (Issue 183):
+              // User typed before fetched notes arrived! Result must be:
+              // TYPED CONTENT + FETCHED CONTENT (typed prepended, never overwritten)
+              if (fetchedContent.trim().length > 0) {
+                setContent((currentTyped) => {
+                  const merged = mergeNoteContents({
+                    typedContent: currentTyped,
+                    fetchedContent,
+                  });
+                  triggerAutosave(merged, fetchedShared);
+                  return merged;
+                });
+              }
+              loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
+            }
+          } else {
+            // Subsequent background revalidation:
+            // A background revalidation cannot duplicate/append the fetched payload again.
+            if (!userHasTypedOnPage && prevLoadedPayload !== fetchedContent) {
+              setContent(fetchedContent);
+              setIsShared(fetchedShared);
+              loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
+            }
+          }
+        } else {
+          setNoteView(null);
+          setStatusMessage(res.error);
+          loadedPayloadForPageRef.current.set(currentPageId, "");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStatusMessage("Failed to load note.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currentPageId, authorPersonId, queryClient, queryKey, triggerAutosave]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -143,6 +240,7 @@ export function NotebookModal({
 
   function handleContentChange(nextText: string) {
     if (nextText.length > 1000) return;
+    userTypedPagesRef.current.add(currentPageId);
     setContent(nextText);
     triggerAutosave(nextText, isShared);
   }
@@ -164,12 +262,27 @@ export function NotebookModal({
     setCurrentPageId(targetId);
     setSaveStatus("idle");
     setStatusMessage("");
+
+    // Check if target page already has cached data in React Query
+    const cached = queryClient.getQueryData<GetNoteResult>(["note", targetId, authorPersonId]);
+    if (cached?.ok && cached.note) {
+      const cachedContent = cached.note.content ?? "";
+      setContent(cachedContent);
+      setIsShared(cached.note.isShared);
+      setNoteView(cached.note);
+      loadedPayloadForPageRef.current.set(targetId, cachedContent);
+    } else {
+      setContent("");
+      setIsShared(false);
+      setNoteView(null);
+    }
   }
 
   if (!open) return null;
 
   const pageMeta = getPageMeta(currentPageId);
   const isSomeoneElsesPrivateNote = !isOwner && noteView && !noteView.isShared;
+  const isPendingOtherUserNote = !isOwner && !noteView && isFetching;
 
   return (
     <div className="notebook-overlay" role="dialog" aria-modal="true" aria-labelledby="notebook-dialog-title">
@@ -221,9 +334,10 @@ export function NotebookModal({
           </button>
         </div>
 
-        {/* Modal Body */}
+        {/* Modal Body: rendered immediately for owner, never blocked */}
         <div className="notebook-body">
-          {loading ? (
+          {isPendingOtherUserNote ? (
+            /* Subtly loading someone else's note to check authorization */
             <div
               style={{
                 display: "flex",
@@ -247,25 +361,41 @@ export function NotebookModal({
           ) : !isOwner ? (
             /* Someone else's shared note: read-only view */
             <div className="notebook-viewer-wrap">
-              <div className="notebook-sharing-row">
+              {noteView?.authorName && (
+                <div style={{ fontSize: "12px", color: "var(--ink-muted)", marginBottom: "8px" }}>
+                  By {noteView.authorName}
+                </div>
+              )}
+              <div
+                className="notebook-viewer-content"
+                dangerouslySetInnerHTML={{
+                  __html: normalizeContentToHtml(noteView?.content || "No revelation written for this page yet."),
+                }}
+              />
+              <div className="notebook-share-subtle">
                 <span className="notebook-share-badge is-shared">
                   <CheckIcon size={12} /> Shared with my connect &amp; leaders
                 </span>
-                {noteView?.authorName && (
-                  <span style={{ fontSize: "12px", color: "var(--ink-muted)" }}>
-                    By {noteView.authorName}
-                  </span>
-                )}
-              </div>
-              <div className="notebook-viewer-content">
-                {noteView?.content || "No revelation written for this page yet."}
               </div>
             </div>
           ) : (
-            /* Owner's editing view */
+            /* Owner's editing view: rendered immediately, never blocked */
             <>
-              <div className="notebook-sharing-row">
-                <label className="notebook-share-toggle">
+              <div className="notebook-editor-wrap">
+                <NotesEditor
+                  content={content}
+                  onChange={handleContentChange}
+                  maxLength={1000}
+                  placeholder="Write in your personal revelations…"
+                />
+                <div className="notebook-limit-text">
+                  {content.length}/1000 characters
+                </div>
+              </div>
+
+              {/* Subtler sharing control moved to the bottom of the notes experience (Issue 183: Part 3) */}
+              <div className="notebook-share-subtle">
+                <label className="notebook-share-subtle-toggle">
                   <input
                     type="checkbox"
                     checked={isShared}
@@ -274,33 +404,11 @@ export function NotebookModal({
                   <span>Share with my connect &amp; leaders</span>
                 </label>
 
-                <span
-                  className={`notebook-share-badge ${isShared ? "is-shared" : "is-private"}`}
-                >
-                  {isShared ? (
-                    <>
-                      <CheckIcon size={12} /> Shared
-                    </>
-                  ) : (
-                    <>
-                      <LockIcon size={12} /> Private
-                    </>
-                  )}
-                </span>
-              </div>
-
-              <div className="notebook-editor-wrap">
-                <textarea
-                  className="notebook-textarea"
-                  value={content}
-                  maxLength={1000}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  placeholder="Write in your personal revelations…"
-                  aria-label="Write in your personal revelations"
-                />
-                <div className="notebook-limit-text">
-                  {content.length}/1000 characters
-                </div>
+                {isShared && (
+                  <span className="notebook-share-badge is-shared">
+                    <CheckIcon size={12} /> Shared
+                  </span>
+                )}
               </div>
             </>
           )}
@@ -329,6 +437,12 @@ export function NotebookModal({
                 )}
                 {(saveStatus === "blocked" || saveStatus === "error") && (
                   <span>{statusMessage || "Auto-save failed"}</span>
+                )}
+                {isFetching && saveStatus === "idle" && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12px" }}>
+                    <SpinnerIcon size={12} />
+                    <span>Syncing…</span>
+                  </span>
                 )}
               </div>
             )}
