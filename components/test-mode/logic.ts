@@ -1,4 +1,4 @@
-import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, planPhase, todaysEntry } from "@/lib/plan";
+import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, entryChapters, planPhase, todaysEntry } from "@/lib/plan";
 import type { TodayState } from "@/components/use-today";
 import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 
@@ -393,7 +393,7 @@ export function simulatedTodayState(date: string, timezone: string): TodayState 
 export function simulatedChapters(completionPct: number): number[] {
   const clamped = Math.min(Math.max(completionPct, 0), 100);
   const count = Math.round((clamped / 100) * PLAN.length);
-  return Array.from({ length: count }, (_, i) => i + 1);
+  return PLAN.slice(0, count).flatMap(entryChapters);
 }
 
 /** A synthetic group ratio (0-1, the unit `groupStats.ratio` and `stageFor` use) for a group percentage, 0-100. */
@@ -407,13 +407,13 @@ export function simulatedMemberHistory(
   completionPct: number,
   todayLocal: string,
 ): { chapters: number[]; readingDates: string[] } {
-  const chapterCount = simulatedChapters(completionPct).length;
-  const maxStart = Math.max(PLAN.length - chapterCount, 0);
-  const start = chapterCount === 0 ? 0 : Math.abs(memberId) % (maxStart + 1);
-  const chapters = Array.from({ length: chapterCount }, (_, index) => start + index + 1);
-  const readingDates = chapters
-    .filter((ch) => ch <= PLAN.length)
-    .map((ch) => PLAN[ch - 1].date)
+  const assignmentCount = Math.round((Math.min(Math.max(completionPct, 0), 100) / 100) * PLAN.length);
+  const maxStart = Math.max(PLAN.length - assignmentCount, 0);
+  const start = assignmentCount === 0 ? 0 : Math.abs(memberId) % (maxStart + 1);
+  const assignments = PLAN.slice(start, start + assignmentCount);
+  const chapters = assignments.flatMap(entryChapters);
+  const readingDates = assignments
+    .map((entry) => entry.date)
     .filter((d) => d <= todayLocal);
   return { chapters, readingDates };
 }

@@ -163,16 +163,16 @@ describe("simulatedChapters", () => {
   });
 
   it("is all 20 assignments at 100%", () => {
-    expect(simulatedChapters(100)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+    expect(simulatedChapters(100)).toEqual(PLAN.flatMap((entry) => entry.chapters ?? [entry.chapter]));
   });
 
   it("is a proportional, sequential prefix in between", () => {
-    expect(simulatedChapters(50)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(simulatedChapters(50)).toEqual(PLAN.slice(0, 10).flatMap((entry) => entry.chapters ?? [entry.chapter]));
   });
 
   it("clamps out-of-range percentages", () => {
     expect(simulatedChapters(-10)).toEqual([]);
-    expect(simulatedChapters(500)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+    expect(simulatedChapters(500)).toEqual(PLAN.flatMap((entry) => entry.chapters ?? [entry.chapter]));
   });
 });
 
