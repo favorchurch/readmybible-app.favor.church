@@ -236,18 +236,6 @@
   gap: 4px;
 }
 
-/* The chapter link belongs to the passage above it; the source groups below are a
-   separate band, so give the first group extra room beneath it. */
-.link-groups>.link-group:first-child {
-  margin-bottom: 24px;
-}
-
-/* The chapter link trails the passage it belongs to, so it sits at the end of
-   the row rather than under the passage's first word. */
-.link-groups>.link-group:first-child .link-group-row {
-  justify-content: flex-end;
-}
-
 .scripture-sheet .link-group .eyebrow {
   margin-bottom: 4px;
 }
