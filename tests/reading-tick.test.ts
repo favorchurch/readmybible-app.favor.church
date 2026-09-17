@@ -11,6 +11,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   NO_SCROLL_DWELL_MS,
+  BOTTOM_ELIGIBLE_DELAY_MS,
+  MIN_READING_TIME_MS,
+  ReadingQualificationTracker,
   checkInWithRetry,
   sentinelAction,
   shouldWrite,
@@ -50,6 +53,21 @@ describe("shouldWrite", () => {
 
   it("still refuses a sandbox write for a chapter already read", () => {
     expect(shouldWrite({ ...OPEN, writesBlocked: false, alreadyRead: true })).toBe(false);
+  });
+});
+
+describe("ReadingQualificationTracker visibility", () => {
+  it("does not count time while the document is hidden", () => {
+    const tracker = new ReadingQualificationTracker(MIN_READING_TIME_MS, BOTTOM_ELIGIBLE_DELAY_MS);
+    tracker.onContentLoaded(1_000);
+    tracker.onIntersectionChange(true, 6_000);
+
+    tracker.onVisibilityChange(false, 6_000);
+    expect(tracker.onTimerElapsed(20_000)).toBe(false);
+
+    tracker.onVisibilityChange(true, 20_000);
+    expect(tracker.onTimerElapsed(20_000)).toBe(false);
+    expect(tracker.onTimerElapsed(30_000)).toBe(true);
   });
 });
 

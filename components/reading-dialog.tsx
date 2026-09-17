@@ -114,6 +114,7 @@ export function ReadingDialog({
   }, [chaptersProp, chapter]);
 
   const [fetchedPassages, setFetchedPassages] = useState<Record<number, PassageState>>({});
+  const [passagesTranslation, setPassagesTranslation] = useState<Translation | null>(null);
   const bodyStyle = useReadingBodyStyle();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const celebrationRef = useRef<HTMLDivElement>(null);
@@ -145,6 +146,8 @@ export function ReadingDialog({
 
   useEffect(() => {
     let cancelled = false;
+    setFetchedPassages({});
+    setPassagesTranslation(null);
     void Promise.all(
       resolvedChapters.map(async (ch) => {
         const ref = `Matthew ${ch}`;
@@ -158,6 +161,7 @@ export function ReadingDialog({
           nextMap[ch] = res;
         }
         setFetchedPassages(nextMap);
+        setPassagesTranslation(translation);
       }
     });
     return () => {
@@ -179,7 +183,12 @@ export function ReadingDialog({
   const isPassageError = allResolved && (anyError || !allHaveVerses);
 
   // Arm only once all scripture in the assignment has loaded onto the screen
-  const armed = mode !== "preview" && allResolved && !isPassageError && allHaveVerses;
+  const armed =
+    mode !== "preview" &&
+    passagesTranslation === translation &&
+    allResolved &&
+    !isPassageError &&
+    allHaveVerses;
 
   const reachedBottom = useRef(onReachBottom);
   useEffect(() => {
@@ -216,41 +225,50 @@ export function ReadingDialog({
       setDwelling(false);
     }
 
+    function handleIntersection(isIntersecting: boolean, timestamp: number) {
+      const result = tracker.onIntersectionChange(isIntersecting, timestamp);
+      if (!isIntersecting) {
+        clearTimer();
+        return;
+      }
+      if (result.qualifies) {
+        clearTimer();
+        fire();
+        return;
+      }
+      if (result.dwellMs !== undefined) {
+        clearTimer();
+        setDwelling(true);
+        dwellTimer.current = setTimeout(() => {
+          clearTimer();
+          if (tracker.onTimerElapsed(performance.now())) fire();
+        }, result.dwellMs);
+      }
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const timestamp = performance.now();
-          const result = tracker.onIntersectionChange(entry.isIntersecting, timestamp);
-          if (!entry.isIntersecting) {
-            clearTimer();
-            continue;
-          }
-          if (result.qualifies) {
-            clearTimer();
-            fire();
-            continue;
-          }
-          if (result.dwellMs !== undefined) {
-            clearTimer();
-            setDwelling(true);
-            dwellTimer.current = setTimeout(() => {
-              clearTimer();
-              const qualifies = tracker.onTimerElapsed(performance.now());
-              if (qualifies) {
-                fire();
-              }
-            }, result.dwellMs);
-          }
+          handleIntersection(entry.isIntersecting, performance.now());
         }
       },
       { root: node.closest(".sheet-scroll"), threshold: 0.9 },
     );
+    function handleVisibilityChange() {
+      const timestamp = performance.now();
+      const visible = document.visibilityState !== "hidden";
+      tracker.onVisibilityChange(visible, timestamp);
+      clearTimer();
+      if (visible) handleIntersection(true, timestamp);
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     observer.observe(node);
     return () => {
       clearTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };
-  }, [armed]);
+  }, [armed, passagesTranslation, translation]);
 
   const primaryRef = passageRef ?? `Matthew ${resolvedChapters[0]}`;
   const parsed = parseReference(primaryRef);

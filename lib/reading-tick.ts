@@ -34,6 +34,9 @@ export class ReadingQualificationTracker {
   private bottomReachedEligible = false;
   private isAtBottom = false;
   private qualified = false;
+  private isVisible = true;
+  private hiddenAt: number | null = null;
+  private hiddenDurationMs = 0;
 
   constructor(
     private readonly minReadingTimeMs = MIN_READING_TIME_MS,
@@ -44,6 +47,22 @@ export class ReadingQualificationTracker {
     this.contentLoadedAt = timestamp;
     this.bottomReachedEligible = false;
     this.qualified = false;
+    this.isVisible = true;
+    this.hiddenAt = null;
+    this.hiddenDurationMs = 0;
+  }
+
+  onVisibilityChange(isVisible: boolean, timestamp: number) {
+    if (isVisible === this.isVisible) return;
+    if (isVisible) {
+      if (this.hiddenAt !== null) {
+        this.hiddenDurationMs += Math.max(0, timestamp - this.hiddenAt);
+      }
+      this.hiddenAt = null;
+    } else {
+      this.hiddenAt = timestamp;
+    }
+    this.isVisible = isVisible;
   }
 
   onIntersectionChange(isIntersecting: boolean, timestamp: number): {
@@ -60,7 +79,11 @@ export class ReadingQualificationTracker {
       return { qualifies: false };
     }
 
-    const elapsed = timestamp - this.contentLoadedAt;
+    if (!this.isVisible) {
+      return { qualifies: false };
+    }
+
+    const elapsed = this.elapsedAt(timestamp);
 
     // Bottom tracking is only eligible starting 3 seconds after content load.
     // A scroll-to-bottom before 3s does not arm the check-in.
@@ -85,10 +108,10 @@ export class ReadingQualificationTracker {
   }
 
   onTimerElapsed(timestamp: number): boolean {
-    if (this.contentLoadedAt === null || !this.isAtBottom || !this.bottomReachedEligible) {
+    if (this.contentLoadedAt === null || !this.isVisible || !this.isAtBottom || !this.bottomReachedEligible) {
       return false;
     }
-    const elapsed = timestamp - this.contentLoadedAt;
+    const elapsed = this.elapsedAt(timestamp);
     if (elapsed >= this.minReadingTimeMs) {
       this.qualified = true;
       return true;
@@ -102,6 +125,12 @@ export class ReadingQualificationTracker {
 
   isQualified(): boolean {
     return this.qualified;
+  }
+
+  private elapsedAt(timestamp: number): number {
+    if (this.contentLoadedAt === null) return 0;
+    const currentHiddenDuration = this.hiddenAt === null ? 0 : Math.max(0, timestamp - this.hiddenAt);
+    return timestamp - this.contentLoadedAt - this.hiddenDurationMs - currentHiddenDuration;
   }
 }
 
