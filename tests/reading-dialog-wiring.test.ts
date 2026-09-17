@@ -617,6 +617,21 @@ describe("issue #125: verse loading shows the companion glyph, not bare text", (
     expect(await screen.findByText("This chapter is available at Bible.com.")).toBeTruthy();
     expect(document.querySelector(".passage-loading")).toBeNull();
   });
+
+  it("renders the commentaries section inside link-groups", async () => {
+    render(React.createElement(AppShell, baseProps()));
+    openReadingDialog();
+
+    const commentariesSummary = await screen.findByText("Commentaries");
+    expect(commentariesSummary).toBeTruthy();
+    const disclosure = commentariesSummary.closest("details");
+    expect(disclosure).toBeTruthy();
+    expect(disclosure?.classList.contains("link-group")).toBe(true);
+
+    const linkRow = disclosure?.querySelector(".link-group-row");
+    expect(linkRow).toBeTruthy();
+    expect(disclosure?.querySelector("a[href*='enduringword.com']")).toBeTruthy();
+  });
 });
 
 describe("qualification: 15s elapsed and 3s bottom eligibility delay", () => {
