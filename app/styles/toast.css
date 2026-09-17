@@ -1,12 +1,11 @@
 .toast-viewport {
   position: fixed;
   z-index: 200;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--nav-clearance) + 12px);
-  width: min(calc(100% - 32px), 420px);
+  top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + 128px);
+  left: 12px;
+  width: min(calc(100% - 24px), 420px);
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   pointer-events: none;
 }
 
@@ -40,6 +39,8 @@
   background: var(--coral-deep);
 }
 
-/* Routes without a bottom nav (e.g. /join/[code]) have nothing to clear,
-   so the toast would otherwise float above empty space. */
-.toast-viewport--no-nav { bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); }
+/* Routes without a bottom nav still use the same top stack, keeping the
+   notification chrome and any reading-sheet footer clear. */
+.toast-viewport--no-nav {
+  top: calc(env(safe-area-inset-top, 0px) + var(--topbar-h) + 8px);
+}
