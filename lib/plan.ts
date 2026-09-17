@@ -115,6 +115,21 @@ export function completedAssignmentsCount(chapters: readonly number[]): number {
   return PLAN.filter((entry) => isAssignmentCompleted(entry, chapters)).length;
 }
 
+/** Counts completed assignments across check-in rows, once per member. */
+export function completedAssignmentCheckinCount(
+  rows: readonly { rockPersonId: number; chapter: number }[],
+): number {
+  const chaptersByMember = new Map<number, number[]>();
+  for (const row of rows) {
+    const chapters = chaptersByMember.get(row.rockPersonId) ?? [];
+    chapters.push(row.chapter);
+    chaptersByMember.set(row.rockPersonId, chapters);
+  }
+  let count = 0;
+  for (const chapters of chaptersByMember.values()) count += completedAssignmentsCount(chapters);
+  return count;
+}
+
 /**
  * Returns all completed assignments.
  */

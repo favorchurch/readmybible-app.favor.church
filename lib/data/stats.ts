@@ -26,6 +26,7 @@ import {
   deriveMemberReadingHistory,
   type MemberReadingHistory,
 } from "@/lib/member-progress";
+import { completedAssignmentCheckinCount } from "@/lib/plan";
 
 export function todayInTimezone(timezone: string, now: Date = appNow()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(now);
@@ -81,8 +82,8 @@ async function loadGroupStats(groupId: number, campusId: number | null): Promise
   const memberCount = roster.length;
   const today = todayInTimezone(timezoneForCampus(campusId));
 
-  const [countRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
+  const rows = await db
+    .select({ rockPersonId: checkins.rockPersonId, chapter: checkins.chapter })
     .from(checkins)
     .where(eq(checkins.groupId, groupId));
 
@@ -91,7 +92,7 @@ async function loadGroupStats(groupId: number, campusId: number | null): Promise
     .from(checkins)
     .where(and(eq(checkins.groupId, groupId), eq(checkins.readingDate, today)));
 
-  const checkinCount = countRow?.count ?? 0;
+  const checkinCount = completedAssignmentCheckinCount(rows);
   return {
     checkinCount,
     memberCount,
@@ -128,17 +129,25 @@ export async function getCampusBoard(campusId: number): Promise<GroupStanding[]>
     // One grouped query for totals, one for today's distinct readers --
     // both across every group on the campus at once.
     const totals = await db
-      .select({ groupId: checkins.groupId, count: sql<number>`count(*)::int` })
+      .select({ groupId: checkins.groupId, rockPersonId: checkins.rockPersonId, chapter: checkins.chapter })
       .from(checkins)
-      .where(inArray(checkins.groupId, groupIds))
-      .groupBy(checkins.groupId);
+      .where(inArray(checkins.groupId, groupIds));
 
     const todayRows = await db
       .select({ groupId: checkins.groupId, rockPersonId: checkins.rockPersonId })
       .from(checkins)
       .where(and(inArray(checkins.groupId, groupIds), eq(checkins.readingDate, today)));
 
-    const totalsByGroup = new Map(totals.map((t) => [t.groupId, t.count]));
+    const rowsByGroup = new Map<number, { rockPersonId: number; chapter: number }[]>();
+    for (const row of totals) {
+      if (row.groupId === null) continue;
+      const groupRows = rowsByGroup.get(row.groupId) ?? [];
+      groupRows.push({ rockPersonId: row.rockPersonId, chapter: row.chapter });
+      rowsByGroup.set(row.groupId, groupRows);
+    }
+    const totalsByGroup = new Map(
+      groupIds.map((groupId) => [groupId, completedAssignmentCheckinCount(rowsByGroup.get(groupId) ?? [])]),
+    );
     const readersToday = new Map<number, Set<number>>();
     for (const row of todayRows) {
       if (row.groupId === null) continue;

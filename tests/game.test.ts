@@ -50,7 +50,7 @@ describe("medals", () => {
     expect(medals(0)).toEqual([]);
     expect(medals(3)).toEqual([3]);
     expect(medals(10)).toEqual([3, 7]);
-    expect(medals(28)).toEqual([3, 7, 14, 21, 28]);
+    expect(medals(20)).toEqual([3, 7, 14, 15, 20]);
   });
 });
 
@@ -58,7 +58,7 @@ describe("nextMedal", () => {
   it("returns the next unreached threshold", () => {
     expect(nextMedal(0)).toBe(3);
     expect(nextMedal(3)).toBe(7);
-    expect(nextMedal(28)).toBeNull();
+    expect(nextMedal(20)).toBeNull();
   });
 });
 
@@ -99,12 +99,16 @@ describe("streak", () => {
 describe("groupRatio", () => {
   it("clamps to [0, 1]", () => {
     expect(groupRatio(0, 5)).toBe(0);
-    expect(groupRatio(5 * 28, 5)).toBe(1);
-    expect(groupRatio(10 * 28, 5)).toBe(1);
+    expect(groupRatio(5 * 20, 5)).toBe(1);
+    expect(groupRatio(10 * 20, 5)).toBe(1);
   });
 
-  it("computes checkins over members times 28", () => {
-    expect(groupRatio(14, 5)).toBeCloseTo(14 / 140);
+  it("computes assignments over members times 20", () => {
+    expect(groupRatio(14, 5)).toBeCloseTo(14 / 100);
+  });
+
+  it("treats all chapters in a two-chapter assignment as one assignment slot", () => {
+    expect(groupRatio(20, 1)).toBe(1);
   });
 
   it("returns 0 for zero members instead of dividing by zero", () => {

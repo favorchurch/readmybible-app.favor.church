@@ -11,7 +11,8 @@
  * Qualification is per assignment, not per chapter.
  */
 import type { CheckInGroupState, CheckInResult } from "@/app/actions/checkIn";
-import { TOTAL_CHAPTERS, groupStateFor, stageFor } from "@/lib/game";
+import { groupStateFor, stageFor } from "@/lib/game";
+import { TOTAL_ASSIGNMENTS } from "@/lib/plan";
 
 export const MIN_READING_TIME_MS = 15_000;
 export const BOTTOM_ELIGIBLE_DELAY_MS = 3_000;
@@ -199,7 +200,7 @@ export function simulatedCheckInGroup(args: {
   memberCount: number;
 }): CheckInGroupState {
   const members = Math.max(1, args.memberCount);
-  const totalSlots = members * TOTAL_CHAPTERS;
+  const totalSlots = members * TOTAL_ASSIGNMENTS;
   const beforeCheckins = Math.round(args.ratio * totalSlots);
   const afterCheckins = Math.min(totalSlots, beforeCheckins + 1);
   return {

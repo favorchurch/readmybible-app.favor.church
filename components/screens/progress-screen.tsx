@@ -10,15 +10,26 @@ import { Header } from "@/components/screens/header";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { REWARD_TITLES } from "@/components/screens/rewards-screen";
 import type { useToday } from "@/components/use-today";
-import { nextMedal, TOTAL_CHAPTERS } from "@/lib/game";
+import { nextMedal } from "@/lib/game";
 import type { GroupStanding } from "@/lib/game";
-import { dayState, PLAN, type DayState, type PlanEntry } from "@/lib/plan";
+import {
+  assignmentReference,
+  dayState,
+  isAssignmentCompleted,
+  PLAN,
+  PLAN_START,
+  REVIEW_DATES,
+  TOTAL_ASSIGNMENTS,
+  type DayState,
+  type PlanEntry,
+} from "@/lib/plan";
 
-const GRACE_DAYS: PlanEntry[] = [
-  { day: 29, chapter: 29, date: "2026-10-29", keyPassage: "", title: "Catch-up day" },
-  { day: 30, chapter: 30, date: "2026-10-30", keyPassage: "", title: "Catch-up day" },
-  { day: 31, chapter: 31, date: "2026-10-31", keyPassage: "", title: "Catch-up day" },
-];
+const CALENDAR_START = `${PLAN_START.slice(0, 7)}-01`;
+const CALENDAR_LEADING_BLANKS = new Date(`${CALENDAR_START}T00:00:00Z`).getUTCDay();
+const CALENDAR_DAYS = [
+  ...PLAN.map((entry) => ({ kind: "assignment" as const, date: entry.date, entry })),
+  ...REVIEW_DATES.map((date) => ({ kind: "review" as const, date })),
+].sort((a, b) => a.date.localeCompare(b.date));
 
 function campusGroupCountLabel(count: number): string {
   return `${count} Connect Group${count === 1 ? "" : "s"} on this campus.`;
@@ -50,7 +61,10 @@ export function ProgressScreen({
   onTranslationChange: (translation: Translation) => void;
   connectSwitcher?: ConnectSwitcherContext;
 }) {
-  const completedDays = useMemo(() => new Set(chapters), [chapters]);
+  const completedAssignmentDays = useMemo(
+    () => new Set(PLAN.filter((entry) => isAssignmentCompleted(entry, chapters)).map((entry) => entry.day)),
+    [chapters],
+  );
   const next = nextMedal(chaptersRead);
   const isPreLaunch = today.displayPhase === "pre-launch";
   const { hasNote, isShared: noteIsShared } = useNotesPresence();
@@ -59,14 +73,14 @@ export function ProgressScreen({
   const [previewIsRead, setPreviewIsRead] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  function handleCellClick(entry: PlanEntry, cellState: DayState | "grace") {
+  function handleCellClick(entry: PlanEntry, cellState: DayState) {
     if (cellState === "read") {
       setSelectedEntry(entry);
       setPreviewIsRead(true);
       setPreviewOpen(true);
     } else if (cellState === "catch-up" || cellState === "today") {
       onCatchUp(entry.chapter);
-    } else if (cellState === "upcoming" || cellState === "grace") {
+    } else if (cellState === "upcoming") {
       setSelectedEntry(entry);
       setPreviewIsRead(false);
       setPreviewOpen(true);
@@ -80,7 +94,7 @@ export function ProgressScreen({
         <section className="page-title compact">
           <p className="eyebrow">YOUR OCTOBER</p>
           <h1>Your Progress</h1>
-          <p>28 chapters · Oct 1–28 · 3 catch-up days</p>
+          <p>20 assignments · Oct 5–30 · 6 review days</p>
         </section>
       </div>
 
@@ -98,12 +112,37 @@ export function ProgressScreen({
             ))}
           </div>
           <div className="calendar-grid">
-            <span key="blank-0" className="calendar-blank" aria-hidden="true" />
-            <span key="blank-1" className="calendar-blank" aria-hidden="true" />
-            <span key="blank-2" className="calendar-blank" aria-hidden="true" />
-            <span key="blank-3" className="calendar-blank" aria-hidden="true" />
-            {PLAN.map((entry) => {
-              const isRead = completedDays.has(entry.chapter);
+            {Array.from({ length: CALENDAR_LEADING_BLANKS }, (_, index) => (
+              <span key={`blank-${index}`} className="calendar-blank" aria-hidden="true" />
+            ))}
+            {CALENDAR_DAYS.map((day) => {
+              const dayNumber = Number(day.date.slice(-2));
+              if (day.kind === "review") {
+                return (
+                  <span
+                    key={day.date}
+                    data-date={day.date}
+                    data-day-state="review"
+                    className="calendar-cell review-cell"
+                    aria-label={`October ${dayNumber}, Review day`}
+                  >
+                    <span className="day-number">{dayNumber}</span>
+                    <i className="cell-tag" aria-hidden="true">↺</i>
+                    {hasNote(day.date) && (
+                      <NoteIndicator
+                        exists
+                        isShared={noteIsShared(day.date)}
+                        isOwner
+                        size={10}
+                        className="calendar-note-indicator"
+                      />
+                    )}
+                  </span>
+                );
+              }
+
+              const entry = day.entry;
+              const isRead = completedAssignmentDays.has(entry.day);
               const state = dayState(entry, today.todayLocal, isRead);
               const labelState = state === "read" ? "Read" : state === "today" ? "Today" : state === "catch-up" ? "Catch up" : "Upcoming";
               return (
@@ -111,21 +150,22 @@ export function ProgressScreen({
                   type="button"
                   key={entry.day}
                   data-day={entry.day}
+                  data-date={day.date}
                   data-day-state={state}
                   className={`calendar-cell ${state}-cell`}
                   onClick={() => handleCellClick(entry, state)}
-                  aria-label={`Day ${entry.day}, Matthew ${entry.chapter}, ${labelState}`}
+                  aria-label={`Day ${entry.day}, ${assignmentReference(entry)}, ${labelState}`}
                   aria-current={entry.date === today.todayLocal ? "date" : undefined}
                 >
                   {state === "read" && <span className="cell-glyph" aria-hidden="true">✓</span>}
-                  <span className="day-number">{entry.day}</span>
+                  <span className="day-number">{dayNumber}</span>
                   {state === "today" && <i className="cell-tag">Today</i>}
                   {state === "today" && <span className="today-ring" aria-hidden="true" />}
                   {state === "catch-up" && <i className="cell-tag" aria-hidden="true">↺</i>}
-                  {hasNote(entry.date) && (
+                  {hasNote(day.date) && (
                     <NoteIndicator
                       exists
-                      isShared={noteIsShared(entry.date)}
+                      isShared={noteIsShared(day.date)}
                       isOwner
                       size={10}
                       className="calendar-note-indicator"
@@ -134,20 +174,6 @@ export function ProgressScreen({
                 </button>
               );
             })}
-            {GRACE_DAYS.map((entry) => (
-              <button
-                type="button"
-                key={entry.day}
-                data-day={entry.day}
-                data-day-state="grace"
-                className="calendar-cell grace-cell"
-                onClick={() => handleCellClick(entry, "grace")}
-                aria-label={`October ${entry.day}, Catch up day`}
-              >
-                <span className="day-number">{entry.day}</span>
-                <i className="cell-tag" aria-hidden="true">↺</i>
-              </button>
-            ))}
           </div>
           <div className="calendar-legend" data-section="calendar-legend">
             <div className="legend-item">
@@ -163,7 +189,7 @@ export function ProgressScreen({
               <span>Catch-up</span>
             </div>
             <div className="legend-item">
-              <span className="legend-swatch upcoming-swatch" aria-hidden="true">28</span>
+              <span className="legend-swatch upcoming-swatch" aria-hidden="true">20</span>
               <span>Upcoming</span>
             </div>
           </div>
@@ -191,17 +217,17 @@ export function ProgressScreen({
         ) : (
           <>
             <section className="stats-card">
-              <div className="chapter-ring" style={{ background: `conic-gradient(var(--gold) 0 ${Math.min(100, chaptersRead / TOTAL_CHAPTERS * 100)}%, rgba(255,255,255,.14) 0)` }}>
+              <div className="chapter-ring" style={{ background: `conic-gradient(var(--gold) 0 ${Math.min(100, chaptersRead / TOTAL_ASSIGNMENTS * 100)}%, rgba(255,255,255,.14) 0)` }}>
                 <span>
                   <b>{chaptersRead}</b>
-                  <small>/ {TOTAL_CHAPTERS}</small>
+                  <small>/ {TOTAL_ASSIGNMENTS}</small>
                 </span>
               </div>
               <div className="stat-copy">
-                <p>CHAPTERS</p>
-                <h2>{chaptersRead}/28</h2>
-                <ProgressBar value={chaptersRead} max={TOTAL_CHAPTERS} />
-                <span>{TOTAL_CHAPTERS - chaptersRead} chapters to go</span>
+                <p>ASSIGNMENTS</p>
+                <h2>{chaptersRead}/{TOTAL_ASSIGNMENTS}</h2>
+                <ProgressBar value={chaptersRead} max={TOTAL_ASSIGNMENTS} />
+                <span>{TOTAL_ASSIGNMENTS - chaptersRead} assignments to go</span>
               </div>
             </section>
             <section className="mini-stats">
@@ -226,7 +252,7 @@ export function ProgressScreen({
                 <div>
                   <p className="eyebrow">UP NEXT</p>
                   <h2>{REWARD_TITLES[next]}</h2>
-                  <span>{next - chaptersRead} more chapters</span>
+                  <span>{next - chaptersRead} more assignments</span>
                 </div>
                 <strong>
                   {chaptersRead} / {next}

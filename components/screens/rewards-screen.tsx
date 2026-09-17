@@ -12,19 +12,19 @@ const REWARD_META: Record<number, { tone: string; kind: "medal" | "trophy"; shap
   3: { tone: "bronze", kind: "medal", shape: "small" },
   7: { tone: "silver", kind: "medal", shape: "medium" },
   14: { tone: "gold", kind: "medal", shape: "star" },
-  21: { tone: "violet", kind: "trophy", shape: "medium" },
-  28: { tone: "navy", kind: "trophy", shape: "large" },
+  15: { tone: "violet", kind: "trophy", shape: "medium" },
+  20: { tone: "navy", kind: "trophy", shape: "large" },
 };
 
 export const REWARD_TITLES: Record<number, string> = {
   3: "First steps",
   7: "One week in",
   14: "Halfway there",
-  21: "Three weeks strong",
-  28: "All of Matthew",
+  15: "Three weeks strong",
+  20: "All of Matthew",
 };
 
-const REWARD_THRESHOLDS = [3, 7, 14, 21, 28];
+const REWARD_THRESHOLDS = [3, 7, 14, 15, 20];
 
 export function RewardsScreen({
   profile,
@@ -120,7 +120,7 @@ export function RewardsScreen({
           <div>
             <p className="eyebrow">NEXT REWARD</p>
             <h2>{REWARD_TITLES[next]}</h2>
-            <span>{next - chapters} more chapters</span>
+            <span>{next - chapters} more assignments</span>
           </div>
           <strong>
             {chapters} / {next}
@@ -165,7 +165,7 @@ function Reward({
         </div>
       )}
       <strong>{title}</strong>
-      <span className="reward-state">{earned ? <><span aria-hidden="true">✓ </span>Earned</> : <><svg aria-hidden="true" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5" /><path d="M5 7V5a3 3 0 0 1 6 0v2" /></svg> Unlock at {threshold} chapters</>}</span>
+      <span className="reward-state">{earned ? <><span aria-hidden="true">✓ </span>Earned</> : <><svg aria-hidden="true" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="7" width="10" height="7" rx="1.5" /><path d="M5 7V5a3 3 0 0 1 6 0v2" /></svg> Unlock at {threshold} assignments</>}</span>
     </article>
   );
 }

@@ -36,7 +36,7 @@ export function HomeGrowthSheet({
 
         <div className="home-growth-formula">
           <span className="formula-label">How progress is calculated</span>
-          <p className="formula-text">group check-ins divided by members times 28</p>
+        <p className="formula-text">completed assignments divided by members times 20</p>
         </div>
 
         <div className="home-growth-stages">

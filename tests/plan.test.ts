@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   assignmentReference,
   chapterReference,
+  completedAssignmentCheckinCount,
   completedAssignmentsCount,
   entryChapters,
   isAssignmentCompleted,
@@ -111,6 +112,13 @@ describe("assignmentReference", () => {
   });
 });
 
+describe("assignment completion model", () => {
+  it("keeps a two-chapter assignment incomplete until both chapters are read", () => {
+    expect(completedAssignmentsCount([1])).toBe(0);
+    expect(completedAssignmentsCount([1, 2])).toBe(1);
+  });
+});
+
 describe("assignment completion", () => {
   it("checks completion and counts completed assignments", () => {
     expect(isAssignmentCompleted(PLAN[0], [1])).toBe(false);
@@ -118,5 +126,14 @@ describe("assignment completion", () => {
     expect(completedAssignmentsCount([1, 2])).toBe(1);
     expect(completedAssignmentsCount([1, 2, 3, 4])).toBe(2);
   });
-});
 
+  it("counts a two-chapter assignment once per member in shared-home stats", () => {
+    expect(
+      completedAssignmentCheckinCount([
+        { rockPersonId: 1, chapter: 1 },
+        { rockPersonId: 1, chapter: 2 },
+        { rockPersonId: 2, chapter: 1 },
+      ]),
+    ).toBe(1);
+  });
+});

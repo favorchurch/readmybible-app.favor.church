@@ -403,6 +403,33 @@ describe("TodayScreen tent people toggle", () => {
 });
 
 describe("ProgressScreen campus groups", () => {
+  it("uses assignments and renders review days from the plan calendar", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ProgressScreen, {
+        today: { ...mockTodayState, todayLocal: "2026-10-12", entry: null },
+        chapters: [1],
+        chaptersRead: 0,
+        coins: 0,
+        streakDays: 0,
+        groupName: null,
+        campusBoard: [],
+        profile: testProfile,
+        onCatchUp: () => {},
+        onEditProfile: () => {},
+        onTranslationChange: () => {},
+      }),
+    );
+
+    expect(html).toContain("20 assignments · Oct 5–30 · 6 review days");
+    expect(html).not.toContain("28 chapters · Oct 1–28 · 3 catch-up days");
+    expect(html).toContain('data-date="2026-10-10"');
+    expect(html).toContain('data-day-state="review"');
+    expect(html).toContain('data-day="1"');
+    expect(html).toContain('data-day-state="catch-up"');
+    expect(html).not.toContain('data-day="29"');
+    expect(html).not.toContain('data-day="30"');
+  });
+
   it("renders only the campus group count on the active branch", () => {
     const html = renderToStaticMarkup(
       React.createElement(ProgressScreen, {

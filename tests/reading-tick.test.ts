@@ -116,8 +116,8 @@ describe("checkInWithRetry", () => {
 describe("simulatedCheckInGroup", () => {
   it("advances the group by exactly one check-in", () => {
     const group = simulatedCheckInGroup({ ratio: 0.5, memberCount: 10 });
-    // 10 members * 28 chapters = 280 slots; half is 140, plus this one read.
-    expect(group.checkinCount).toBe(141);
+    // 10 members * 20 assignments = 200 slots; half is 100, plus this one read.
+    expect(group.checkinCount).toBe(101);
     expect(group.memberCount).toBe(10);
     expect(group.after.ratio).toBeGreaterThan(group.before.ratio);
   });
@@ -129,7 +129,7 @@ describe("simulatedCheckInGroup", () => {
 
   it("does not exceed a fully-read group", () => {
     const group = simulatedCheckInGroup({ ratio: 1, memberCount: 4 });
-    expect(group.checkinCount).toBe(4 * 28);
+    expect(group.checkinCount).toBe(4 * 20);
     expect(group.after.ratio).toBe(1);
   });
 
