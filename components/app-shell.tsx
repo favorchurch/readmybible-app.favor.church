@@ -79,6 +79,7 @@ export type RosterMemberView = {
   readToday: boolean;
   chapters: number[];
   readingDates: string[];
+  displayPoints?: number;
 };
 
 export type AppShellProps = {

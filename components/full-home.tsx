@@ -3,44 +3,88 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Avatar, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
-import { homeStages, RotatableHome } from "@/components/rotatable-home";
+import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { Sheet } from "@/components/sheet";
 import { ProgressBar } from "@/components/progress-bar";
 import type { TodayState } from "@/components/use-today";
 import { modelFor } from "./scene-home-registry";
 import { sceneEligibility } from "@/lib/scene-eligibility";
 import { longDate, PLAN_START } from "@/lib/plan";
+import type { ConnectScore } from "@/lib/scoring";
 
 const TIMES = ['Day', 'Sunset', 'Night'] as const;
+const timeLabels: Record<typeof TIMES[number], string> = {
+  Day: "3D Campfire Day",
+  Sunset: "3D Campfire Sunset",
+  Night: "3D Campfire Night",
+};
 const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 const ImmersiveHomeScene = lazy(() => import('@/components/immersive-home-scene').then(module => ({ default: module.ImmersiveHomeScene })));
 
-function SceneControlIcon({ icon }: { icon: 'people' | 'moon' | 'sun' | 'reset' | 'expand' }) {
+function SceneControlIcon({ icon }: { icon: 'people' | 'moon' | 'sun' | 'reset' | 'expand' | 'hide' | 'eye' }) {
   return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     {icon === 'people' && <><circle cx="9" cy="7" r="3" /><path d="M3 20v-3a6 6 0 0 1 12 0v3H3ZM16 4a3 3 0 0 1 0 6M18 13a5 5 0 0 1 3 4v3h-3" /></>}
     {icon === 'moon' && <path d="M20 15.3A8.5 8.5 0 0 1 8.7 4 8.5 8.5 0 1 0 20 15.3Z" />}
     {icon === 'sun' && <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>}
     {icon === 'reset' && <><path d="M20 7v5h-5M20 12a8 8 0 1 0-2.3 5.7" /></>}
     {icon === 'expand' && <path d="M14 4h6v6M20 4l-7 7M10 20H4v-6m0 6 7-7" />}
+    {icon === 'hide' && <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></>}
+    {icon === 'eye' && <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}
   </svg>;
 }
 
-export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, progress, milestone, overallPct, today, roster, profile, selectedMemberId, onSelectMember, onViewReading, onViewPlan }: {
-  onClose: () => void; groupName: string; coins: number; stage: number;
+export function FullHome({
+  onClose,
+  groupName,
+  coins,
+  groupCheckinCount,
+  stage,
+  progress,
+  milestone,
+  overallPct,
+  today,
+  roster,
+  profile,
+  selectedMemberId,
+  onSelectMember,
+  onViewReading,
+  onViewPlan,
+  score,
+  unlocked3dCampfire,
+}: {
+  onClose: () => void;
+  groupName: string;
+  coins: number;
+  stage: number;
   groupCheckinCount: number | null;
-  progress: { pct: number; stage: string } | null; milestone: { stage: string; pct: number } | null;
-  overallPct: number; today: TodayState; roster: RosterMemberView[]; profile: UserProfile;
-  selectedMemberId: number | null; onSelectMember: (member: RosterMemberView) => void;
-  onViewReading?: () => void; onViewPlan?: () => void;
+  progress: { pct: number; stage: string } | null;
+  milestone: { stage: string; pct: number } | null;
+  overallPct: number;
+  today: TodayState;
+  roster: RosterMemberView[];
+  profile: UserProfile;
+  selectedMemberId: number | null;
+  onSelectMember: (member: RosterMemberView) => void;
+  onViewReading?: () => void;
+  onViewPlan?: () => void;
+  score?: ConnectScore;
+  unlocked3dCampfire?: boolean;
 }) {
   const [people, setPeople] = useState(true);
   const [names, setNames] = useState(true);
-  const [time, setTime] = useState<typeof TIMES[number]>('Sunset');
-  const [mode, setMode] = useState<'classic' | 'tent' | 'campfire'>('classic');
-  const supportsScene = modelFor(stage)?.supported ?? false;
-  const isCampsite = supportsScene && mode !== 'classic';
+  const [showPoints, setShowPoints] = useState(true);
+  const [time, setTime] = useState<typeof TIMES[number]>('Day');
+  const [mode, setMode] = useState<'home' | 'campfire'>('home');
+  const [controlsHidden, setControlsHidden] = useState(false);
+  const restoreButtonRef = useRef<HTMLButtonElement>(null);
+
+  const activeStage = score ? stageIndex(score.stage) : stage;
+  const supportsScene = modelFor(activeStage)?.supported ?? false;
+  const isCampsite = supportsScene && mode === 'campfire';
   const eligibility = sceneEligibility(groupCheckinCount);
-  const gatheringOpen = eligibility.kind === "unlocked";
+  const isCampfireUnlocked = score ? score.unlocked3dCampfire : (unlocked3dCampfire !== undefined ? unlocked3dCampfire : eligibility.kind === "unlocked");
+  const gatheringOpen = isCampfireUnlocked;
+
   const [options, setOptions] = useState(false);
   const [reset, setReset] = useState(0);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
@@ -56,6 +100,19 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
     };
   }, []);
 
+  useEffect(() => {
+    if (!controlsHidden) return;
+    restoreButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setControlsHidden(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [controlsHidden]);
+
   async function expand() {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
@@ -64,30 +121,58 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
   }
 
   return <>
-    <Sheet open onClose={onClose} labelledBy="full-home-title" immersive className={`full-home ${isCampsite ? 'scene-home' : ''} time-${time.toLowerCase()} mode-${mode}`}>
-      <div className="full-home-header">
+    <Sheet open onClose={onClose} labelledBy="full-home-title" immersive className={`full-home ${isCampsite ? 'scene-home' : ''} time-${time.toLowerCase()} mode-${mode} ${controlsHidden ? 'controls-hidden' : ''}`}>
+      {!controlsHidden && <div className="full-home-header">
         <button className="home-float-button" onClick={onClose} aria-label="Close Home">×</button>
-        <div className="full-home-identity"><h2 id="full-home-title">{groupName}</h2><span>{roster.length} members · {homeStages[stage].name}</span></div>
+        <div className="full-home-identity"><h2 id="full-home-title">{groupName}</h2><span>{roster.length} members · {homeStages[activeStage].name}</span></div>
         <button type="button" className="coin-chip" aria-expanded={coinInfo} aria-label={`${coins} chapter points. Select to learn more`} onClick={() => setCoinInfo(value => !value)}>◉ {coins}</button>
         {fullscreenAvailable && <button className="home-float-button home-expand" aria-label="Toggle device fullscreen" onClick={expand}><SceneControlIcon icon="expand" /></button>}
-      </div>
+      </div>}
+      {controlsHidden && (
+        <button
+          ref={restoreButtonRef}
+          type="button"
+          className="home-restore-controls"
+          onClick={() => setControlsHidden(false)}
+          aria-label="Restore controls"
+        >
+          <SceneControlIcon icon="eye" />
+          Restore controls
+        </button>
+      )}
       {isCampsite && <Suspense fallback={<div className="scene-loading" role="status">Preparing your gathering…</div>}>
-        <ImmersiveHomeScene stage={stage} mode={mode === 'campfire' ? 'campfire' : 'tent'} time={time} roster={roster} profile={profile} people={people && gatheringOpen} names={names} selectedMemberId={selectedMemberId} onSelectMember={onSelectMember} resetKey={reset} />
+        <ImmersiveHomeScene
+          stage={activeStage}
+          mode="campfire"
+          time={time}
+          roster={roster}
+          profile={profile}
+          people={people && gatheringOpen}
+          names={names}
+          showPoints={showPoints}
+          selectedMemberId={selectedMemberId}
+          onSelectMember={onSelectMember}
+          resetKey={reset}
+        />
       </Suspense>}
-      {!isCampsite && <RotatableHome key={reset} stage={stage} completed={false} immersive>
+      {!isCampsite && <RotatableHome key={reset} stage={activeStage} completed={false} immersive>
         {people && <div className={`home-gathering ${names ? 'show-names' : ''}`}>
           {roster.map((member, index) => {
             const angle = index / Math.max(roster.length, 1) * Math.PI * 2;
             const radius = 168 * (1 + Math.floor(index / 14) * .22);
+            const points = member.displayPoints;
             return <button type="button" className={`home-person ${selectedMemberId === member.personId ? 'selected' : ''}`} key={member.personId} style={{ '--px': `${Math.cos(angle) * radius}px`, '--pz': `${Math.sin(angle) * radius}px` } as React.CSSProperties} onClick={() => onSelectMember(member)} aria-label={`View ${member.name}'s profile`}>
-              <span className="home-person-label">{member.name}{member.isSelf ? ' · You' : ''}</span>
+              <span className="home-person-label">
+                {showPoints && points !== undefined && <span className="home-person-points">{points}</span>}
+                <span className="home-person-name">{member.name}{member.isSelf ? ' · You' : ''}</span>
+              </span>
               <Avatar color="coral" {...(member.isSelf ? profile : member.avatar)} />
             </button>;
           })}
         </div>}
       </RotatableHome>}
-      {coinInfo && <p className="full-home-coin-info" role="status">Points celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
-      <div className="full-home-footer">
+      {!controlsHidden && coinInfo && <p className="full-home-coin-info" role="status">Points celebrate each chapter your group checks in. Home stages are unlocked by overall Matthew completion.</p>}
+      {!controlsHidden && <div className="full-home-footer">
         {isCampsite && !gatheringOpen && <div className="scene-access-note" role="status" data-scene-access={eligibility.kind}>
           <p>{eligibility.message}</p>
           {!gatheringOpen && eligibility.kind === "locked" && (today.displayPhase === "active" ? onViewReading : onViewPlan) && <button type="button" onClick={today.displayPhase === "active" ? onViewReading : onViewPlan}>
@@ -109,23 +194,39 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           </div>
         </details>
         {supportsScene && <div className="home-scene-switch" role="group" aria-label="Scene presentation">
-          <button type="button" aria-pressed={mode === 'classic'} onClick={() => setMode('classic')}>Classic</button>
-          <button type="button" aria-pressed={mode === 'tent'} onClick={() => setMode('tent')}>{modelFor(stage)?.name}</button>
-          <button type="button" aria-pressed={mode === 'campfire'} onClick={() => setMode('campfire')}>Campfire</button>
+          <button type="button" aria-pressed={mode === 'home'} onClick={() => setMode('home')}>Home</button>
+          <button
+            type="button"
+            aria-pressed={mode === 'campfire'}
+            onClick={() => setMode('campfire')}
+            aria-label={isCampfireUnlocked ? "3D Campfire" : "3D Campfire (locked)"}
+            data-locked={!isCampfireUnlocked}
+            className="home-scene-switch-campfire"
+          >
+            {!isCampfireUnlocked && (
+              <svg className="scene-lock-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: 4, verticalAlign: "-2px" }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            )}
+            3D Campfire
+          </button>
         </div>}
         <div className="home-floating-actions">
           <button onClick={() => setOptions(true)} aria-haspopup="dialog"><span><SceneControlIcon icon="people" /></span>People</button>
-          <button onClick={() => setTime(TIMES[(TIMES.indexOf(time) + 1) % TIMES.length])} aria-label={`Time of day: ${time}. Change time of day`}><span><SceneControlIcon icon={time === 'Night' ? 'moon' : 'sun'} /></span>{time}</button>
+          <button onClick={() => setTime(TIMES[(TIMES.indexOf(time) + 1) % TIMES.length])} aria-label={`Time of day: ${timeLabels[time]}. Change time of day`}><span><SceneControlIcon icon={time === 'Night' ? 'moon' : 'sun'} /></span>{time}</button>
           <button onClick={() => setReset(value => value + 1)}><span><SceneControlIcon icon="reset" /></span>Reset view</button>
+          <button type="button" onClick={() => setControlsHidden(true)} aria-label="Hide controls"><span><SceneControlIcon icon="hide" /></span>Hide</button>
         </div>
-      </div>
+      </div>}
     </Sheet>
     <Sheet open={options} onClose={() => setOptions(false)} labelledBy="home-options-title" className="home-options">
       <button className="close-button" aria-label="Close View Options" onClick={() => setOptions(false)}>×</button>
       <h2 id="home-options-title">View Options</h2>
-      <label className="home-option" htmlFor="home-people" aria-label="Show all members"><span><strong>Show all members</strong><small>See everyone in the scene</small></span><input id="home-people" type="checkbox" role="switch" checked={people} onChange={e => setPeople(e.target.checked)} /></label>
-      <label className="home-option" htmlFor="home-names" aria-label="Show name labels"><span><strong>Show name labels</strong><small>Display names above avatars</small></span><input id="home-names" type="checkbox" role="switch" checked={names} disabled={!people} onChange={e => setNames(e.target.checked)} /></label>
-      <fieldset className="home-time-options"><legend>Time of day</legend>{TIMES.map(value => <button key={value} aria-pressed={time === value} onClick={() => setTime(value)}>{value}</button>)}</fieldset>
+      <label className="home-option" htmlFor="home-people" aria-label="Show all members"><span><strong>Show all members</strong><small>See everyone in the scene</small></span><input id="home-people" type="checkbox" role="switch" checked={people} aria-checked={people} onChange={e => setPeople(e.target.checked)} /></label>
+      <label className="home-option" htmlFor="home-names" aria-label="Show name labels"><span><strong>Show name labels</strong><small>Display names above avatars</small></span><input id="home-names" type="checkbox" role="switch" checked={names} aria-checked={names} disabled={!people} onChange={e => setNames(e.target.checked)} /></label>
+      <label className="home-option" htmlFor="home-points" aria-label="Show points"><span><strong>Show points</strong><small>Display contributed points above names</small></span><input id="home-points" type="checkbox" role="switch" checked={showPoints} aria-checked={showPoints} disabled={!people} onChange={e => setShowPoints(e.target.checked)} /></label>
+      <fieldset className="home-time-options"><legend>Time of day</legend>{TIMES.map(value => <button key={value} type="button" aria-pressed={time === value} onClick={() => setTime(value)} aria-label={timeLabels[value]}>{timeLabels[value]}</button>)}</fieldset>
       <section className="home-options-members" aria-labelledby="home-options-members-title">
         <h3 id="home-options-members-title">Connect members</h3>
         <p>Select anyone to view their profile.</p>
@@ -133,7 +234,8 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           {roster.map(member => <button type="button" key={member.personId} className={selectedMemberId === member.personId ? "selected" : ""} onClick={() => { setOptions(false); onSelectMember(member); }}>{member.name}{member.isSelf ? " (You)" : ""}</button>)}
         </div>
       </section>
-      <button className="home-option-reset" onClick={() => setReset(value => value + 1)}>↺ Reset view</button>
+      <button type="button" className="home-option-reset" onClick={() => { setOptions(false); setControlsHidden(true); }}>Hide controls</button>
+      <button type="button" className="home-option-reset" onClick={() => setReset(value => value + 1)}>↺ Reset view</button>
       <button className="primary-button" onClick={() => setOptions(false)}>Done <span aria-hidden="true">✓</span></button>
     </Sheet>
   </>;
