@@ -9,16 +9,25 @@ vi.mock("server-only", () => ({}));
 const searchParams = vi.hoisted(() => ({ value: new URLSearchParams("test=1") }));
 
 const nudgeMocks = vi.hoisted(() => ({
-  sendNudge: vi.fn(async (_input?: unknown) => ({ ok: true as const })),
-  getNotifications: vi.fn(async () => ({ ok: true as const, notifications: [] })),
-  dismissNotification: vi.fn(async (_input?: unknown) => ({ ok: true as const })),
+  sendNudge: vi.fn(async (input?: unknown) => {
+    void input;
+    return { ok: true as const };
+  }),
+  getNotifications: vi.fn(async () => ({
+    ok: true as const,
+    notifications: [] as import("@/app/actions/notifications").NotificationItem[],
+  })),
+  dismissNotification: vi.fn(async (input?: unknown) => {
+    void input;
+    return { ok: true as const };
+  }),
   dismissAllNotifications: vi.fn(async () => ({ ok: true as const })),
 }));
 
 vi.mock("@/app/actions/notifications", () => ({
-  sendNudge: (input: unknown) => nudgeMocks.sendNudge(input as never),
+  sendNudge: (input: unknown) => nudgeMocks.sendNudge(input),
   getNotifications: () => nudgeMocks.getNotifications(),
-  dismissNotification: (input: unknown) => nudgeMocks.dismissNotification(input as never),
+  dismissNotification: (input: unknown) => nudgeMocks.dismissNotification(input),
   dismissAllNotifications: () => nudgeMocks.dismissAllNotifications(),
 }));
 
@@ -101,67 +110,60 @@ afterEach(() => {
 });
 
 describe("Known-Bad 1 & 2: Test Mode blocks writes for nudge and notification dismissal", () => {
+  /**
+   * Both tests render the REAL AppShell, in real Test Mode (test=1), and
+   * drive the actual UI -- not a hand-built NotificationProvider standing in
+   * for AppShell's wiring. That is the only way these can catch a regression
+   * where AppShell stops passing `guardWrite(testMode.active, ...)` into
+   * NotificationProvider and instead wires the raw `sendNudge`/
+   * `dismissNotification` actions straight through.
+   */
   it("Known-Bad 1: A nudge attempted while Test Mode is active performs NO write", async () => {
     searchParams.value = new URLSearchParams("test=1");
 
     render(React.createElement(AppShell, baseShellProps()));
 
-    // Open member profile sheet by clicking on Fellow Member or render with AppShell's context
-    // Directly test NudgeButton inside AppShell or test the guarded action:
-    // In AppShell, guardedSendNudge is passed to NotificationProvider.
-    // Let's render a NudgeButton inside AppShell or verify with the MemberProfileSheet rendered:
-    render(
-      <NotificationProvider
-        guardedSendNudge={async () => {
-          // Wrapped by guardWrite(active, sendNudge)
-          return { ok: false, error: "Test mode: writes are disabled." };
-        }}
-        activeGroupId={501}
-        viewerIsConnectMember={true}
-      >
-        <NudgeButton targetPersonId={101} groupId={501} targetName="Fellow Member" />
-      </NotificationProvider>,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Connect" }));
 
-    const nudgeButton = screen.getByRole("button", { name: "Nudge Fellow Member" });
+    const memberCard = await screen.findByRole("button", {
+      name: "View Fellow Member's profile: Waiting",
+    });
+    fireEvent.click(memberCard);
+
+    const nudgeButton = await screen.findByRole("button", { name: "Nudge Fellow Member" });
     fireEvent.click(nudgeButton);
 
     await waitFor(() => {
       expect(screen.getByText("Test mode: writes are disabled.")).toBeTruthy();
     });
 
-    // The underlying action was NOT called
+    // The underlying server action was NOT called
     expect(nudgeMocks.sendNudge).not.toHaveBeenCalled();
   });
 
   it("Known-Bad 2: A notification dismiss while Test Mode is active performs NO write", async () => {
     searchParams.value = new URLSearchParams("test=1");
 
-    const sampleNotification = {
-      id: 99,
-      type: "nudge",
-      title: "Nudge",
-      message: "Fellow Member nudged you to read today!",
-      senderRockPersonId: 101,
-      senderName: "Fellow Member",
-      groupId: 501,
-      createdAt: "2026-10-05T10:00:00Z",
-      dismissedAt: null,
-    };
+    nudgeMocks.getNotifications.mockResolvedValue({
+      ok: true,
+      notifications: [
+        {
+          id: 99,
+          type: "nudge",
+          title: "Nudge",
+          message: "Fellow Member nudged you to read today!",
+          senderRockPersonId: 101,
+          senderName: "Fellow Member",
+          groupId: 501,
+          createdAt: "2026-10-05T10:00:00Z",
+          dismissedAt: null,
+        },
+      ],
+    });
 
-    render(
-      <NotificationProvider
-        initialNotifications={[sampleNotification]}
-        guardedDismissNotification={async () => {
-          // Wrapped by guardWrite(active, dismissNotification)
-          return { ok: false, error: "Test mode: writes are disabled." };
-        }}
-      >
-        <NotificationToast />
-      </NotificationProvider>,
-    );
+    render(React.createElement(AppShell, baseShellProps()));
 
-    expect(screen.getByText("Fellow Member nudged you to read today!")).toBeTruthy();
+    await screen.findByText("Fellow Member nudged you to read today!");
     const dismissBtn = screen.getByRole("button", { name: "Dismiss notification" });
     fireEvent.click(dismissBtn);
 
@@ -169,7 +171,7 @@ describe("Known-Bad 1 & 2: Test Mode blocks writes for nudge and notification di
       expect(screen.getByText("Test mode: writes are disabled.")).toBeTruthy();
     });
 
-    // The underlying dismiss action was NOT called
+    // The underlying server action was NOT called
     expect(nudgeMocks.dismissNotification).not.toHaveBeenCalled();
   });
 });

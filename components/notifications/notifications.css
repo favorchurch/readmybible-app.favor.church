@@ -1,6 +1,19 @@
 /* Persistent Notification & Nudge Styles */
 
-/* Top-right chrome composition container */
+/* Shared top-right chrome region (app-shell.tsx). Test Mode's "Testing as"
+   chip and Visiting's "Visiting: <Connect>" chip (map 146) mount as
+   additional flex children here -- keep this a plain gap row so they lay
+   out beside the inbox trigger instead of overlapping it. */
+.top-right-chrome {
+  position: fixed;
+  z-index: 140;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .notification-inbox-wrap {
   position: relative;
   display: inline-flex;
@@ -223,7 +236,10 @@
 .notification-toast-viewport {
   position: fixed;
   z-index: 180;
-  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  /* Cleared below .top-right-chrome's row (safe-area + 8px top offset +
+     topbar-h row height + 8px gap) so a toast never covers the inbox
+     trigger or a future chip mounted beside it. */
+  top: calc(env(safe-area-inset-top, 0px) + 8px + var(--topbar-h) + 8px);
   right: 12px;
   width: min(calc(100% - 24px), 360px);
   pointer-events: none;

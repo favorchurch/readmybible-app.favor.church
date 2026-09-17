@@ -201,13 +201,6 @@ function AppShellInner(props: AppShellProps) {
     () => guardWrite(testMode.active, dismissAllNotifications),
     [testMode.active],
   );
-  const viewerIsConnectMember = useMemo(() => {
-    const effectiveGroupId = testMode.active
-      ? (testMode.state.groupId ?? props.activeGroup?.groupId ?? null)
-      : (props.activeGroup?.groupId ?? null);
-    if (!effectiveGroupId) return false;
-    return props.memberships.some((m) => m.groupId === effectiveGroupId) || props.isLeader;
-  }, [testMode.active, testMode.state.groupId, props.activeGroup, props.memberships, props.isLeader]);
   // The simulated group the panel has selected, falling back to the reader's
   // real active group when nothing is picked -- same resolution TestModePanel
   // already uses for its own "Join code: ..." preview (`simulatedGroupId`
@@ -419,6 +412,18 @@ function AppShellInner(props: AppShellProps) {
     ? simulatedScope.isAdminScope
     : (props.isAdminScope ?? false);
   const canSeeLeaderTab = isLeader || isAdminScope;
+  // The nudge capability's group context. Test mode must resolve this the
+  // same way it resolves `isLeader` just above -- against the SIMULATED role,
+  // never `props.isLeader`/`props.activeGroup` (the real signed-in user) --
+  // or a real leader simulating an unrelated role/group would still see a
+  // member-nudge surface the server would reject anyway (#152 known-bad 5,
+  // test-mode variant). `simulatedGroupId` is already null for a synthetic
+  // scenario, since a fabricated roster has no real Rock person ids to nudge.
+  const effectiveConnectGroupId = testMode.active ? simulatedGroupId : (props.activeGroup?.groupId ?? null);
+  const viewerIsConnectMember = useMemo(() => {
+    if (!effectiveConnectGroupId) return false;
+    return props.memberships.some((m) => m.groupId === effectiveConnectGroupId) || isLeader;
+  }, [effectiveConnectGroupId, props.memberships, isLeader]);
   const showReaderTabs = today.displayPhase !== "pre-launch" || canSeeLeaderTab;
   const activeTab =
     !showReaderTabs && tab !== "today" ? "today" : canSeeLeaderTab || tab !== "leader" ? tab : "today";
@@ -667,7 +672,7 @@ function AppShellInner(props: AppShellProps) {
         guardedDismissNotification={guardedDismissNotification}
         guardedDismissAllNotifications={guardedDismissAllNotifications}
         viewerIsConnectMember={viewerIsConnectMember}
-        activeGroupId={props.activeGroup?.groupId ?? null}
+        activeGroupId={effectiveConnectGroupId}
       >
         <div className="app-shell">
           <div className="paper-noise" />
@@ -689,7 +694,7 @@ function AppShellInner(props: AppShellProps) {
         guardedDismissNotification={guardedDismissNotification}
         guardedDismissAllNotifications={guardedDismissAllNotifications}
         viewerIsConnectMember={viewerIsConnectMember}
-        activeGroupId={props.activeGroup?.groupId ?? null}
+        activeGroupId={effectiveConnectGroupId}
       >
         <div className="app-shell">
           <div className="paper-noise" />
@@ -720,7 +725,7 @@ function AppShellInner(props: AppShellProps) {
         guardedDismissNotification={guardedDismissNotification}
         guardedDismissAllNotifications={guardedDismissAllNotifications}
         viewerIsConnectMember={viewerIsConnectMember}
-        activeGroupId={props.activeGroup?.groupId ?? null}
+        activeGroupId={effectiveConnectGroupId}
       >
         <div className="app-shell">
           <div className="paper-noise" />
@@ -741,7 +746,7 @@ function AppShellInner(props: AppShellProps) {
       guardedDismissNotification={guardedDismissNotification}
       guardedDismissAllNotifications={guardedDismissAllNotifications}
       viewerIsConnectMember={viewerIsConnectMember}
-      activeGroupId={props.activeGroup?.groupId ?? null}
+      activeGroupId={effectiveConnectGroupId}
     >
       <div className="app-shell">
         {activeTab !== "leader" && <div className="paper-noise" />}
