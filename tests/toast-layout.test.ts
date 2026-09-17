@@ -155,7 +155,7 @@ function mockMatchMedia(reduceMotion: boolean) {
 
 /**
  * Loads the real stylesheets into jsdom's CSSOM so getComputedStyle resolves
- * the actual cascade (including the :has() stacking rule), instead of a
+ * the actual cascade (including the elevated-wrapper stacking rule), instead of a
  * hand-rolled fixture that could silently drift from production CSS.
  */
 function loadRealStylesheets() {
@@ -221,8 +221,20 @@ describe("transient toast vs. reading sheet stacking", () => {
     expect(attribution?.textContent).toContain("NIV");
     expect(screen.getByText(/you have read/i)).toBeTruthy();
 
-    const readingWrap = document.querySelector(".modal-wrap:has(.reading-dialog-sheet)");
+    const readingWrap = document.querySelector(".modal-wrap--elevated");
     expect(readingWrap).toBeTruthy();
+    expect(readingWrap?.querySelector(".reading-dialog-sheet")).toBeTruthy();
+
+    // The elevation must come from a plain class the Sheet renders, never from
+    // `:has()`. This project ships no browserslist override, so Next targets
+    // Firefox 111, and `:has()` did not land until Firefox 121 -- a selector the
+    // target browser drops would silently let the toast cover the NET licensing
+    // attribution again, which is a compliance failure rather than a cosmetic one.
+    const sheetCss = readFileSync(fileURLToPath(new NodeURL("../app/styles/sheet.css", import.meta.url)), "utf8");
+    // Strip comments first: the rule above deliberately names `:has()` in prose
+    // to explain why it is not used, and that explanation must not trip this guard.
+    const selectorsOnly = sheetCss.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(selectorsOnly).not.toContain(":has(");
 
     const wrapZ = Number(getComputedStyle(readingWrap as Element).zIndex);
     const toastZ = Number(getComputedStyle(toastViewport as Element).zIndex);

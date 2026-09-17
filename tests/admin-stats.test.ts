@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -7,7 +9,7 @@ import {
   flattenGroupNodes,
   statForGroup,
 } from "@/lib/admin/stats";
-import { completedAssignmentCheckinCount } from "@/lib/plan";
+import { completedAssignmentCheckinCount, PLAN_START } from "@/lib/plan";
 import type { HierarchyGroupNode, HierarchySectionNode } from "@/lib/rock/hierarchy";
 
 function group(overrides: Partial<HierarchyGroupNode>): HierarchyGroupNode {
@@ -167,5 +169,28 @@ describe("flattenGroupNodes / collectTopLevelSeriesInputs", () => {
     expect(g10.readersToday).toBe(5);
     expect(g11.checkins).toBe(0);
     expect(g11.stage).toBe("Tent");
+  });
+});
+
+describe("R4: admin stats derive the launch date from the real schedule", () => {
+  it("does not carry its own retired PLAN_START copy", async () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../lib/admin/stats.ts", import.meta.url)),
+      "utf8",
+    );
+    // A second PLAN_START declared here shadowed lib/plan.ts and pinned the
+    // admin chart to the retired October 1 date, so the cumulative series
+    // opened with four days that precede the first scheduled assignment --
+    // any legacy check-in row in that window renders as pre-launch progress.
+    expect(source).not.toMatch(/export const PLAN_START\s*=/);
+  });
+
+  it("pulls the launch date from lib/plan, the real schedule source", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../lib/admin/stats.ts", import.meta.url)),
+      "utf8",
+    );
+    expect(source).toMatch(/import \{[^}]*\bPLAN_START\b[^}]*\} from "@\/lib\/plan"/);
+    expect(PLAN_START).toBe("2026-10-05");
   });
 });

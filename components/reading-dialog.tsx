@@ -284,7 +284,7 @@ export function ReadingDialog({
       : `Matthew ${resolvedChapters[0]}–${resolvedChapters[resolvedChapters.length - 1]}`;
 
   return (
-    <Sheet open onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet scripture-sheet">
+    <Sheet open elevated onClose={onClose} labelledBy="reading-dialog-title" className="reading-dialog-sheet scripture-sheet">
       <button className="close-button" onClick={onClose} aria-label="Close">
         ×
       </button>

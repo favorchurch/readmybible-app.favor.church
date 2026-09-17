@@ -14,8 +14,13 @@
    toast layer (transient save toast 200, persistent notification toast 180,
    top-right chrome 140) guarantees the toast can never paint over this
    content, regardless of scroll position -- a fixed-position toast otherwise
-   has no way to know where the attribution has scrolled to. */
-.modal-wrap:has(.reading-dialog-sheet) {
+   has no way to know where the attribution has scrolled to.
+
+   Driven by the Sheet `elevated` prop rather than `:has(.reading-dialog-sheet)`:
+   this project has no browserslist override, so Next's fallback target includes
+   Firefox 111, and `:has()` did not ship until Firefox 121. A selector the target
+   browser drops would silently restore the bug it was added to fix. */
+.modal-wrap--elevated {
   z-index: 210;
 }
 

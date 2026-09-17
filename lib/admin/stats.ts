@@ -14,11 +14,10 @@ import { createHash } from "node:crypto";
 import { and, countDistinct, eq, gte, inArray } from "drizzle-orm";
 
 import { appNow } from "@/lib/dev-clock";
-import { groupRatio, stageFor, TOTAL_CHAPTERS, type Stage } from "@/lib/game";
-import { completedAssignmentCheckinCount, completedAssignmentsCount } from "@/lib/plan";
+import { groupRatio, stageFor, type Stage } from "@/lib/game";
+import { completedAssignmentCheckinCount, completedAssignmentsCount, PLAN_START } from "@/lib/plan";
 import type { HierarchyGroupNode, HierarchySectionNode } from "@/lib/rock/hierarchy";
 
-export const PLAN_START = "2026-10-01";
 const ADMIN_TZ = "Asia/Manila";
 
 /** Today's date (YYYY-MM-DD) in Favor's org-local timezone, for "read today" and chart range. */
@@ -272,8 +271,6 @@ export async function loadAdminStats(
 
   return { sections: statsSections, series };
 }
-
-export { TOTAL_CHAPTERS };
 
 /** Short stable digest of a group id set, so cache keys stay small under global scope. */
 function idsHash(groupIds: Iterable<number>): string {
