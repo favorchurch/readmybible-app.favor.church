@@ -91,7 +91,7 @@ Build and enable one new stage at a time:
 - Trailer: rounded body, wheels on both sides, hitch, windows and door.
 - Cabin: log construction, roof, porch, windows, chimney.
 - House: main volume, garage, porch, roof sections.
-- Apartment: readable floor structure, entrance, balconies/windows, roof parapet.
+- Condo: readable floor structure, entrance, balconies/windows, roof parapet.
 - Mansion: main section and wings, entrance, roofs, landscaping.
 
 Implementation order may follow the blueprint, but do not reorder the actual product's progression. Preserve its current stage order unless Rico explicitly changes it.

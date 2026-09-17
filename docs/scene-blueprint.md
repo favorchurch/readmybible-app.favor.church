@@ -9,7 +9,7 @@ The delivered scope includes a reusable model contract and six procedural homes,
 
 - **Classic** is the default and uses the original CSS 3D scene.
 - At the Tent stage, **Tent** and **Campfire** are alternate WebGL presentations in the same immersive sheet.
-- Trailer, Cabin, Apartment, House, and Mansion now have enabled alternate models. Classic remains the default and remains available.
+- Trailer, Cabin, Condo, House, and Mansion now have enabled alternate models. Classic remains the default and remains available.
 - Campfire keeps the tent in the background and uses darker lighting, a central fire, and additional log seating.
 - First names are shown above people by default; full names remain in accessible labels and title attributes. People settings can hide names or people.
 - This is a procedural, stylized 3D interpretation of the reference, not a pixel-identical illustration. Art direction still needs the user's visual acceptance.
@@ -111,11 +111,11 @@ This is browser touch emulation, not physical iOS/Android hardware validation. S
 
 ## Delivered scene contract and rewards
 
-`components/scene-home-contract.ts` defines `HomeModel`: grounded local geometry, footprint, member area, focal point, label clearance and framing. `scene-home-registry.ts` maps the product order Tent → Trailer → Cabin → Apartment → House → Mansion. The shared renderer asks the registry for a model and contains no stage-specific geometry or half-width table. Placement validation clamps to the model member area, excludes the model footprint and fire clearance, and returns a grounded Y of `0`.
+`components/scene-home-contract.ts` defines `HomeModel`: grounded local geometry, footprint, member area, focal point, label clearance and framing. `scene-home-registry.ts` maps the product order Tent → Trailer → Cabin → Condo → House → Mansion. The shared renderer asks the registry for a model and contains no stage-specific geometry or half-width table. Placement validation clamps to the model member area, excludes the model footprint and fire clearance, and returns a grounded Y of `0`.
 
 The approved rewards rule is option B in `docs/scene-rewards-proposal.md`: a positive current-group `GroupStats.checkinCount` opens the alternate gathering for everyone. Zero shows an empty teaser; missing data shows an unavailable message. Access survives reload and day rollover, evaluates the destination after a group switch, and does not alter stage thresholds, chapter coins, medal rewards or check-in persistence. Everyone remains visible after unlock with the existing read-today semantics.
 
-Visual review covered Tent, Trailer, Cabin, Apartment, House and Mansion in portrait and landscape, Tent/Campfire presentations, 0/2/11/30-member fixtures, and all Day/Sunset/Night options. The matrix recorded 96 passing combinations for Tent and Trailer, with the same framing and bounds assertions applied to the remaining model review. Screenshots inspected include `/tmp/rmb-0-tent-portrait.png`, `/tmp/rmb-0-campfire-landscape.png`, `/tmp/rmb-1-tent-portrait.png`, `/tmp/rmb-mansion-portrait.png`, `/tmp/rmb-mansion-landscape-left.png`, and `/tmp/rmb-30-grid.png`. Browser touch input was emulated through Chromium; this is not physical-device testing. The placement probe sampled 47,628 positions across all models and presentations with zero violations. Existing suite: 372 tests across 39 files passed. Lint has zero errors and one pre-existing `no-img-element` warning.
+Visual review covered Tent, Trailer, Cabin, Condo, House and Mansion in portrait and landscape, Tent/Campfire presentations, 0/2/11/30-member fixtures, and all Day/Sunset/Night options. The matrix recorded 96 passing combinations for Tent and Trailer, with the same framing and bounds assertions applied to the remaining model review. Screenshots inspected include `/tmp/rmb-0-tent-portrait.png`, `/tmp/rmb-0-campfire-landscape.png`, `/tmp/rmb-1-tent-portrait.png`, `/tmp/rmb-mansion-portrait.png`, `/tmp/rmb-mansion-landscape-left.png`, and `/tmp/rmb-30-grid.png`. Browser touch input was emulated through Chromium; this is not physical-device testing. The placement probe sampled 47,628 positions across all models and presentations with zero violations. Existing suite: 372 tests across 39 files passed. Lint has zero errors and one pre-existing `no-img-element` warning.
 
 ## Pending checks handoff
 
@@ -130,7 +130,7 @@ Do not start this phase until the tent's visual direction is accepted.
 2. **Trailer.** Rounded body, wheels on both sides, hitch, windows/door, and a restrained accent stripe. Validate wheel contact and the wider footprint from both yaw extremes.
 3. **Cabin.** Log courses, A-frame roof, porch, door/windows, chimney. Keep the fire and members clear of the porch.
 4. **House.** Main volume, garage, porch, layered roof; define a larger exclusion area without reducing usable member placement to a thin strip.
-5. **Apartment.** Floors, balconies/windows, entrance, roof parapet. Its taller framing uses a fixed camera pitch/look-at target while the grounded model stays at world Y `0`.
+5. **Condo.** Floors, balconies/windows, entrance, roof parapet. Its taller framing uses a fixed camera pitch/look-at target while the grounded model stays at world Y `0`.
 6. **Mansion.** Center plus wings, roof sections, entrance and landscaping. Check width in portrait and ensure edge members remain reachable.
 7. **Enable one stage at a time** in `FullHome`, retaining Classic. Each stage needs mouse/touch/keyboard drag checks, 2/11/30-member layouts, all times, both new presentations, and screenshots at both orientations.
 

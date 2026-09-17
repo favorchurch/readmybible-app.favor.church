@@ -190,8 +190,8 @@ function cabin() {
   return parts;
 }
 
-function apartment() {
-  // .home3d-model.apartment { --w:142; --h:176; --d:108 } + .apartment-detail
+function condo() {
+  // .home3d-model.condo { --w:142; --h:176; --d:108 } + .condo-detail
   const w = 142, h = 176, d = 108;
   const yTop = -h / 2;
   const zf = d / 2;
@@ -203,7 +203,7 @@ function apartment() {
     panel(-58, yTop + 20, -35, yTop + 45, zf + 1, "#f6dda0", DETAIL),
     panel(-11.5, yTop + 20, 11.5, yTop + 45, zf + 1, "#f6dda0", DETAIL),
     panel(35, yTop + 20, 58, yTop + 45, zf + 1, "#f6dda0", DETAIL),
-    // .apartment-detail span -- projecting balcony slabs at 39 / 78 / 117
+    // .condo-detail span -- projecting balcony slabs at 39 / 78 / 117
     ...[39, 78, 117].map((t) => panel(-59, yTop + t, 59, yTop + t + 9, zf + 9, "#e4d7b9", { ...DETAIL, ...PROJECTING })),
     // .window3d (top:112) / .door3d
     panel(-58, yTop + 112, -31, yTop + 143, zf + 1, "#f6dda0", DETAIL),
@@ -272,7 +272,7 @@ const STAGES = {
   Tent: tent(),
   Trailer: trailer(),
   Cabin: cabin(),
-  Apartment: apartment(),
+  Condo: condo(),
   House: house(),
   Mansion: mansion(),
 };
@@ -331,7 +331,7 @@ export const STAGE_ORDER: readonly Stage[] = [
   "Tent",
   "Trailer",
   "Cabin",
-  "Apartment",
+  "Condo",
   "House",
   "Mansion",
 ];

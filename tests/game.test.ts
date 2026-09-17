@@ -29,7 +29,7 @@ describe("stageTransition", () => {
   });
 
   it("reports a downward transition too", () => {
-    expect(stageTransition(0.5, 0.2)).toEqual({ from: "Apartment", to: "Trailer" });
+    expect(stageTransition(0.5, 0.2)).toEqual({ from: "Condo", to: "Trailer" });
   });
 });
 
@@ -122,7 +122,7 @@ describe("stageFor", () => {
     expect(stageFor(0.09)).toBe("Tent");
     expect(stageFor(0.1)).toBe("Trailer");
     expect(stageFor(0.25)).toBe("Cabin");
-    expect(stageFor(0.45)).toBe("Apartment");
+    expect(stageFor(0.45)).toBe("Condo");
     expect(stageFor(0.65)).toBe("House");
     expect(stageFor(0.85)).toBe("Mansion");
     expect(stageFor(1)).toBe("Mansion");
@@ -144,7 +144,7 @@ describe("nextStageProgress", () => {
 describe("nextStageMilestone", () => {
   it("returns the authoritative overall completion threshold for the next home", () => {
     expect(nextStageMilestone(0)).toEqual({ stage: "Trailer", pct: 10 });
-    expect(nextStageMilestone(0.26)).toEqual({ stage: "Apartment", pct: 45 });
+    expect(nextStageMilestone(0.26)).toEqual({ stage: "Condo", pct: 45 });
   });
 
   it("returns null after the final home is unlocked", () => {

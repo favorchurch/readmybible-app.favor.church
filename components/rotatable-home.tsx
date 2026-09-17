@@ -9,7 +9,7 @@ export const homeStages: Array<{ name: Stage; className: string; note: string }>
   { name: "Tent", className: "tent", note: "A humble beginning" },
   { name: "Trailer", className: "trailer", note: "Making room" },
   { name: "Cabin", className: "cabin3d", note: "Feels like home" },
-  { name: "Apartment", className: "apartment", note: "Room to grow" },
+  { name: "Condo", className: "condo", note: "Room to grow" },
   { name: "House", className: "house3d", note: "Growing together" },
   { name: "Mansion", className: "mansion", note: "Look how far God has brought us" },
 ];

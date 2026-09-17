@@ -1,7 +1,7 @@
 import { focalPoint, framing, memberArea, modelBuilder, type HomeModel } from "./scene-home-contract";
 
-export const apartment: HomeModel = {
-  name: "Apartment", supported: true,
+export const condo: HomeModel = {
+  name: "Condo", supported: true,
   footprint: { minX: -2.8, maxX: 2.8, minZ: -1.94, maxZ: 2.3 },
   memberArea, focalPoint: { ...focalPoint, y: 2.6 }, labelClearance: 2.8,
   framing: { ...framing, height: 8.6, radius: 17.8 },
@@ -31,6 +31,6 @@ export const apartment: HomeModel = {
     for (const z of [-1.85,1.85]) box(0,6.55,z,5.6,.5,.16,0xf2dfbf);
     for (const x of [-2.72,2.72]) box(x,6.55,0,.16,.5,3.8,0xf2dfbf);
     box(0,6.3,0,5.4,.15,3.7,0x666b5e);
-    group.name = "Apartment"; return group;
+    group.name = "Condo"; return group;
   },
 };
