@@ -106,36 +106,17 @@ function renderLeader(
 describe("LeaderScreen", () => {
   afterEach(() => cleanup());
 
-  it("shows stage icons by default, grouped by locality, without group names", () => {
+  it("no longer renders the retired Other Connects card list -- the town view supersedes it (issue #171)", () => {
     const { container } = renderLeader();
 
     expect(container.querySelector(".leader-screen")).not.toBeNull();
-    expect(container.querySelector('[data-section="other-connects"]')).not.toBeNull();
-    expect(screen.getByRole("heading", { name: /Ortigas Center/i }).textContent).toContain("2 groups");
-    expect(screen.getByRole("heading", { name: /Pasig/i }).textContent).toContain("1 group");
-    expect(screen.getByRole("heading", { name: /Unknown/i }).textContent).toContain("1 group");
-    expect(container.querySelectorAll(".locality-stage-mini")).toHaveLength(4);
-    expect(container.querySelector(".locality-icon-own")).not.toBeNull();
-    expect(container.textContent).not.toContain("Ortigas Alpha");
-    expect(container.textContent).not.toContain("Pasig One");
-    expect(screen.getByLabelText("Ortigas Alpha — Mansion (your group)")).toBeTruthy();
+    expect(container.querySelector('[data-section="other-connects"]')).toBeNull();
   });
 
   it("uses the paper token for the leader surface light mode", () => {
     const css = readFileSync("app/styles/leader.css", "utf8");
     const leaderBlock = css.slice(css.indexOf(".leader-screen {"), css.indexOf("}", css.indexOf(".leader-screen {")));
     expect(leaderBlock).toContain("background: var(--paper)");
-  });
-
-  it("reveals names, stage, and percent after the toggle", () => {
-    const { container } = renderLeader();
-    fireEvent.click(screen.getByRole("button", { name: "Show names" }));
-
-    expect(screen.getByRole("button", { name: "Show icons" }).getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelectorAll(".campus-group-card")).toHaveLength(4);
-    expect(container.textContent).toContain("Ortigas Alpha");
-    expect(container.textContent).toContain("85% complete · Mansion");
-    expect(container.textContent).toContain("Unknown One");
   });
 
   it("only shows the still-reading nudge during the active phase", () => {
