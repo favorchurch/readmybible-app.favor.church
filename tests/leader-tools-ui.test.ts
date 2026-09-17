@@ -271,3 +271,79 @@ describe("AppShell leader role guard and paper noise", () => {
     expect(container.querySelector(".paper-noise")).not.toBeNull();
   });
 });
+
+describe("AppShell -- upstream/Connect scenario composition", () => {
+  beforeEach(() => {
+    navigation.refresh.mockClear();
+    vi.stubGlobal("scrollTo", vi.fn());
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  function renderShellForScenario() {
+    const { container } = render(
+      React.createElement(AppShell, {
+        displayName: "Alex",
+        avatar: { ...defaultAvatarConfig },
+        avatarCustomized: true,
+        translation: "NIV",
+        memberships: [],
+        activeGroup: null,
+        needsGroupChoice: false,
+        campusGroups: [],
+        testModeAuthorized: true,
+        testWritableGroupId: null,
+        isLeader: false,
+        isAdminScope: false,
+        campusName: "Manila",
+        roster: [],
+        chapters: [],
+        readingDates: [],
+        groupStats: null,
+        campusBoard,
+        appBaseUrl: "http://localhost:3000",
+        devMockToday: "2026-10-05",
+        sectionSlot: React.createElement("div", { "data-testid": "section-dashboard-stub" }, "Section Dashboard"),
+      }),
+    );
+    const show = screen.queryByRole("button", { name: /^show$/i });
+    if (show) fireEvent.click(show);
+    return container;
+  }
+
+  function selectScenario(value: string) {
+    fireEvent.change(screen.getByRole("combobox", { name: "Scenario" }), { target: { value } });
+  }
+
+  // Known-bad behavior 2: a Regional Leader who is also a genuine Connect
+  // member keeps their Connect experience -- the own-Connect surface and the
+  // upstream jurisdiction surface (sectionSlot) render together, not one in
+  // place of the other.
+  it("keeps the Connect experience AND the upstream surface for a leader who is both (#2)", async () => {
+    const container = renderShellForScenario();
+    selectScenario("connect-and-upstream-leader");
+    fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
+
+    await waitFor(() => expect(container.querySelector(".leader-screen")).not.toBeNull());
+    expect(container.querySelector('[data-section="group-pulse"]')).not.toBeNull();
+    expect(container.querySelector('[data-section="bring-someone-in"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull();
+  });
+
+  // Known-bad behaviors 1 and 4: an upstream leader with no genuine Connect
+  // membership is never given a fabricated Home, and a section-only user
+  // sees Leader (here, the section slot) with no member-style scaffolding.
+  it("shows no fabricated Home for an upstream leader with no Connect membership (#1, #4)", async () => {
+    const container = renderShellForScenario();
+    selectScenario("upstream-leader-no-connect");
+    fireEvent.click(container.querySelector('.bottom-nav [data-tab="leader"]') as HTMLElement);
+
+    await waitFor(() => expect(container.querySelector('[data-testid="section-dashboard-stub"]')).not.toBeNull());
+    expect(container.querySelector('[data-section="group-pulse"]')).toBeNull();
+    expect(container.querySelector('[data-section="bring-someone-in"]')).toBeNull();
+    expect(container.querySelector('[data-section="other-connects"]')).toBeNull();
+  });
+});
