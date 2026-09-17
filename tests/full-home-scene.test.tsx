@@ -255,6 +255,16 @@ describe("FullHome scene integration", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("exposes progress details and the active reading action", () => {
+    const onViewReading = vi.fn();
+    renderHome({ onViewReading });
+    fireEvent.click(screen.getByText("Chapter 2 · 40% to Condo"));
+    expect(screen.getByText("40% of Matthew complete")).toBeTruthy();
+    expect(screen.getByText("40% through this stage · Condo unlocks at 45% overall")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Read Matthew 2/ }));
+    expect(onViewReading).toHaveBeenCalledTimes(1);
+  });
+
   it("renders locked access note when viewing locked 3D Campfire without people", async () => {
     const lockedScore: ConnectScore = {
       groupId: 102,

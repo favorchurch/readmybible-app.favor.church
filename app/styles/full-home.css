@@ -54,6 +54,7 @@
   cursor: pointer;
   pointer-events: auto;
 }
+.home-person .avatar { width: clamp(38px, 11vw, 58px); height: clamp(38px, 11vw, 58px); box-shadow: 0 5px 0 rgba(23,41,67,.15); }
 .home-person-label { display: flex; flex-direction: column; align-items: center; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 108px; padding: 3px 6px; background: var(--paper); color: var(--ink); border-radius: 4px; font-size: 12px; line-height: 1.2; overflow-wrap: anywhere; opacity: 0; pointer-events: none; }
 .home-person-points { display: block; font-size: 12px; font-weight: 600; color: var(--ink-muted); line-height: 1; margin-bottom: 2px; opacity: 0.8; }
 .home-person-name { display: block; line-height: 1.2; }

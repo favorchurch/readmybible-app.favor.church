@@ -555,7 +555,7 @@ export function ImmersiveHomeScene({
                 <span className={styles.memberPoints}>{member.displayPoints}</span>
               )}
               {names ? (
-                <span className={styles.memberName}>{member.name.split(' ')[0]}${member.isSelf ? " · You" : ""}</span>
+                <span className={styles.memberName}>{member.name.split(' ')[0]}{member.isSelf ? " · You" : ""}</span>
               ) : (
                 <span className="sr-only">{member.name}</span>
               )}
