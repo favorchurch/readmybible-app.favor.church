@@ -282,6 +282,37 @@ export async function getGroupBasic(groupId: number): Promise<RockGroup | null> 
   });
 }
 
+/**
+ * Resolves a group's ancestor hierarchy by walking `ParentGroupId` upward
+ * at request time via `getGroupBasic`, each node cached under `rock:group:{id}`.
+ * Issue 118: current structure in Rock is authoritative, no schema change or
+ * denormalised column needed.
+ */
+export async function resolveUpwardScope(groupId: number): Promise<RockGroup[]> {
+  const chain: RockGroup[] = [];
+  const visited = new Set<number>();
+  let currentId: number | null = groupId;
+
+  while (currentId !== null && !visited.has(currentId)) {
+    visited.add(currentId);
+    const group = await getGroupBasic(currentId);
+    if (!group) break;
+    chain.push(group);
+    currentId = group.ParentGroupId;
+  }
+  return chain;
+}
+
+/**
+ * Checks whether `groupId` sits inside any of `rootIds` by checking direct
+ * match or walking `ParentGroupId` upward.
+ */
+export async function isGroupInScope(groupId: number, rootIds: number[]): Promise<boolean> {
+  if (rootIds.includes(groupId)) return true;
+  const chain = await resolveUpwardScope(groupId);
+  return chain.some((node) => rootIds.includes(node.Id));
+}
+
 /** Active, non-archived Connect Groups for a campus. Cached 15 minutes.
  *  Fetches loadAttributes=simple to include CityMunicipalityLocality; narrows
  *  before caching to keep the Redis value compact (raw payload is ~3.3× larger). */

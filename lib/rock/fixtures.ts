@@ -218,8 +218,56 @@ export function fixtureAllCampusNames(): Map<number, string> {
   return new Map(Object.entries(FIXTURE_CAMPUS_NAMES).map(([id, name]) => [Number(id), name]));
 }
 
+const FIXTURE_SECTIONS: Record<number, RockGroup> = {
+  23870: {
+    Id: 23870,
+    Name: "Region // Synthetic Region",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 23869,
+    IsActive: true,
+    IsArchived: false,
+  },
+  23869: {
+    Id: 23869,
+    Name: "Cluster // Synthetic Cluster",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 78,
+    IsActive: true,
+    IsArchived: false,
+  },
+  78: {
+    Id: 78,
+    Name: "MNL Adults",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 39,
+    IsActive: true,
+    IsArchived: false,
+  },
+  39: {
+    Id: 39,
+    Name: "MNL Connect Groups",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: 22464,
+    IsActive: true,
+    IsArchived: false,
+  },
+  22464: {
+    Id: 22464,
+    Name: "Connect Groups",
+    GroupTypeId: 24,
+    CampusId: 1,
+    ParentGroupId: null,
+    IsActive: true,
+    IsArchived: false,
+  },
+};
+
 export function fixtureGroupBasic(groupId: number): RockGroup | null {
-  return fixtureAllConnectGroups().find((g) => g.Id === groupId) ?? null;
+  return fixtureAllConnectGroups().find((g) => g.Id === groupId) ?? FIXTURE_SECTIONS[groupId] ?? null;
 }
 
 export function isFixtureMode(): boolean {
