@@ -24,8 +24,22 @@ export function useNotesPresence(authorPersonId?: number) {
   }, [authorPersonId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    getNotesPresence({ authorPersonId })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setPresence(res.presence);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authorPersonId]);
 
   const hasNote = useCallback(
     (page: string): boolean => {
