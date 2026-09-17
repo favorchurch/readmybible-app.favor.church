@@ -3,7 +3,7 @@ import { eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { AppShell, type AppShellProps } from "@/components/app-shell";
+import { AppShell, type AppShellProps, type ConnectLeaderView } from "@/components/app-shell";
 import { isAvatarConfig, resolveAvatar, type Translation } from "@/components/avatar";
 import { devMockToday } from "@/lib/dev-clock";
 import {
@@ -13,6 +13,8 @@ import {
   getPersonReadingState,
 } from "@/lib/data/stats";
 import { getCampusName, getRoster } from "@/lib/rock/client";
+import { resolveConnectScore } from "@/lib/connect-scoring";
+import { presentConnectRoster } from "@/lib/scoring-presentation";
 import type { SessionContext } from "@/lib/session";
 import { testWritableGroupId } from "@/lib/test-mode-config";
 import {
@@ -55,6 +57,9 @@ export async function HomeData({
   const memberReadingMapP = activeGroupId
     ? rosterP.then((members) => getGroupMembersReadingHistory(activeGroupId, members.map((m) => m.PersonId)))
     : Promise.resolve(new Map());
+  // Issue #150: derived every call from current Rock roster/roles and stored
+  // check-in facts -- never a saved, incrementing group score.
+  const connectScoreP = activeGroupId ? resolveConnectScore(activeGroupId) : Promise.resolve(null);
 
   const writableGroupId = testWritableGroupId();
   const realAdminScope = resolveAdminScope(session);
@@ -75,7 +80,7 @@ export async function HomeData({
   // the shell paints and every other control (role, campus, phase, sliders) is
   // usable while the org-wide Rock call is still in flight. Awaiting it here is
   // what made test mode feel slow even after the fetch was gated.
-  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap] =
+  const [profileRows, readingState, roster, groupStats, campusBoard, campusName, memberReadingMap, connectScore] =
     await Promise.all([
       db.select().from(profiles).where(eq(profiles.rockPersonId, session.rockPersonId)).limit(1),
       getPersonReadingState(session.rockPersonId),
@@ -86,7 +91,22 @@ export async function HomeData({
       session.campusId ? getCampusBoard(session.campusId) : Promise.resolve([]),
       session.campusId ? getCampusName(session.campusId) : Promise.resolve(null),
       memberReadingMapP,
+      connectScoreP,
     ]);
+
+  const rosterPresentationByPersonId = connectScore
+    ? new Map(presentConnectRoster(connectScore.score).map((row) => [row.rockPersonId, row]))
+    : new Map();
+
+  const connectLeaders: ConnectLeaderView[] = connectScore
+    ? [...rosterPresentationByPersonId.values()]
+        .filter((row) => row.isUpstreamLeader && !row.isConnectRosterMember)
+        .map((row) => ({
+          personId: row.rockPersonId,
+          name: connectScore.leaderNames.get(row.rockPersonId) ?? `Reader ${row.rockPersonId}`,
+          contributedPoints: row.displayContributedPoints,
+        }))
+    : [];
 
   const profileRow = profileRows[0];
   const avatar = resolveAvatar(session.rockPersonId, session.rockGender, profileRow?.avatar);
@@ -165,6 +185,7 @@ export async function HomeData({
     campusName,
     roster: roster.map((m) => {
       const history = memberReadingMap.get(m.PersonId);
+      const presentation = rosterPresentationByPersonId.get(m.PersonId);
       return {
         personId: m.PersonId,
         avatar: resolveAvatar(m.PersonId, m.Person?.Gender, savedAvatars.get(m.PersonId)),
@@ -174,6 +195,8 @@ export async function HomeData({
         readToday: groupStats?.readersTodayIds.includes(m.PersonId) ?? false,
         chapters: history?.chapters ?? [],
         readingDates: history?.dates ?? [],
+        contributedPoints: presentation?.displayContributedPoints,
+        isUpstreamLeader: presentation?.isUpstreamLeader ?? false,
       };
     }),
     chapters: readingState.chapters,
@@ -188,6 +211,7 @@ export async function HomeData({
     testWritableGroupId: writableGroupId,
     campusId: session.campusId,
     sectionSlot,
+    connectLeaders,
   };
 
   return <AppShell {...props} />;

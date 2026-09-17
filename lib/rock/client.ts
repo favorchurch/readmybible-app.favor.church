@@ -14,6 +14,7 @@ import {
   GROUP_TYPE_CONNECT_GROUP,
   GROUP_TYPE_SECTION,
   GT25_ACTIVE_ROLE_IDS,
+  ROLE_GT24_LEADER,
 } from "@/lib/rock/constants";
 import {
   fixtureAllCampusNames,
@@ -24,6 +25,7 @@ import {
   fixtureMemberships,
   fixturePerson,
   fixtureRoster,
+  fixtureSectionLeaders,
   fixtureSectionMemberships,
   fixtureSectionSubtree,
   isFixtureMode,
@@ -263,6 +265,20 @@ export async function getRoster(groupId: number): Promise<RockGroupMember[]> {
   if (isFixtureMode()) return fixtureRoster(groupId);
   return cached(`rock:roster:${groupId}`, 300, async () => {
     const filter = `GroupId eq ${groupId} and GroupMemberStatus eq 'Active'`;
+    return rockFetchAllPages<RockGroupMember>("GroupMembers", filter, "&$expand=Person");
+  });
+}
+
+/**
+ * Active GT24 Leader-role members of a single section (Region, Cluster, or
+ * Department group). Cached 5 minutes. Issue #150: a section's leaders are
+ * resolved by role within that specific section, never inferred from a
+ * caller-supplied bucket -- callers filter by which section they asked for.
+ */
+export async function getSectionLeaders(groupId: number): Promise<RockGroupMember[]> {
+  if (isFixtureMode()) return fixtureSectionLeaders(groupId);
+  return cached(`rock:section-leaders:${groupId}`, 300, async () => {
+    const filter = `GroupId eq ${groupId} and GroupRoleId eq ${ROLE_GT24_LEADER} and GroupMemberStatus eq 'Active'`;
     return rockFetchAllPages<RockGroupMember>("GroupMembers", filter, "&$expand=Person");
   });
 }

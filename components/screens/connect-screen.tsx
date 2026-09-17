@@ -6,7 +6,7 @@ import { Avatar, type UserProfile } from "@/components/avatar";
 import { FullHome } from "@/components/full-home";
 import { homeStages, RotatableHome, stageIndex } from "@/components/rotatable-home";
 import { ProgressBar } from "@/components/progress-bar";
-import type { RosterMemberView } from "@/components/app-shell";
+import type { ConnectLeaderView, RosterMemberView } from "@/components/app-shell";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
 import { Header } from "@/components/screens/header";
 import { HomeGrowthSheet } from "@/components/home-growth-sheet";
@@ -29,6 +29,7 @@ export function ConnectScreen({
   connectSwitcher,
   onViewReading,
   onViewPlan,
+  connectLeaders = [],
 }: {
   groupName: string | null;
   campusName: string | null;
@@ -40,6 +41,7 @@ export function ConnectScreen({
   connectSwitcher?: ConnectSwitcherContext;
   onViewReading?: () => void;
   onViewPlan?: () => void;
+  connectLeaders?: ConnectLeaderView[];
 }) {
   const phase = today.displayPhase;
 
@@ -172,6 +174,10 @@ export function ConnectScreen({
                       <Avatar color="coral" {...avatar} />
                     </div>
                     <strong>{m.name}</strong>
+                    {m.isUpstreamLeader && <span className="member-leader-marker">Leader</span>}
+                    {m.contributedPoints !== undefined && (
+                      <span className="member-points-note">Contributed {m.contributedPoints} points</span>
+                    )}
                   </button>
                 );
               }
@@ -196,7 +202,11 @@ export function ConnectScreen({
                     {m.readToday && <b>✓</b>}
                   </div>
                   <strong>{m.name}</strong>
+                  {m.isUpstreamLeader && <span className="member-leader-marker">Leader</span>}
                   <span>{m.readToday ? "Read" : "Waiting"}</span>
+                  {m.contributedPoints !== undefined && (
+                    <span className="member-points-note">Contributed {m.contributedPoints} points</span>
+                  )}
                 </button>
               );
             })}
@@ -204,6 +214,26 @@ export function ConnectScreen({
         )}
         <p className="gentle-note">We cheer for groups, not against people.</p>
       </section>
+
+      {connectLeaders.length > 0 && (
+        <section className="member-section" data-section="connect-leaders">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">LEADERS</p>
+              <h2>Leaders over this Connect</h2>
+            </div>
+          </div>
+          <div className="member-grid">
+            {connectLeaders.map((leader) => (
+              <div className="member-card leader-card" key={leader.personId} title={leader.name}>
+                <strong>{leader.name}</strong>
+                <span className="member-leader-marker">Leader</span>
+                <span className="member-points-note">Contributed {Math.round(leader.contributedPoints)} points</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <HomeGrowthSheet
         open={growthSheetOpen}

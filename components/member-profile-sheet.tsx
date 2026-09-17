@@ -60,7 +60,10 @@ export function MemberProfileSheet({
               <h2 id="member-profile-title">{member.name}</h2>
               <span className="member-profile-status">
                 {member.isLeader ? "Group Leader · " : ""}
-                {readCount} of {TOTAL_ASSIGNMENTS} assignments read
+                {member.isUpstreamLeader ? "Leader · " : ""}
+                {member.contributedPoints !== undefined
+                  ? `Contributed ${member.contributedPoints} points`
+                  : `${readCount} of ${TOTAL_ASSIGNMENTS} assignments read`}
               </span>
             </div>
           </div>

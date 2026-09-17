@@ -27,17 +27,8 @@ export function HomeGrowthSheet({
         </div>
 
         <p className="home-growth-intro">
-          Every chapter your Connect Group reads adds to your shared progress. Your home grows by the percentage of Matthew your group has completed, so a group of 5 and a group of 15 grow at the same pace.
+          Every reading your Connect Group and its leaders complete adds to your shared progress -- so a small group and a large group grow at the same pace.
         </p>
-
-        <p className="home-growth-principle">
-          Points celebrate every chapter. Group completion percentage decides the home stage.
-        </p>
-
-        <div className="home-growth-formula">
-          <span className="formula-label">How progress is calculated</span>
-        <p className="formula-text">completed assignments divided by members times 20</p>
-        </div>
 
         <div className="home-growth-stages">
           <span className="stages-title">Home stages</span>
