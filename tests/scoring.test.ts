@@ -4,6 +4,7 @@ import {
   BASE_POINTS_MAX,
   BONUS_POOL_MAX,
   TOTAL_ASSIGNMENTS,
+  countsInBase,
   type PersonContribution,
   scoreConnect,
   stageForPoints,
@@ -17,10 +18,11 @@ function person(
   return {
     rockPersonId,
     completedAssignments,
-    countsInBase: true,
+    isConnectMember: true,
     isConnectLeader: false,
     isRegionalLeader: false,
     isClusterHead: false,
+    isDepartmentHead: false,
     ...overrides,
   };
 }
@@ -95,7 +97,7 @@ describe("scoreConnect base pool", () => {
     const withVisitor = connect({
       members: [
         person(1, TOTAL_ASSIGNMENTS),
-        person(2, 0, { countsInBase: false, isRegionalLeader: true }),
+        person(2, 0, { isRegionalLeader: true }),
       ],
     });
     const withoutVisitor = connect({ members: [person(1, TOTAL_ASSIGNMENTS)] });
@@ -157,9 +159,19 @@ describe("scoreConnect presentation data", () => {
     expect(memberRead.unlocked3dCampfire).toBe(true);
   });
 
-  it("does not unlock from an ordinary-member upstream leader who is not in the base pool", () => {
+  it("unlocks from a genuine member who also holds an upstream role", () => {
+    // They are excluded from the base pool, but they are still a member who read.
     const score = connect({
-      members: [person(2, 5, { countsInBase: false, isClusterHead: true })],
+      members: [person(2, 5, { isClusterHead: true })],
+    });
+    expect(countsInBase(score.contributions[0])).toBe(false);
+    expect(score.unlocked3dCampfire).toBe(true);
+  });
+
+  it("does not unlock from someone who is not a member of this Connect at all", () => {
+    const score = connect({
+      members: [person(1, 0)],
+      clusterHeads: [person(9, TOTAL_ASSIGNMENTS, { isConnectMember: false, isClusterHead: true })],
     });
     expect(score.unlocked3dCampfire).toBe(false);
   });
@@ -179,5 +191,65 @@ describe("scoreConnect presentation data", () => {
     const score = connect({ members: [person(1, TOTAL_ASSIGNMENTS)] });
     expect(score.displayPoints).toBe(Math.round(score.totalPoints));
     expect(score.stage).toBe(stageForPoints(score.totalPoints));
+  });
+});
+
+describe("countsInBase", () => {
+  it("includes an ordinary Connect member", () => {
+    expect(countsInBase(person(1, 0))).toBe(true);
+  });
+
+  it("excludes each upstream role held by a mere member", () => {
+    expect(countsInBase(person(1, 0, { isRegionalLeader: true }))).toBe(false);
+    expect(countsInBase(person(1, 0, { isClusterHead: true }))).toBe(false);
+    expect(countsInBase(person(1, 0, { isDepartmentHead: true }))).toBe(false);
+  });
+
+  it("includes an upstream leader who also leads this Connect", () => {
+    expect(countsInBase(person(1, 0, { isConnectLeader: true, isClusterHead: true }))).toBe(true);
+  });
+
+  it("excludes someone who belongs to this Connect in no capacity", () => {
+    expect(countsInBase(person(1, 0, { isConnectMember: false }))).toBe(false);
+  });
+
+  it("is derived, so a merged duplicate row cannot smuggle someone back in", () => {
+    // One row per role is the natural shape when walking Rock memberships. If
+    // eligibility were a caller-supplied boolean, OR-ing the rows would let the
+    // excluded upstream leader back into the base pool.
+    const score = connect({
+      members: [
+        person(1, TOTAL_ASSIGNMENTS),
+        person(2, TOTAL_ASSIGNMENTS, { isRegionalLeader: true }),
+        person(2, TOTAL_ASSIGNMENTS),
+      ],
+    });
+    expect(score.basePoints).toBeCloseTo(BASE_POINTS_MAX, 10);
+    expect(score.contributions.filter((row) => row.rockPersonId === 2)).toHaveLength(1);
+    expect(countsInBase(score.contributions.find((row) => row.rockPersonId === 2)!)).toBe(false);
+  });
+});
+
+describe("scoreConnect bad input containment", () => {
+  it("contains a NaN assignment count at the person rather than the Connect", () => {
+    const score = connect({
+      members: [person(1, TOTAL_ASSIGNMENTS), person(2, Number.NaN)],
+    });
+    expect(Number.isNaN(score.totalPoints)).toBe(false);
+    expect(score.basePoints).toBeCloseTo(BASE_POINTS_MAX / 2, 10);
+    expect(score.stage).toBe("Condo");
+  });
+
+  it("contains a NaN in a bonus pool", () => {
+    const score = connect({ regionalLeaders: [person(9, Number.NaN)] });
+    expect(score.regionalBonus).toBe(0);
+    expect(Number.isNaN(score.totalPoints)).toBe(false);
+  });
+
+  it("clamps an over-count and a negative count", () => {
+    const over = connect({ members: [person(1, 999)] });
+    expect(over.basePoints).toBeCloseTo(BASE_POINTS_MAX, 10);
+    const under = connect({ members: [person(1, -5)] });
+    expect(under.basePoints).toBe(0);
   });
 });

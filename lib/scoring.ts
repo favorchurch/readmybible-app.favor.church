@@ -48,19 +48,40 @@ export function stageForPoints(points: number): Stage {
 /**
  * One person's standing in one Connect, as the scorer needs it.
  *
- * `countsInBase` is false for a Regional Leader, Cluster Head or Department Head
- * who is merely an ordinary member here -- they leave the base numerator *and*
- * denominator. It is true when that same person is also a Connect Leader.
+ * These are facts about the person, never conclusions about them. Base
+ * eligibility is derived here by `countsInBase`, not supplied by the caller: a
+ * caller that builds one row per role would otherwise have to get the exclusion
+ * right in every construction site, and getting it wrong fails open -- the
+ * excluded upstream leader quietly re-enters the base pool.
  */
 export type PersonContribution = {
   rockPersonId: number;
   /** 0..TOTAL_ASSIGNMENTS. A two-chapter day is one assignment, not two. */
   completedAssignments: number;
-  countsInBase: boolean;
+  /** Genuine current member of *this* Connect. Distinct from base eligibility. */
+  isConnectMember: boolean;
   isConnectLeader: boolean;
   isRegionalLeader: boolean;
   isClusterHead: boolean;
+  isDepartmentHead: boolean;
 };
+
+/** True when this person holds an oversight role above the Connect. */
+function hasUpstreamRole(person: PersonContribution): boolean {
+  return person.isRegionalLeader || person.isClusterHead || person.isDepartmentHead;
+}
+
+/**
+ * Whether a person counts in this Connect's base numerator *and* denominator.
+ *
+ * An upstream leader who is merely an ordinary member here leaves both. The same
+ * person counts normally once they also lead this Connect.
+ */
+export function countsInBase(person: PersonContribution): boolean {
+  if (!person.isConnectMember && !person.isConnectLeader) return false;
+  if (person.isConnectLeader) return true;
+  return !hasUpstreamRole(person);
+}
 
 export type ConnectScore = {
   groupId: number;
@@ -82,11 +103,25 @@ export type ConnectScore = {
   contributions: PersonContribution[];
 };
 
+/**
+ * Contain a bad number at the person rather than the Connect. `Math.max(0, NaN)`
+ * is NaN, so a single missing check-in count would otherwise turn the whole
+ * total into NaN -- and NaN reads as Tent, dropping a Mansion to a Tent with no
+ * error anywhere.
+ */
+function finiteOrZero(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+/** Completed assignments for one person, clamped to [0, TOTAL_ASSIGNMENTS]. */
+function assignmentsOf(person: PersonContribution): number {
+  return Math.min(TOTAL_ASSIGNMENTS, Math.max(0, finiteOrZero(person.completedAssignments)));
+}
+
 /** Completion ratio for one person, clamped to [0, 1]. */
 function ratioOf(person: PersonContribution): number {
   if (TOTAL_ASSIGNMENTS <= 0) return 0;
-  const ratio = person.completedAssignments / TOTAL_ASSIGNMENTS;
-  return Math.min(1, Math.max(0, ratio));
+  return assignmentsOf(person) / TOTAL_ASSIGNMENTS;
 }
 
 /** Pool average across a leader set. An empty set contributes nothing, never NaN. */
@@ -109,13 +144,18 @@ function dedupe(people: PersonContribution[]): PersonContribution[] {
       merged.set(person.rockPersonId, { ...person });
       continue;
     }
+    // Role flags are facts about the person, so OR-ing them is right: a row
+    // built while walking regional leaders knows nothing about this Connect's
+    // roster. Completion is per-person-per-campaign, so two rows for the same
+    // person should already agree; max reconciles a stale one upward.
     merged.set(person.rockPersonId, {
       ...existing,
-      completedAssignments: Math.max(existing.completedAssignments, person.completedAssignments),
-      countsInBase: existing.countsInBase || person.countsInBase,
+      completedAssignments: Math.max(assignmentsOf(existing), assignmentsOf(person)),
+      isConnectMember: existing.isConnectMember || person.isConnectMember,
       isConnectLeader: existing.isConnectLeader || person.isConnectLeader,
       isRegionalLeader: existing.isRegionalLeader || person.isRegionalLeader,
       isClusterHead: existing.isClusterHead || person.isClusterHead,
+      isDepartmentHead: existing.isDepartmentHead || person.isDepartmentHead,
     });
   }
   return [...merged.values()];
@@ -134,13 +174,10 @@ export function scoreConnect(input: {
   clusterHeads: PersonContribution[];
 }): ConnectScore {
   const members = dedupe(input.members);
-  const eligible = members.filter((member) => member.countsInBase);
+  const eligible = members.filter(countsInBase);
 
   const denominator = eligible.length * TOTAL_ASSIGNMENTS;
-  const completed = eligible.reduce(
-    (sum, member) => sum + Math.min(TOTAL_ASSIGNMENTS, Math.max(0, member.completedAssignments)),
-    0,
-  );
+  const completed = eligible.reduce((sum, member) => sum + assignmentsOf(member), 0);
   const basePoints = denominator > 0 ? (completed / denominator) * BASE_POINTS_MAX : 0;
 
   const regionalBonus = poolBonus(dedupe(input.regionalLeaders));
@@ -156,9 +193,12 @@ export function scoreConnect(input: {
     totalPoints,
     stage: stageForPoints(totalPoints),
     displayPoints: Math.round(totalPoints),
+    // Membership, not base eligibility. A Regional Leader who genuinely belongs
+    // to this Connect is a member reading real assignments; the rule bars
+    // upstream-only bonus activity, which is a different thing.
     unlocked3dCampfire: members.some(
       (member) =>
-        (member.countsInBase || member.isConnectLeader) && member.completedAssignments > 0,
+        (member.isConnectMember || member.isConnectLeader) && assignmentsOf(member) > 0,
     ),
     contributions: dedupe([...members, ...input.regionalLeaders, ...input.clusterHeads]),
   };

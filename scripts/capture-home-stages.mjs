@@ -68,7 +68,7 @@ const stages = [
   ['tent', 0],
   ['trailer', 10],
   ['cabin', 25],
-  ['apartment', 45],
+  ['condo', 45],
   ['house', 65],
   ['mansion', 85],
 ];
