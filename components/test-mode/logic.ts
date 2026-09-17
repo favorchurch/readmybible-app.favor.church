@@ -1,4 +1,4 @@
-import { GRACE_DATES, PLAN, dayLabelNumber, displayPhase, entryChapters, planPhase, todaysEntry } from "@/lib/plan";
+import { PLAN, PLAN_END, dayLabelNumber, displayPhase, entryChapters, planPhase, todaysEntry } from "@/lib/plan";
 import type { TodayState } from "@/components/use-today";
 import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 
@@ -8,7 +8,7 @@ export const DAY_PARAM = "day";
 
 export const TEST_MODE_BLOCKED_MESSAGE = "Test mode: writes are disabled.";
 
-export type SimulatedPhase = "pre-launch" | "active" | "grace" | "closed";
+export type SimulatedPhase = "pre-launch" | "active" | "review";
 
 /**
  * The roles the panel can simulate, widest scope first among the admin tiers.
@@ -366,8 +366,11 @@ export const STAGE_PRESETS: ReadonlyArray<{ stage: string; pct: number; threshol
  */
 export function dateForSimulatedDay(day: number, phase: SimulatedPhase): string {
   if (phase === "pre-launch") return "2026-09-15";
-  if (phase === "grace") return GRACE_DATES[0];
-  if (phase === "closed") return "2026-11-02"; // day after PLAN_END (2026-10-31)
+  if (phase === "review") {
+    const reviewDate = new Date(`${PLAN_END}T00:00:00Z`);
+    reviewDate.setUTCDate(reviewDate.getUTCDate() + 1);
+    return reviewDate.toISOString().slice(0, 10);
+  }
   const clamped = Math.min(Math.max(Math.trunc(day), 1), PLAN.length);
   return PLAN[clamped - 1].date;
 }

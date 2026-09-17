@@ -35,10 +35,6 @@ export const REVIEW_DATES: readonly string[] = [
   "2026-10-25",
 ];
 
-/** Preserved for backwards compatibility with any remaining imports. */
-export const GRACE_DATES: readonly string[] = ["2026-10-31"];
-export const GRACE_DAY_START = 31;
-
 export const PLAN: PlanEntry[] = [
   { day: 1, chapter: 1, chapters: [1, 2], date: "2026-10-05", keyPassage: "Matthew 1:20-21", title: "Jesus is born · The wise men arrive" },
   { day: 2, chapter: 3, chapters: [3, 4], date: "2026-10-06", keyPassage: "Matthew 3:16-17", title: "Jesus is baptized · The first disciples" },
@@ -179,7 +175,7 @@ export function syncViewedChapter(
   return { syncedChapter, viewedChapter };
 }
 
-export type PlanPhase = "pre-launch" | "active" | "review" | "closed";
+export type PlanPhase = "pre-launch" | "active" | "review";
 
 /**
  * Which phase the plan is in for a given local YYYY-MM-DD date.
@@ -217,7 +213,7 @@ export function dayLabelNumber(todayLocal: string): number {
   return Math.min(Math.max(past.length, 1), TOTAL_ASSIGNMENTS);
 }
 
-export type DisplayPhase = "pre-launch" | "active" | "review" | "grace" | "closed";
+export type DisplayPhase = "pre-launch" | "active" | "review";
 
 /**
  * The phase shown in the UI.

@@ -131,11 +131,9 @@ describe("dateForSimulatedDay", () => {
     expect(dateForSimulatedDay(999, "active")).toBe(PLAN[19].date);
   });
 
-  it("maps pre-launch/grace/closed to a date in that phase, independent of day", () => {
+  it("maps pre-launch/review to a date in that phase, independent of day", () => {
     expect(dateForSimulatedDay(5, "pre-launch") < "2026-10-05").toBe(true);
-    expect(dateForSimulatedDay(5, "grace") >= "2026-10-29").toBe(true);
-    expect(dateForSimulatedDay(5, "grace") <= "2026-10-31").toBe(true);
-    expect(dateForSimulatedDay(5, "closed") > "2026-10-31").toBe(true);
+    expect(dateForSimulatedDay(5, "review") > "2026-10-30").toBe(true);
   });
 });
 

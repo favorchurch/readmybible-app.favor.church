@@ -469,7 +469,7 @@ export function TodayScreen({
     );
   }
 
-  if (today.displayPhase === "review" || today.displayPhase === "grace" || today.displayPhase === "closed") {
+  if (today.displayPhase === "review") {
     const review = reviewForDate(today.todayLocal);
     const unfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
     const allCaughtUp = unfinished.length === 0;

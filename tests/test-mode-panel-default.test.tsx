@@ -10,7 +10,7 @@
  */
 
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TestModePanel } from "@/components/test-mode/TestModePanel";
@@ -96,5 +96,15 @@ describe("TestModePanel default collapsed state (#127)", () => {
       groupId: null,
       role: "regional",
     }));
+  });
+
+  it("exposes only reachable plan phases", () => {
+    render(<TestModePanel state={state} onChange={() => {}} />);
+    const phaseGroup = screen.getByRole("group", { name: "Phase" });
+    expect(within(phaseGroup).getByRole("button", { name: "Pre-launch" })).toBeTruthy();
+    expect(within(phaseGroup).getByRole("button", { name: "Active" })).toBeTruthy();
+    expect(within(phaseGroup).getByRole("button", { name: "Review" })).toBeTruthy();
+    expect(within(phaseGroup).queryByRole("button", { name: "Grace" })).toBeNull();
+    expect(within(phaseGroup).queryByRole("button", { name: "Closed" })).toBeNull();
   });
 });

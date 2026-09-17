@@ -18,8 +18,7 @@ import {
 const PHASES: { value: SimulatedPhase; label: string }[] = [
   { value: "pre-launch", label: "Pre-launch" },
   { value: "active", label: "Active" },
-  { value: "grace", label: "Grace" },
-  { value: "closed", label: "Closed" },
+  { value: "review", label: "Review" },
 ];
 
 /** Ordered narrowest-to-widest, so the row reads like the org chart. */

@@ -103,8 +103,7 @@ export function FullHome({ onClose, groupName, coins, groupCheckinCount, stage, 
           {today.displayPhase === "active" && (currentMember?.readToday
             ? <button type="button" className="primary-button home-reading-cta" disabled>You&apos;re done for today <span aria-hidden="true">✓</span></button>
             : onViewReading ? <button type="button" className="primary-button home-reading-cta" onClick={onViewReading}>{today.entry ? `Read Matthew ${today.entry.chapter}` : "Continue reading"} <span aria-hidden="true">→</span></button> : null)}
-          {today.displayPhase === "grace" && onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
-          {today.displayPhase === "closed" && onViewPlan && <button type="button" className="secondary-link home-reading-cta" onClick={onViewPlan}>Review the reading plan →</button>}
+          {today.displayPhase === "review" && onViewPlan && <button type="button" className="primary-button home-reading-cta" onClick={onViewPlan}>View reading plan <span aria-hidden="true">→</span></button>}
           </div>
         </details>
         {supportsScene && <div className="home-scene-switch" role="group" aria-label="Scene presentation">
