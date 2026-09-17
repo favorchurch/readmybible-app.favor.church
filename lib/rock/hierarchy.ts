@@ -2,22 +2,21 @@
  * Rock GT24 section hierarchy for the admin dashboard. See intent/SPEC.md
  * "Admin dashboard" and intent/FLOWS.md "Admin dashboard".
  *
- * Root section discovered live on 2026-09-03 via `rock_entity` (Rock MCP,
- * read-only) by walking ParentGroupId up from Connect Group 24077
- * ("Adults // Erwin & Jeric Presnedi", GT25), which sits inside section
- * 23870:
+ * The GT24 section hierarchy was confirmed live via `rock_entity` (Rock MCP,
+ * read-only) by walking ParentGroupId upward from a GT25 Connect group. The
+ * shape, from a leaf upward, is:
  *
- *   24077 (GT25 group)
- *     -> 23870 "Region // Arnel Guiron & Belle Guiron"      (GT24)
- *     -> 23869 "Cluster // Cielo Pabalan & Peejay Pabalan"  (GT24)
- *     -> 78    "MNL Adults"                                 (GT24, department, CampusId 1)
- *     -> 39    "MNL Connect Groups"                         (GT24, campus root, CampusId 1)
- *     -> 22464 "Connect Groups"  ParentGroupId: null         (GT24, GLOBAL ROOT)
+ *   GT25 Connect group
+ *     -> Region section        (GT24)
+ *     -> Cluster section       (GT24)
+ *     -> Department section    (GT24, carries a CampusId)
+ *     -> Campus root section   (GT24, carries a CampusId)
+ *     -> Global root           (GT24, ParentGroupId: null)
  *
- * Siblings of 39 directly under 22464 are the other campus roots:
- *   39    "MNL Connect Groups" (CampusId 1)
- *   22863 "BNE Connect Groups" (CampusId 2)
- *   22864 "SEL Connect Groups" (CampusId 3)
+ * One campus root exists per campus, all siblings directly under the global
+ * root. Section names are derived from their leaders' names, so no concrete
+ * ids or names are recorded here: this repository is public. Resolve the live
+ * tree from Rock at request time instead.
  *
  * Never write to Rock from this module.
  */
