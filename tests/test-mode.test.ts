@@ -123,16 +123,16 @@ describe("writesBlocked", () => {
 describe("dateForSimulatedDay", () => {
   it("maps an active day to that day's real plan date", () => {
     expect(dateForSimulatedDay(1, "active")).toBe(PLAN[0].date);
-    expect(dateForSimulatedDay(28, "active")).toBe(PLAN[27].date);
+    expect(dateForSimulatedDay(20, "active")).toBe(PLAN[19].date);
   });
 
   it("clamps an out-of-range active day into the plan", () => {
     expect(dateForSimulatedDay(0, "active")).toBe(PLAN[0].date);
-    expect(dateForSimulatedDay(999, "active")).toBe(PLAN[27].date);
+    expect(dateForSimulatedDay(999, "active")).toBe(PLAN[19].date);
   });
 
   it("maps pre-launch/grace/closed to a date in that phase, independent of day", () => {
-    expect(dateForSimulatedDay(5, "pre-launch") < "2026-10-01").toBe(true);
+    expect(dateForSimulatedDay(5, "pre-launch") < "2026-10-05").toBe(true);
     expect(dateForSimulatedDay(5, "grace") >= "2026-10-29").toBe(true);
     expect(dateForSimulatedDay(5, "grace") <= "2026-10-31").toBe(true);
     expect(dateForSimulatedDay(5, "closed") > "2026-10-31").toBe(true);
@@ -147,7 +147,7 @@ describe("simulatedTodayState", () => {
     expect(state.phase).toBe("active");
     expect(state.displayPhase).toBe("active");
     expect(state.dayLabel).toBe(5);
-    expect(state.entry?.chapter).toBe(5);
+    expect(state.entry?.chapter).toBe(7);
   });
 
   it("has no entry before the plan starts", () => {
@@ -162,17 +162,17 @@ describe("simulatedChapters", () => {
     expect(simulatedChapters(0)).toEqual([]);
   });
 
-  it("is all 28 chapters at 100%", () => {
-    expect(simulatedChapters(100)).toEqual(PLAN.map((entry) => entry.chapter));
+  it("is all 20 assignments at 100%", () => {
+    expect(simulatedChapters(100)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
   });
 
   it("is a proportional, sequential prefix in between", () => {
-    expect(simulatedChapters(50)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+    expect(simulatedChapters(50)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it("clamps out-of-range percentages", () => {
     expect(simulatedChapters(-10)).toEqual([]);
-    expect(simulatedChapters(500)).toEqual(PLAN.map((entry) => entry.chapter));
+    expect(simulatedChapters(500)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
   });
 });
 

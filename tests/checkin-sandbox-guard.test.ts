@@ -23,7 +23,7 @@ vi.mock("@/lib/data/stats", () => ({ getGroupStatsFresh: vi.fn(async () => null)
 // Today is outside the plan window in real time, so validateCheckIn would
 // reject before the insert and the positive tests below would pass for the
 // wrong reason. Pin the clock to day 1 of the plan instead.
-vi.mock("@/lib/dev-clock", () => ({ appNow: () => new Date(2026, 9, 1, 12, 0, 0) }));
+vi.mock("@/lib/dev-clock", () => ({ appNow: () => new Date(2026, 9, 5, 12, 0, 0) }));
 
 const insertSpy = vi.fn();
 vi.mock("@/db", () => ({

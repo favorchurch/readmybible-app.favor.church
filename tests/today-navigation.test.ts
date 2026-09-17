@@ -28,18 +28,18 @@ describe("Today reading navigation", () => {
     const dayFive = simulatedTodayState(dateForSimulatedDay(5, "active"), "UTC").entry;
 
     expect(syncViewedChapter(dayFive?.chapter ?? null, dayOne?.chapter ?? 1, dayOne?.chapter ?? 1)).toEqual({
-      syncedChapter: 5,
-      viewedChapter: 5,
+      syncedChapter: 7,
+      viewedChapter: 7,
     });
   });
 
   it("resets the viewed chapter when today's entry changes overnight", () => {
-    const yesterday = planEntryForDate("2026-10-01");
-    const today = planEntryForDate("2026-10-02");
+    const yesterday = planEntryForDate("2026-10-05");
+    const today = planEntryForDate("2026-10-06");
 
     expect(syncViewedChapter(today?.chapter ?? null, yesterday?.chapter ?? 1, yesterday?.chapter ?? 1)).toEqual({
-      syncedChapter: 2,
-      viewedChapter: 2,
+      syncedChapter: 3,
+      viewedChapter: 3,
     });
   });
 });

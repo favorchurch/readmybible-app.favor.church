@@ -127,21 +127,21 @@ function selectSandbox() {
  * the sentinel as visible the moment it is observed -- that IS "the reader
  * reached the bottom" for the purposes of this wiring test.
  */
+let mockNow = 1000;
+
 class ImmediateIntersectionObserver {
   constructor(private readonly callback: IntersectionObserverCallback) {}
   observe(target: Element) {
-    // Two callbacks, because D13 distinguishes them: the first reports the
-    // state on open (not yet at the end -- a chapter that overflows the
-    // sheet), and the second is the reader scrolling down to it. Reporting
-    // the end as visible on the first callback would mean a no-scroll dwell,
-    // which is not what this test is about.
     const fire = (isIntersecting: boolean) =>
       this.callback(
         [{ isIntersecting, target } as unknown as IntersectionObserverEntry],
         this as unknown as IntersectionObserver,
       );
     fire(false);
-    queueMicrotask(() => fire(true));
+    queueMicrotask(() => {
+      mockNow += 16_000;
+      fire(true);
+    });
   }
   unobserve() {}
   disconnect() {}
@@ -176,6 +176,8 @@ afterEach(() => {
   searchParams.value = new URLSearchParams("test=1");
 });
 beforeEach(() => {
+  mockNow = 1000;
+  vi.spyOn(performance, "now").mockImplementation(() => mockNow);
   vi.stubGlobal("IntersectionObserver", ImmediateIntersectionObserver);
   stubScriptureFetch();
   [checkIn, joinByCode, chooseGroup, saveProfile, getOrCreateJoinCode, getTestGroupSnapshot].forEach((m) =>

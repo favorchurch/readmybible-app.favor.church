@@ -3,36 +3,43 @@ import { describe, expect, it } from "vitest";
 import { checkInOpensLabel, displayPhase, dayState, longDate, planEntryForDate } from "@/lib/plan";
 
 describe("displayPhase", () => {
-  it("is pre-launch before October 1", () => {
+  it("is pre-launch before October 5", () => {
     expect(displayPhase("2026-09-30")).toBe("pre-launch");
+    expect(displayPhase("2026-10-04")).toBe("pre-launch");
   });
 
-  it("is active on October 1 and mid-plan days", () => {
-    expect(displayPhase("2026-10-01")).toBe("active");
-    expect(displayPhase("2026-10-28")).toBe("active");
+  it("is active on scheduled assignment days", () => {
+    expect(displayPhase("2026-10-05")).toBe("active");
+    expect(displayPhase("2026-10-12")).toBe("active");
+    expect(displayPhase("2026-10-30")).toBe("active");
   });
 
-  it("is grace on October 29 through 31", () => {
-    expect(displayPhase("2026-10-29")).toBe("grace");
-    expect(displayPhase("2026-10-30")).toBe("grace");
-    expect(displayPhase("2026-10-31")).toBe("grace");
+  it("is review on weekend review days", () => {
+    expect(displayPhase("2026-10-10")).toBe("review");
+    expect(displayPhase("2026-10-11")).toBe("review");
+    expect(displayPhase("2026-10-17")).toBe("review");
+    expect(displayPhase("2026-10-18")).toBe("review");
+    expect(displayPhase("2026-10-24")).toBe("review");
+    expect(displayPhase("2026-10-25")).toBe("review");
   });
 
-  it("is closed after October 31", () => {
-    expect(displayPhase("2026-11-01")).toBe("closed");
+  it("is review after October 30 forever (perpetual Review & Catch Up, no closed state)", () => {
+    expect(displayPhase("2026-10-31")).toBe("review");
+    expect(displayPhase("2026-11-01")).toBe("review");
+    expect(displayPhase("2026-12-01")).toBe("review");
   });
 });
 
 describe("dayState", () => {
-  const entry = planEntryForDate("2026-10-10")!;
+  const entry = planEntryForDate("2026-10-12")!;
 
   it("is read when isRead is true, regardless of date", () => {
-    expect(dayState(entry, "2026-10-10", true)).toBe("read");
+    expect(dayState(entry, "2026-10-12", true)).toBe("read");
     expect(dayState(entry, "2026-10-20", true)).toBe("read");
   });
 
   it("is today when the entry's date matches todayLocal and unread", () => {
-    expect(dayState(entry, "2026-10-10", false)).toBe("today");
+    expect(dayState(entry, "2026-10-12", false)).toBe("today");
   });
 
   it("is catch-up for an unread past day", () => {
