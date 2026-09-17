@@ -290,11 +290,13 @@
   gap: 2px 14px;
 }
 
+/* COMMENTARIES and APPS are secondary to the passage and the chapter link, so they
+   sit at --ink-muted (5.04:1 on --cream, above the 4.5:1 body floor). The underline
+   and the arrow carry the link affordance, not the colour. */
 .scripture-sheet .link-group-row .inline-link {
   display: inline-block;
   padding: 4px 6px;
-  color: var(--navy);
-  /* set below for the source groups */
+  color: var(--ink-muted);
   font-size: 14px;
   font-weight: 600;
   text-decoration: underline;
@@ -313,13 +315,6 @@
   outline: 2px solid var(--gold);
   outline-offset: 1px;
   border-radius: 4px;
-}
-
-/* COMMENTARIES and APPS are secondary to the passage and the chapter link, so they
-   sit at --ink-muted (5.04:1 on --cream, above the 4.5:1 body floor). The underline
-   and the arrow carry the link affordance, not the colour. */
-.link-group+.link-group .inline-link {
-  color: var(--ink-muted);
 }
 
 @media (hover: hover) {
