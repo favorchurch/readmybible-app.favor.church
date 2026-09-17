@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { type Translation, type UserProfile } from "@/components/avatar";
 import { DayPreviewSheet } from "@/components/day-preview-sheet";
+import { NoteIndicator, useNotesPresence } from "@/components/notes";
 import { ProgressBar } from "@/components/progress-bar";
 import { Header } from "@/components/screens/header";
 import type { ConnectSwitcherContext } from "@/components/connect-switcher";
@@ -52,6 +53,7 @@ export function ProgressScreen({
   const completedDays = useMemo(() => new Set(chapters), [chapters]);
   const next = nextMedal(chaptersRead);
   const isPreLaunch = today.displayPhase === "pre-launch";
+  const { hasNote, isShared: noteIsShared } = useNotesPresence();
 
   const [selectedEntry, setSelectedEntry] = useState<PlanEntry | null>(null);
   const [previewIsRead, setPreviewIsRead] = useState(false);
@@ -120,6 +122,15 @@ export function ProgressScreen({
                   {state === "today" && <i className="cell-tag">Today</i>}
                   {state === "today" && <span className="today-ring" aria-hidden="true" />}
                   {state === "catch-up" && <i className="cell-tag" aria-hidden="true">↺</i>}
+                  {hasNote(entry.date) && (
+                    <NoteIndicator
+                      exists
+                      isShared={noteIsShared(entry.date)}
+                      isOwner
+                      size={10}
+                      className="calendar-note-indicator"
+                    />
+                  )}
                 </button>
               );
             })}
