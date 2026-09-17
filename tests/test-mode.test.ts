@@ -73,19 +73,37 @@ describe("initialTestModeState", () => {
 
 describe("writesBlocked", () => {
   it("returns false (writes allowed) when test mode is inactive", () => {
-    expect(writesBlocked(false, null, null, null)).toBe(false);
-    expect(writesBlocked(false, 87177, 87177, 87177)).toBe(false);
-    expect(writesBlocked(false, 12345, 99999, 87177)).toBe(false);
+    expect(writesBlocked(false, null, null, null, false)).toBe(false);
+    expect(writesBlocked(false, 87177, 87177, 87177, false)).toBe(false);
+    expect(writesBlocked(false, 12345, 99999, 87177, false)).toBe(false);
+    // Inactive short-circuits before the toggle is even read.
+    expect(writesBlocked(false, 87177, 87177, 87177, true)).toBe(false);
   });
 
   describe("when test mode is active", () => {
-    it("returns false (writes allowed) only when writable, selected, and real active all match", () => {
-      expect(writesBlocked(true, 87177, 87177, 87177)).toBe(false);
+    it("returns false (writes allowed) only when writable, selected, real active, and the toggle all match", () => {
+      expect(writesBlocked(true, 87177, 87177, 87177, true)).toBe(false);
+    });
+
+    /**
+     * Map 146 locks writes blocked by default. The triple-match alone must
+     * never be enough -- the toggle is an explicit, additional opt-in, not a
+     * config the sandbox can imply.
+     */
+    it("returns true when the triple-match holds but the toggle is off (default)", () => {
+      expect(writesBlocked(true, 87177, 87177, 87177, false)).toBe(true);
+      expect(writesBlocked(true, null, 87177, 87177, false)).toBe(true);
+    });
+
+    it("returns true when the toggle is on but the triple-match fails", () => {
+      expect(writesBlocked(true, 12345, 87177, 87177, true)).toBe(true);
+      expect(writesBlocked(true, 87177, 99999, 87177, true)).toBe(true);
+      expect(writesBlocked(true, 87177, 87177, null, true)).toBe(true);
     });
 
     it("returns true when writableGroupId is null", () => {
-      expect(writesBlocked(true, 87177, 87177, null)).toBe(true);
-      expect(writesBlocked(true, null, null, null)).toBe(true);
+      expect(writesBlocked(true, 87177, 87177, null, true)).toBe(true);
+      expect(writesBlocked(true, null, null, null, true)).toBe(true);
     });
 
     /**
@@ -100,22 +118,22 @@ describe("writesBlocked", () => {
      * active group here.
      */
     it("resolves a null selection to the real active group, so the sandbox is reachable", () => {
-      expect(writesBlocked(true, null, 87177, 87177)).toBe(false);
+      expect(writesBlocked(true, null, 87177, 87177, true)).toBe(false);
     });
 
     it("still blocks a null selection when the real active group is not the sandbox", () => {
-      expect(writesBlocked(true, null, 12345, 87177)).toBe(true);
-      expect(writesBlocked(true, null, null, 87177)).toBe(true);
+      expect(writesBlocked(true, null, 12345, 87177, true)).toBe(true);
+      expect(writesBlocked(true, null, null, 87177, true)).toBe(true);
     });
 
     it("returns true when selectedGroupId does not match writableGroupId", () => {
-      expect(writesBlocked(true, 12345, 87177, 87177)).toBe(true);
-      expect(writesBlocked(true, 12345, 12345, 87177)).toBe(true);
+      expect(writesBlocked(true, 12345, 87177, 87177, true)).toBe(true);
+      expect(writesBlocked(true, 12345, 12345, 87177, true)).toBe(true);
     });
 
     it("returns true when realActiveGroupId does not match writableGroupId (A2 mismatch case)", () => {
-      expect(writesBlocked(true, 87177, 99999, 87177)).toBe(true);
-      expect(writesBlocked(true, 87177, null, 87177)).toBe(true);
+      expect(writesBlocked(true, 87177, 99999, 87177, true)).toBe(true);
+      expect(writesBlocked(true, 87177, null, 87177, true)).toBe(true);
     });
   });
 });
@@ -249,7 +267,7 @@ describe("guardWrite", () => {
 
   it("blocks a check-in attempt for a non-sandbox group", async () => {
     const checkInAction = vi.fn(async () => ({ ok: true as const }));
-    const nonSandboxBlocked = writesBlocked(true, 12345, 87177, 87177);
+    const nonSandboxBlocked = writesBlocked(true, 12345, 87177, 87177, true);
     const guarded = guardWrite(nonSandboxBlocked, checkInAction);
 
     const result = await guarded();
@@ -260,7 +278,7 @@ describe("guardWrite", () => {
 
   it("allows a check-in attempt for the designated sandbox group when real active group matches", async () => {
     const checkInAction = vi.fn(async () => ({ ok: true as const }));
-    const sandboxBlocked = writesBlocked(true, 87177, 87177, 87177);
+    const sandboxBlocked = writesBlocked(true, 87177, 87177, 87177, true);
     const guarded = guardWrite(sandboxBlocked, checkInAction);
 
     const result = await guarded();
@@ -285,12 +303,18 @@ describe("guardWrite", () => {
 describe("sandbox unblock is scoped to check-in only", () => {
   const SANDBOX = 87177;
   // The most permissive state that exists: simulating the sandbox, from a
-  // session really in the sandbox, with the sandbox configured.
-  const checkInGate = () => writesBlocked(true, SANDBOX, SANDBOX, SANDBOX);
+  // session really in the sandbox, with the sandbox configured, and the
+  // opt-in toggle deliberately turned on.
+  const checkInGate = (sandboxWritesEnabled: boolean) =>
+    writesBlocked(true, SANDBOX, SANDBOX, SANDBOX, sandboxWritesEnabled);
   const otherActionGate = (testModeActive: boolean) => testModeActive;
 
-  it("unblocks check-in in the fully-matching sandbox state", () => {
-    expect(checkInGate()).toBe(false);
+  it("unblocks check-in in the fully-matching sandbox state when the toggle is on", () => {
+    expect(checkInGate(true)).toBe(false);
+  });
+
+  it("keeps check-in blocked in the fully-matching sandbox state when the toggle is off (default)", () => {
+    expect(checkInGate(false)).toBe(true);
   });
 
   it.each([

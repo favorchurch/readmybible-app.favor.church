@@ -29,6 +29,7 @@ const state: TestModeState = {
   day: 1,
   completionPct: 0,
   groupPct: 0,
+  sandboxWritesEnabled: false,
 };
 
 afterEach(cleanup);

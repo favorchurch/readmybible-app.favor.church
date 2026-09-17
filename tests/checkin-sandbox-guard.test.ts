@@ -118,4 +118,24 @@ describe("checkIn sandbox claim", () => {
     expect(result.ok).toBe(true);
     expect(insertSpy).toHaveBeenCalled();
   });
+
+  /**
+   * The Test Mode opt-in toggle (components/test-mode/logic.ts) is client/
+   * session state only -- this action has no parameter for it and never will
+   * (adding one would be exactly the "client grants itself the write" trap).
+   * A forged request that believes the toggle is on is indistinguishable here
+   * from an ordinary sandboxGroupId claim: the server's only defenses are the
+   * resolved session and the configured sandbox, neither of which a client
+   * can fake. These refusals above already prove that; this test just names
+   * the scenario the packet asked for explicitly.
+   */
+  it("refuses a forged claim even when the client believes the opt-in toggle is on", async () => {
+    writable.mockReturnValue(SANDBOX);
+    sessionInGroup(12345); // real active group is NOT the sandbox -- triple-match fails
+
+    const result = await checkIn({ ...input, sandboxGroupId: SANDBOX });
+
+    expect(result).toEqual(BLOCKED);
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
 });

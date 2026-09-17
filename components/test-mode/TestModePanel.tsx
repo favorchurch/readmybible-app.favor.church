@@ -215,9 +215,15 @@ export function TestModePanel({
   const [groupPickerError, setGroupPickerError] = useState<Error | null>(null);
   const realActiveGroupId = realActiveGroup?.groupId ?? null;
   const isSynthetic = state.scenario !== "real";
-  const isBlocked = isSynthetic || writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId);
+  const isBlocked =
+    isSynthetic || writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId, state.sandboxWritesEnabled);
   const isA2Mismatch =
     !isSynthetic && writableGroupId !== null && state.groupId === writableGroupId && realActiveGroupId !== writableGroupId;
+  // Whether the triple-match holds on its own, independent of the toggle --
+  // used only to give the tester an accurate reason when writes are still
+  // blocked because the toggle is off, rather than the generic message.
+  const tripleMatchReady =
+    !isSynthetic && !writesBlocked(true, state.groupId, realActiveGroupId, writableGroupId, true);
   const simulatedGroupId = !isSynthetic ? (state.groupId ?? realActiveGroupId) : null;
 
   useEffect(() => {
@@ -295,9 +301,28 @@ export function TestModePanel({
             <p className="test-mode-note test-mode-note-sandbox">Sandbox group — writes are REAL.</p>
           ) : isA2Mismatch ? (
             <p className="test-mode-note">View-only. Writes disabled (session not in group {writableGroupId}).</p>
+          ) : tripleMatchReady && !state.sandboxWritesEnabled ? (
+            <p className="test-mode-note">
+              Sandbox group ready. View-only. Turn on &quot;Allow real database writes&quot; below to enable a real check-in.
+            </p>
           ) : (
             <p className="test-mode-note">View-only. Writes disabled.</p>
           )}
+
+          <label className="test-mode-field test-mode-field-checkbox">
+            <span>
+              <input
+                type="checkbox"
+                checked={state.sandboxWritesEnabled}
+                onChange={(event) => onChange({ ...state, sandboxWritesEnabled: event.target.checked })}
+              />{" "}
+              Allow real database writes (sandbox check-in)
+            </span>
+            <span className="test-mode-note">
+              When on, and the sandbox group matches your real active group, a check-in here writes a real row to
+              the production database. Off by default.
+            </span>
+          </label>
 
           <div className="test-mode-field" role="group" aria-label="Scenario">
             <span>Scenario</span>

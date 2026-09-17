@@ -154,6 +154,7 @@ function AppShellInner(props: AppShellProps) {
       testMode.state.groupId,
       props.activeGroup?.groupId ?? null,
       props.testWritableGroupId,
+      testMode.state.sandboxWritesEnabled,
     );
   }, [
     testMode.active,
@@ -161,6 +162,7 @@ function AppShellInner(props: AppShellProps) {
     testMode.state.groupId,
     props.activeGroup?.groupId,
     props.testWritableGroupId,
+    testMode.state.sandboxWritesEnabled,
   ]);
   // Only checkIn is ever unblocked by the sandbox group. It writes a check-in
   // row against the server's real active group, which `writesBlocked` has

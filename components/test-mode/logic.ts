@@ -100,6 +100,14 @@ export type TestModeState = {
   scenario: TestModeScenario;
   role: TestModeRole;
   campus: TestModeCampus;
+  /**
+   * Explicit opt-in for the sandbox write exception. Map 146 locks writes
+   * blocked by default; this toggle is the ONLY way a leader can reach the
+   * triple-match unblock in `writesBlocked` below. Client/session state only
+   * -- never persisted server-side, so turning it on cannot itself become a
+   * write (see components/test-mode/TestModePanel.tsx).
+   */
+  sandboxWritesEnabled: boolean;
 };
 
 /**
@@ -299,6 +307,9 @@ export function initialTestModeState(
     scenario: "real",
     role,
     campus: campusFromParams(searchParams, sessionCampus),
+    // Default off, matching the locked decision that Test Mode writes
+    // nothing unless a leader deliberately opts in.
+    sandboxWritesEnabled: false,
   };
 }
 
@@ -426,16 +437,25 @@ type WriteResult = { ok: true } | { ok: false; error: string };
 /**
  * Pure helper to determine if writes are blocked in test mode.
  * Returns `false` (writes allowed) only when all hold:
- * `active === true`, `writableGroupId !== null`, `selectedGroupId === writableGroupId`, `realActiveGroupId === writableGroupId`.
+ * `active === true`, `sandboxWritesEnabled === true`, `writableGroupId !== null`,
+ * `selectedGroupId === writableGroupId`, `realActiveGroupId === writableGroupId`.
  * Otherwise `true`. When `active` is `false`, returns `false` so `guardWrite` stays a pass-through.
+ *
+ * `sandboxWritesEnabled` is an explicit, additional gate on top of the
+ * triple-match -- Map 146 locks writes blocked by default, so the
+ * triple-match alone must never be enough to unblock. Toggle on + triple-match
+ * fails is still blocked; the toggle only ever narrows, never replaces, the
+ * existing match.
  */
 export function writesBlocked(
   active: boolean,
   selectedGroupId: number | null,
   realActiveGroupId: number | null,
   writableGroupId: number | null,
+  sandboxWritesEnabled: boolean,
 ): boolean {
   if (!active) return false;
+  if (!sandboxWritesEnabled) return true;
   // `selectedGroupId === null` means "my real active group" -- the panel's
   // first option, which is also the ONLY way that group can be selected,
   // because the picker filters it out of the campus list to avoid listing it
