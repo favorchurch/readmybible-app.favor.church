@@ -12,3 +12,7 @@ export {
   type NotebookPageMeta,
 } from "./pages";
 export { ScrollIcon, LockIcon, CheckIcon } from "./icons";
+export { mergeNoteContents } from "./merge-notes";
+export { sanitizeNoteHtml, normalizeContentToHtml, ALLOWED_FONTS, type AllowedFont } from "./sanitize";
+export { NotesEditor } from "./notes-editor";
+
