@@ -85,6 +85,20 @@ function NotebookModalInner({
   // Mirrors `content` synchronously so the late-fetch merge (an async callback)
   // can read the latest typed text without a side effect inside a setState updater.
   const contentRef = useRef("");
+  // Per-page record of the user's own explicit share decision. A value that
+  // arrives from a fetch/cache/revalidation must never overwrite this once
+  // the user has toggled sharing on a page -- their intent always wins,
+  // mirroring how userTypedPagesRef protects typed content from being
+  // clobbered by a late-arriving fetch.
+  const userSharedByPageRef = useRef<Map<string, boolean>>(new Map());
+
+  const resolveShared = useCallback(
+    (pageId: string, fetchedShared: boolean): boolean =>
+      userSharedByPageRef.current.has(pageId)
+        ? userSharedByPageRef.current.get(pageId)!
+        : fetchedShared,
+    [],
+  );
 
   const isOwner = !authorPersonId || noteView?.isOwner !== false;
 
@@ -107,6 +121,7 @@ function NotebookModalInner({
     if (open) {
       userTypedPagesRef.current.clear();
       loadedPayloadForPageRef.current.clear();
+      userSharedByPageRef.current.clear();
     }
   }, [open]);
 
@@ -171,7 +186,7 @@ function NotebookModalInner({
         if (!userTypedPagesRef.current.has(currentPageId)) {
           setContent(cachedContent);
           contentRef.current = cachedContent;
-          setIsShared(cached.note.isShared);
+          setIsShared(resolveShared(currentPageId, cached.note.isShared));
           setNoteView(cached.note);
           loadedPayloadForPageRef.current.set(currentPageId, cachedContent);
         }
@@ -204,15 +219,20 @@ function NotebookModalInner({
             if (!userHasTypedOnPage) {
               setContent(fetchedContent);
               contentRef.current = fetchedContent;
-              setIsShared(fetchedShared);
+              // The user may have toggled sharing before this fetch resolved
+              // (e.g. on a still-empty note) -- their decision always wins
+              // over the server's last-known value.
+              setIsShared(resolveShared(currentPageId, fetchedShared));
               loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
             } else {
               // Late-fetch merge rule (Issue 183):
               // User typed before fetched notes arrived! Result must be:
               // TYPED CONTENT + FETCHED CONTENT (typed prepended, never overwritten)
-              // fetchedShared reflects the server's current record and always applies,
-              // independent of whether there was any fetched content to merge in.
-              setIsShared(fetchedShared);
+              // A share toggle made before the fetch landed always wins over
+              // the server's last-known value, the same way typed content
+              // always wins over being silently overwritten.
+              const effectiveShared = resolveShared(currentPageId, fetchedShared);
+              setIsShared(effectiveShared);
               if (fetchedContent.trim().length > 0) {
                 const merged = mergeNoteContents({
                   typedContent: contentRef.current,
@@ -221,7 +241,7 @@ function NotebookModalInner({
                 setContent(merged);
                 contentRef.current = merged;
                 if (merged.length <= 1000) {
-                  triggerAutosave(merged, fetchedShared);
+                  triggerAutosave(merged, effectiveShared);
                 } else {
                   // Autosave's own request would fail server-side validation (max 1000
                   // chars) -- surface it immediately instead of losing the merge silently.
@@ -231,7 +251,7 @@ function NotebookModalInner({
                   cancelPendingAutosave();
                   setSaveStatus("error");
                   setStatusMessage(
-                    "Merged note exceeds the 1000 character limit. Remove some text to save.",
+                    "This merged note is too large to save because of its formatting. Remove some text to continue.",
                   );
                 }
               }
@@ -243,14 +263,18 @@ function NotebookModalInner({
             if (!userHasTypedOnPage && prevLoadedPayload !== fetchedContent) {
               setContent(fetchedContent);
               contentRef.current = fetchedContent;
-              setIsShared(fetchedShared);
+              setIsShared(resolveShared(currentPageId, fetchedShared));
               loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
             }
           }
         } else {
           setNoteView(null);
           setStatusMessage(res.error);
-          loadedPayloadForPageRef.current.set(currentPageId, "");
+          // Do NOT mark this page as loaded here -- a failed fetch has no
+          // real data. Marking it loaded would poison the late-fetch merge
+          // guard: a later successful retry would be misread as a background
+          // revalidation (hasLoadedThisPage already true) instead of a first
+          // load, and any content typed in the meantime would never merge.
         }
       })
       .catch(() => {
@@ -261,7 +285,16 @@ function NotebookModalInner({
     return () => {
       cancelled = true;
     };
-  }, [open, currentPageId, authorPersonId, queryClient, queryKey, triggerAutosave, cancelPendingAutosave]);
+  }, [
+    open,
+    currentPageId,
+    authorPersonId,
+    queryClient,
+    queryKey,
+    triggerAutosave,
+    cancelPendingAutosave,
+    resolveShared,
+  ]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -287,7 +320,12 @@ function NotebookModalInner({
       // or it would fire in the background with stale content.
       cancelPendingAutosave();
       setSaveStatus("error");
-      setStatusMessage("Note exceeds the 1000 character limit. Remove some text or formatting to save.");
+      // Deliberately doesn't cite "1000 characters" -- the visible-text
+      // counter can show well under 1000 at the same time (markup overhead
+      // inflates HTML length past what the counter reports), and repeating
+      // that number here would contradict the counter instead of explaining
+      // the actual cause.
+      setStatusMessage("This note is too large to save because of its formatting. Remove some text or formatting to continue.");
       return;
     }
 
@@ -299,6 +337,7 @@ function NotebookModalInner({
   }
 
   function handleShareToggle(checked: boolean) {
+    userSharedByPageRef.current.set(currentPageId, checked);
     setIsShared(checked);
     triggerAutosave(content, checked);
   }
@@ -323,13 +362,13 @@ function NotebookModalInner({
       const cachedContent = cached.note.content ?? "";
       setContent(cachedContent);
       contentRef.current = cachedContent;
-      setIsShared(cached.note.isShared);
+      setIsShared(resolveShared(targetId, cached.note.isShared));
       setNoteView(cached.note);
       loadedPayloadForPageRef.current.set(targetId, cachedContent);
     } else {
       setContent("");
       contentRef.current = "";
-      setIsShared(false);
+      setIsShared(resolveShared(targetId, false));
       setNoteView(null);
     }
   }
