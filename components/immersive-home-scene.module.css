@@ -60,6 +60,19 @@
 }
 
 .selected { color: #ffe182; }
+.memberPoints {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 253, 244, 0.65);
+  line-height: 1;
+  text-shadow: 0 1px 3px #071713, 0 0 8px #071713;
+  margin-bottom: 2px;
+}
+.memberName {
+  display: block;
+  line-height: 1.1;
+}
 .scene[data-large-roster="true"] .memberLabel { font-size: 10px; }
 
 .hint {

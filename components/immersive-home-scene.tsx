@@ -22,6 +22,7 @@ type ImmersiveHomeSceneProps = {
   profile: UserProfile;
   people: boolean;
   names: boolean;
+  showPoints?: boolean;
   selectedMemberId: number | null;
   onSelectMember: (member: RosterMemberView) => void;
   resetKey: number;
@@ -158,6 +159,7 @@ export function ImmersiveHomeScene({
   profile,
   people,
   names,
+  showPoints = true,
   selectedMemberId,
   onSelectMember,
   resetKey,
@@ -200,7 +202,8 @@ export function ImmersiveHomeScene({
     const readyFrame = requestAnimationFrame(() => setWebGlFailed(false));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = time === "Night" || mode === "campfire" ? 1.18 : 1.05;
+    const isNight = time === "Night";
+    renderer.toneMappingExposure = isNight ? 1.18 : 1.05;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -211,8 +214,8 @@ export function ImmersiveHomeScene({
         : { sky: 0x112b42, fog: 0x173640, ambient: .55, sun: .65 };
     const isCampfire = mode === "campfire";
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(isCampfire ? 0x102c3b : palette.sky);
-    scene.fog = new THREE.Fog(isCampfire ? 0x173936 : palette.fog, 15, 35);
+    scene.background = new THREE.Color(isNight && isCampfire ? 0x102c3b : palette.sky);
+    scene.fog = new THREE.Fog(isNight && isCampfire ? 0x173936 : palette.fog, 15, 35);
 
     const camera = new THREE.PerspectiveCamera(42, 1, .1, 70);
     const { height, radius, minYaw, maxYaw } = model.framing;
@@ -227,9 +230,16 @@ export function ImmersiveHomeScene({
     };
     updateCamera();
 
-    const ambient = new THREE.HemisphereLight(isCampfire ? 0xa0bacb : 0xe0e6e0, 0x314334, isCampfire ? .85 : palette.ambient + .5);
+    const ambient = new THREE.HemisphereLight(
+      isNight && isCampfire ? 0xa0bacb : 0xe0e6e0,
+      0x314334,
+      isNight && isCampfire ? .85 : palette.ambient + .5,
+    );
     scene.add(ambient);
-    const sun = new THREE.DirectionalLight(time === "Sunset" ? 0xffb06f : 0xfff0ca, isCampfire ? .48 : palette.sun);
+    const sun = new THREE.DirectionalLight(
+      time === "Sunset" ? 0xffb06f : 0xfff0ca,
+      isNight && isCampfire ? .48 : palette.sun,
+    );
     sun.position.set(-7, 12, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -239,11 +249,11 @@ export function ImmersiveHomeScene({
     sun.shadow.camera.bottom = -8;
     scene.add(sun);
 
-    const ground = mesh(new THREE.CircleGeometry(22, 48), isCampfire ? 0x274a36 : 0x416846, { cast: false });
+    const ground = mesh(new THREE.CircleGeometry(22, 48), isNight && isCampfire ? 0x274a36 : 0x416846, { cast: false });
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
-    addLandscape(scene, isCampfire || time === 'Night', time === 'Sunset');
+    addLandscape(scene, isNight, time === 'Sunset');
     const treeLayout: Array<[number, number, number]> = [
       [-11, -5, 2.1], [-8.3, -6, 1.55], [-6.2, -7.4, 1.7], [7, -7.5, 1.75], [9.4, -6.1, 1.7], [12, -4, 2.2],
       [-10.5, 1.5, 1.5], [-8.6, 4.2, 1.3], [9.1, 3.7, 1.35], [11, .8, 1.6],
@@ -507,7 +517,7 @@ export function ImmersiveHomeScene({
       data-large-roster={roster.length > 20}
       data-home-stage={model?.name}
       data-camera-pitch="locked"
-      aria-label={`${mode === "campfire" ? "Campfire" : "Home"} scene with ${model?.name} home`}
+      aria-label={`${mode === "campfire" ? "3D Campfire" : "Home"} scene with ${model?.name} home`}
     >
       <canvas
         ref={canvasRef}
@@ -515,7 +525,7 @@ export function ImmersiveHomeScene({
         tabIndex={0}
         aria-label={`Interactive 3D ${model?.name}. Drag empty ground or use left and right arrow keys to look around. Drag a person to rearrange the gathering.`}
       />
-      {webGlFailed && <div className={styles.fallback} role="status">3D is unavailable on this device. Choose Classic to explore your home, or People to view your group.</div>}
+      {webGlFailed && <div className={styles.fallback} role="status">3D is unavailable on this device. Choose Home to explore your home, or People to view your group.</div>}
       {showHint && !webGlFailed && <p className={styles.hint}>Drag to look around · drag a person to move them</p>}
       {people && !webGlFailed && (
         <div className={styles.labels} aria-label="Group members">
@@ -529,7 +539,7 @@ export function ImmersiveHomeScene({
               type="button"
               title={member.name}
               className={`${styles.memberLabel} ${selectedMemberId === member.personId ? styles.selected : ""}`}
-              aria-label={`${member.name}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person.`}
+              aria-label={`${member.name}${showPoints && member.contributedPoints !== undefined ? `, ${member.contributedPoints} points` : ""}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person.`}
               onClick={() => onSelectMember(member)}
               onKeyDown={event => {
                 const amount = event.shiftKey ? .8 : .35;
@@ -541,7 +551,14 @@ export function ImmersiveHomeScene({
                 event.preventDefault();
               }}
             >
-              {names ? `${member.name.split(' ')[0]}${member.isSelf ? " · You" : ""}` : <span className="sr-only">{member.name}</span>}
+              {showPoints && member.contributedPoints !== undefined && (
+                <span className={styles.memberPoints}>{member.contributedPoints}</span>
+              )}
+              {names ? (
+                <span className={styles.memberName}>{member.name.split(' ')[0]}{member.isSelf ? " · You" : ""}</span>
+              ) : (
+                <span className="sr-only">{member.name}</span>
+              )}
             </button>
           ))}
         </div>

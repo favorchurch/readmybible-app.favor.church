@@ -245,6 +245,7 @@ export function TodayScreen({
   groupName,
   groupStats,
   roster,
+  unlocked3dCampfire,
   profile,
   avatarCustomized,
   onStart,
@@ -262,6 +263,11 @@ export function TodayScreen({
   groupName: string | null;
   groupStats: GroupStats | null;
   roster: RosterMemberView[];
+  // Required, not optional: an omitted prop here must fail the type check
+  // (caught by the build gate) instead of silently reverting to FullHome's
+  // groupCheckinCount fallback -- the exact squash-merge revert shape this
+  // repo has already been bitten by.
+  unlocked3dCampfire: boolean;
   profile: UserProfile;
   avatarCustomized: boolean;
   onStart: (target: PlanEntry | number) => void;
@@ -456,6 +462,7 @@ export function TodayScreen({
             overallPct={Math.round(ratio * 100)}
             today={today}
             roster={roster}
+            unlocked3dCampfire={unlocked3dCampfire}
             profile={profile}
             selectedMemberId={selectedMember?.personId ?? null}
             onSelectMember={(member) => {
@@ -786,6 +793,7 @@ export function TodayScreen({
           overallPct={Math.round(ratio * 100)}
           today={today}
           roster={roster}
+          unlocked3dCampfire={unlocked3dCampfire}
           profile={profile}
           selectedMemberId={selectedMember?.personId ?? null}
           onSelectMember={(member) => {
