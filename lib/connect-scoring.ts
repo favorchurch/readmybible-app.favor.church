@@ -8,12 +8,17 @@
  * change simply produces a different answer on the next call -- there is no
  * scoring ledger and no scheduled recompute (issue #118).
  *
- * Region/Cluster/Department are resolved by fixed position in the ancestor
- * chain `resolveUpwardScope` returns (leaf Connect Group -> Region -> Cluster
- * -> Department -> Campus root -> Global root), the shape confirmed live
- * against Rock and documented in `lib/rock/hierarchy.ts`. A shorter chain
- * (fixture data, or a Connect Group missing an ancestor) simply leaves the
- * deeper roles unresolved rather than throwing.
+ * Region/Cluster/Department are resolved by position counting backward from
+ * the campus/global roots in the ancestor chain `resolveUpwardScope` returns
+ * (leaf Connect Group -> Region -> Cluster -> Department -> Campus root ->
+ * Global root), the shape confirmed live against Rock and documented in
+ * `lib/rock/hierarchy.ts`. The two roots are excluded by id first, so anchoring
+ * from the leaf end (fixed position 0/1/2) would misfile a shorter chain --
+ * e.g. a Connect Group sitting directly under Department, with no Region or
+ * Cluster between it and the campus root, would otherwise score the
+ * Department's leaders as Regional Leaders. Counting backward from the roots
+ * instead means a shorter chain correctly leaves the missing shallower
+ * roles (Region and/or Cluster) unresolved rather than throwing or misfiling.
  */
 import "server-only";
 
@@ -28,6 +33,7 @@ import {
   ROLE_GT25_ASSISTANT_LEADER,
   ROLE_GT25_LEADER,
 } from "@/lib/rock/constants";
+import { CAMPUS_ROOT_SECTION_IDS, GLOBAL_ROOT_SECTION_ID } from "@/lib/rock/hierarchy-constants";
 import {
   getGroupBasic,
   getRoster,
@@ -44,14 +50,29 @@ type AncestorSections = {
   department: RockGroup | null;
 };
 
-/** The three GT24 sections directly above a Connect Group, by fixed position. */
+const ROOT_SECTION_IDS: readonly number[] = [GLOBAL_ROOT_SECTION_ID, ...CAMPUS_ROOT_SECTION_IDS];
+
+/** The nth section counting backward from the end of `sections` (1 = last), or null if `sections` isn't that deep. */
+function nthFromEnd(sections: RockGroup[], n: number): RockGroup | null {
+  return sections[sections.length - n] ?? null;
+}
+
+/**
+ * The GT24 sections between a Connect Group and the roots, excluding the
+ * roots themselves, identified by position counting backward from the root
+ * end -- Department is always the deepest, then Cluster, then Region -- so a
+ * chain missing shallower ancestors resolves what does exist correctly
+ * instead of shifting deeper roles into shallower pools.
+ */
 async function resolveAncestorSections(groupId: number): Promise<AncestorSections> {
   const chain = await resolveUpwardScope(groupId);
-  const sections = chain.slice(1).filter((group) => group.GroupTypeId === GROUP_TYPE_SECTION);
+  const sections = chain
+    .slice(1)
+    .filter((group) => group.GroupTypeId === GROUP_TYPE_SECTION && !ROOT_SECTION_IDS.includes(group.Id));
   return {
-    region: sections[0] ?? null,
-    cluster: sections[1] ?? null,
-    department: sections[2] ?? null,
+    region: nthFromEnd(sections, 3),
+    cluster: nthFromEnd(sections, 2),
+    department: nthFromEnd(sections, 1),
   };
 }
 

@@ -125,3 +125,36 @@ describe("personContributedPoints", () => {
     expect(personContributedPoints(bystander, pools)).toBe(0);
   });
 });
+
+describe("presentConnectRoster pool sizes (F3, issue #150 PR #185)", () => {
+  it("derives pool sizes from what the scorer actually divided by, not by filtering contributions on role flags", () => {
+    // A roster member who carries the isRegionalLeader flag but was never
+    // included in the `regionalLeaders` array scoreConnect divides by -- the
+    // shape of ConnectScore a future, differently-built caller (issue #153)
+    // could produce even though today's only caller (resolveConnectScore)
+    // never constructs one like it.
+    const strayFlaggedMember = person(5, TOTAL_ASSIGNMENTS, { isRegionalLeader: true });
+    const soleRealRegionalLeader = person(9, 10, { isConnectMember: false, isRegionalLeader: true });
+    const score = connect({
+      members: [person(1, TOTAL_ASSIGNMENTS), strayFlaggedMember],
+      regionalLeaders: [soleRealRegionalLeader],
+    });
+
+    // scoreConnect's own regional pool has exactly one person (9). Filtering
+    // `score.contributions` on `isRegionalLeader` would instead count two
+    // (5 and 9), because 5's flag survives the dedupe/merge into
+    // `contributions` despite never being part of the array the scorer used.
+    expect(score.regionalLeaderCount).toBe(1);
+
+    const rows = presentConnectRoster(score);
+    const nineShare = rows.find((row) => row.rockPersonId === 9)!.contributedPoints;
+    const ratio9 = 10 / TOTAL_ASSIGNMENTS;
+
+    // 9 is the ENTIRE real pool, so their exact share of the 75-point pool
+    // is their own full ratio -- not halved by a phantom second pool member
+    // that filtering `score.contributions` on the flag would have counted.
+    expect(nineShare).toBeCloseTo(ratio9 * BONUS_POOL_MAX, 8);
+    expect(score.regionalBonus).toBeCloseTo(ratio9 * BONUS_POOL_MAX, 8);
+    expect(nineShare).toBeCloseTo(score.regionalBonus, 8);
+  });
+});

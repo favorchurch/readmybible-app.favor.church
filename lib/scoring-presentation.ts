@@ -74,10 +74,15 @@ export type RosterPersonPresentation = {
  * never both, so a dual-role person is never shown twice.
  */
 export function presentConnectRoster(score: ConnectScore): RosterPersonPresentation[] {
+  // Read the pool sizes the scorer actually divided by, rather than
+  // re-deriving them by filtering `score.contributions` on role flags:
+  // `contributions` is the union of members, regionalLeaders, and
+  // clusterHeads, which only agrees with the scorer's own pool sizes when a
+  // caller keeps every role flag perfectly in sync with pool membership.
   const pools: ContributionPoolSizes = {
-    eligibleBaseCount: score.contributions.filter(countsInBase).length,
-    regionalLeaderCount: score.contributions.filter((person) => person.isRegionalLeader).length,
-    clusterHeadCount: score.contributions.filter((person) => person.isClusterHead).length,
+    eligibleBaseCount: score.eligibleBaseCount,
+    regionalLeaderCount: score.regionalLeaderCount,
+    clusterHeadCount: score.clusterHeadCount,
   };
 
   return score.contributions.map((person) => {

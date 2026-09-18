@@ -254,6 +254,64 @@ describe("resolveConnectScore upstream pools", () => {
     expect(resolved!.score.regionalBonus).toBe(0);
     expect(resolved!.score.clusterBonus).toBe(0);
   });
+
+  it("does not misfile a Department's leaders as Regional Leaders when a Connect sits directly under Department", async () => {
+    // No Region or Cluster between the Connect and the campus root.
+    vi.mocked(resolveUpwardScope).mockResolvedValue([
+      group(CONNECT_GROUP_ID, 25),
+      group(DEPARTMENT_ID, 24),
+      group(CAMPUS_ROOT_ID, 24),
+      group(GLOBAL_ROOT_ID, 24),
+    ]);
+    vi.mocked(getSectionLeaders).mockImplementation(async (groupId: number) => {
+      if (groupId === DEPARTMENT_ID) return [member(7, ROLE_LEADER, "Department Head")];
+      throw new Error(`unexpected section id ${groupId}`);
+    });
+    vi.mocked(getRoster).mockResolvedValue([member(1, ROLE_MEMBER)]);
+
+    const resolved = await resolveConnectScore(CONNECT_GROUP_ID);
+
+    // The campus root and global root must never be treated as Cluster/Region.
+    expect(getSectionLeaders).toHaveBeenCalledTimes(1);
+    expect(getSectionLeaders).toHaveBeenCalledWith(DEPARTMENT_ID);
+
+    // Department Heads have no pool at all: person 7 never appears as a
+    // standalone contribution, and critically is never misfiled into the
+    // Regional or Cluster contributions either.
+    expect(resolved!.score.contributions.some((row) => row.rockPersonId === 7)).toBe(false);
+    expect(resolved!.score.regionalBonus).toBe(0);
+    expect(resolved!.score.clusterBonus).toBe(0);
+  });
+
+  it("resolves Cluster and Department, but not Region, when a Connect sits directly under Cluster", async () => {
+    // No Region between the Connect and Cluster.
+    vi.mocked(resolveUpwardScope).mockResolvedValue([
+      group(CONNECT_GROUP_ID, 25),
+      group(CLUSTER_ID, 24),
+      group(DEPARTMENT_ID, 24),
+      group(CAMPUS_ROOT_ID, 24),
+      group(GLOBAL_ROOT_ID, 24),
+    ]);
+    vi.mocked(getSectionLeaders).mockImplementation(async (groupId: number) => {
+      if (groupId === CLUSTER_ID) return [member(8, ROLE_LEADER, "Cluster Head")];
+      if (groupId === DEPARTMENT_ID) return [member(7, ROLE_LEADER, "Department Head")];
+      throw new Error(`unexpected section id ${groupId}`);
+    });
+    vi.mocked(getRoster).mockResolvedValue([member(1, ROLE_MEMBER)]);
+    checkinRows = ALL_CHAPTERS.map((chapter) => ({ rockPersonId: 8, chapter }));
+
+    const resolved = await resolveConnectScore(CONNECT_GROUP_ID);
+
+    expect(getSectionLeaders).not.toHaveBeenCalledWith(REGION_ID);
+    expect(getSectionLeaders).not.toHaveBeenCalledWith(CAMPUS_ROOT_ID);
+    expect(getSectionLeaders).not.toHaveBeenCalledWith(GLOBAL_ROOT_ID);
+
+    const clusterHead = resolved!.score.contributions.find((row) => row.rockPersonId === 8);
+    expect(clusterHead?.isClusterHead).toBe(true);
+    expect(clusterHead?.isRegionalLeader).toBe(false);
+    expect(resolved!.score.clusterBonus).toBeGreaterThan(0);
+    expect(resolved!.score.regionalBonus).toBe(0);
+  });
 });
 
 describe("resolveConnectBasePoints", () => {

@@ -466,6 +466,18 @@ function AppShellInner(props: AppShellProps) {
     });
   }, [testMode.active, currentSnapshot, syntheticView, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
+  // `props.connectLeaders` is the signed-in reader's OWN Connect's real
+  // upstream leaders, resolved server-side. It has no synthetic or
+  // other-group equivalent, so it must be cleared whenever `roster` above
+  // is sourced from something other than `props.roster` -- otherwise Test
+  // Mode would show a simulated/other Connect's roster next to the real
+  // leaders (by name, with real contributed points) of the group the
+  // reader actually belongs to.
+  const connectLeaders = useMemo(() => {
+    if (syntheticView || currentSnapshot || awaitingSnapshot) return [];
+    return props.connectLeaders ?? [];
+  }, [syntheticView, currentSnapshot, awaitingSnapshot, props.connectLeaders]);
+
   const catchUpAssignment = useMemo(() => {
     const pastUnfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
     return pastUnfinished[0] ?? null;
@@ -807,7 +819,7 @@ function AppShellInner(props: AppShellProps) {
           connectSwitcher={connectSwitcher}
           onViewReading={() => selectTab("today")}
           onViewPlan={() => selectTab("progress")}
-          connectLeaders={props.connectLeaders ?? []}
+          connectLeaders={connectLeaders}
         />
       )}
       {activeTab === "rewards" && (
