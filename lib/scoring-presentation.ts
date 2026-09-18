@@ -29,6 +29,16 @@ export type ContributionPoolSizes = {
   eligibleBaseCount: number;
   regionalLeaderCount: number;
   clusterHeadCount: number;
+  /**
+   * rockPersonIds the scorer's own regional/cluster pools actually counted.
+   * A person's `isRegionalLeader`/`isClusterHead` flag alone is not enough
+   * to admit them to a bonus share: `contributions` OR-s that flag in from
+   * ANY of members/regionalLeaders/clusterHeads, so a person could carry the
+   * flag while never having been in the array `poolBonus` divided by. Absent
+   * from these sets, no share -- regardless of the flag.
+   */
+  regionalLeaderIds: ReadonlySet<number>;
+  clusterHeadIds: ReadonlySet<number>;
 };
 
 /**
@@ -43,10 +53,10 @@ export function personContributedPoints(person: PersonContribution, pools: Contr
   if (countsInBase(person) && pools.eligibleBaseCount > 0) {
     points += (ratio * BASE_POINTS_MAX) / pools.eligibleBaseCount;
   }
-  if (person.isRegionalLeader && pools.regionalLeaderCount > 0) {
+  if (pools.regionalLeaderIds.has(person.rockPersonId) && pools.regionalLeaderCount > 0) {
     points += (ratio * BONUS_POOL_MAX) / pools.regionalLeaderCount;
   }
-  if (person.isClusterHead && pools.clusterHeadCount > 0) {
+  if (pools.clusterHeadIds.has(person.rockPersonId) && pools.clusterHeadCount > 0) {
     points += (ratio * BONUS_POOL_MAX) / pools.clusterHeadCount;
   }
   return points;
@@ -83,6 +93,8 @@ export function presentConnectRoster(score: ConnectScore): RosterPersonPresentat
     eligibleBaseCount: score.eligibleBaseCount,
     regionalLeaderCount: score.regionalLeaderCount,
     clusterHeadCount: score.clusterHeadCount,
+    regionalLeaderIds: score.regionalLeaderIds,
+    clusterHeadIds: score.clusterHeadIds,
   };
 
   return score.contributions.map((person) => {

@@ -19,6 +19,19 @@
  * Department's leaders as Regional Leaders. Counting backward from the roots
  * instead means a shorter chain correctly leaves the missing shallower
  * roles (Region and/or Cluster) unresolved rather than throwing or misfiling.
+ *
+ * Anchoring from the root end is only sound once two things are actually
+ * verified, not assumed: that the chain really reached the known global root
+ * (see `resolveAncestorSections`'s termination check -- `resolveUpwardScope`
+ * silently truncates below the roots on a single null `getGroupBasic` read,
+ * which would otherwise shift every role one level deeper, e.g. Region's
+ * leaders fetched and scored as the Cluster pool), and that there are no more
+ * than the three known non-root levels (an unrecognized campus root --
+ * `CAMPUS_ROOT_SECTION_IDS` is a hardcoded list -- or any other inserted
+ * level would otherwise become an unexplained extra entry and shift the
+ * anchor the same way). Either failure resolves to no upstream pools at all:
+ * losing a legitimate bonus pool is the safe direction to fail in, awarding
+ * one to Department Head -- a role the contract gives no pool at all -- is not.
  */
 import "server-only";
 
@@ -52,6 +65,12 @@ type AncestorSections = {
 
 const ROOT_SECTION_IDS: readonly number[] = [GLOBAL_ROOT_SECTION_ID, ...CAMPUS_ROOT_SECTION_IDS];
 
+/** No ancestor resolved at all -- the fail-closed result whenever the chain can't be trusted. */
+const NO_ANCESTORS: AncestorSections = { region: null, cluster: null, department: null };
+
+/** The maximum non-root GT24 levels this resolver can identify: Region, Cluster, Department. */
+const MAX_KNOWN_LEVELS = 3;
+
 /** The nth section counting backward from the end of `sections` (1 = last), or null if `sections` isn't that deep. */
 function nthFromEnd(sections: RockGroup[], n: number): RockGroup | null {
   return sections[sections.length - n] ?? null;
@@ -60,15 +79,37 @@ function nthFromEnd(sections: RockGroup[], n: number): RockGroup | null {
 /**
  * The GT24 sections between a Connect Group and the roots, excluding the
  * roots themselves, identified by position counting backward from the root
- * end -- Department is always the deepest, then Cluster, then Region -- so a
- * chain missing shallower ancestors resolves what does exist correctly
- * instead of shifting deeper roles into shallower pools.
+ * end -- Department is always the deepest, then Cluster, then Region.
+ *
+ * Two invariants gate that anchor, or it would guess on a chain shape it
+ * cannot actually identify:
+ *
+ * 1. The raw chain must genuinely terminate at the known global root.
+ *    `resolveUpwardScope` (lib/rock/client.ts) `break`s silently on a single
+ *    null `getGroupBasic` read, truncating the chain below the roots --
+ *    anchoring from the end of a truncated chain shifts every role one
+ *    level deeper (Region's leaders fetched and scored as the Cluster pool).
+ * 2. At most three non-root sections may remain after excluding the known
+ *    roots. A newly added campus's root section id isn't in the hardcoded
+ *    `CAMPUS_ROOT_SECTION_IDS` until that list is updated, so it survives
+ *    the filter and becomes an unexplained 4th (or deeper) entry -- and any
+ *    other inserted GT24 level would do the same. More entries than this
+ *    resolver can name means it cannot safely say which one is the extra.
+ *
+ * Either violation resolves to no upstream pools at all rather than a guess:
+ * losing a legitimate bonus pool is the safe direction to fail in, awarding
+ * one to Department Head -- a role the contract gives no pool at all -- is not.
  */
 async function resolveAncestorSections(groupId: number): Promise<AncestorSections> {
   const chain = await resolveUpwardScope(groupId);
+  const reachedKnownRoot = chain.length > 0 && chain[chain.length - 1].Id === GLOBAL_ROOT_SECTION_ID;
+  if (!reachedKnownRoot) return NO_ANCESTORS;
+
   const sections = chain
     .slice(1)
     .filter((group) => group.GroupTypeId === GROUP_TYPE_SECTION && !ROOT_SECTION_IDS.includes(group.Id));
+  if (sections.length > MAX_KNOWN_LEVELS) return NO_ANCESTORS;
+
   return {
     region: nthFromEnd(sections, 3),
     cluster: nthFromEnd(sections, 2),

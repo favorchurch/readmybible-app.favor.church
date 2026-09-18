@@ -44,6 +44,10 @@ const CLUSTER_ID = 23869;
 const DEPARTMENT_ID = 78;
 const CAMPUS_ROOT_ID = 39;
 const GLOBAL_ROOT_ID = 22464;
+/** An extra GT24 level with no known role -- used to prove an unidentifiable chain shape fails closed. */
+const SUBCLUSTER_ID = 55555;
+/** A campus root id NOT in the hardcoded `CAMPUS_ROOT_SECTION_IDS` list -- simulates a newly added campus. */
+const UNRECOGNIZED_CAMPUS_ROOT_ID = 66666;
 
 function group(id: number, groupTypeId: number, overrides: Partial<{ IsActive: boolean; IsArchived: boolean }> = {}) {
   return {
@@ -311,6 +315,72 @@ describe("resolveConnectScore upstream pools", () => {
     expect(clusterHead?.isRegionalLeader).toBe(false);
     expect(resolved!.score.clusterBonus).toBeGreaterThan(0);
     expect(resolved!.score.regionalBonus).toBe(0);
+  });
+
+  it("resolves no upstream pools at all when an extra, unidentifiable GT24 level sits between Region and Cluster", async () => {
+    // A level this resolver cannot name sits above Region -- right-anchoring
+    // from the root end would otherwise put Region's own leaders into the
+    // "region" slot's neighbor and shift Cluster/Department out of place.
+    vi.mocked(resolveUpwardScope).mockResolvedValue([
+      group(CONNECT_GROUP_ID, 25),
+      group(REGION_ID, 24),
+      group(SUBCLUSTER_ID, 24),
+      group(CLUSTER_ID, 24),
+      group(DEPARTMENT_ID, 24),
+      group(CAMPUS_ROOT_ID, 24),
+      group(GLOBAL_ROOT_ID, 24),
+    ]);
+    vi.mocked(getRoster).mockResolvedValue([member(1, ROLE_MEMBER)]);
+
+    const resolved = await resolveConnectScore(CONNECT_GROUP_ID);
+
+    // An unidentifiable shape must resolve to NO pools, never a guess.
+    expect(getSectionLeaders).not.toHaveBeenCalled();
+    expect(resolved!.score.regionalBonus).toBe(0);
+    expect(resolved!.score.clusterBonus).toBe(0);
+  });
+
+  it("resolves no upstream pools at all when a campus root is not in the hardcoded CAMPUS_ROOT_SECTION_IDS list", async () => {
+    // A newly added campus's root section id has not yet been added to
+    // CAMPUS_ROOT_SECTION_IDS, so it survives the root filter and becomes an
+    // unexplained 4th non-root entry -- right-anchoring would otherwise shift
+    // Cluster into the "region" slot and Department Head into the 75-point
+    // Cluster pool, a role the contract gives no pool at all.
+    vi.mocked(resolveUpwardScope).mockResolvedValue([
+      group(CONNECT_GROUP_ID, 25),
+      group(REGION_ID, 24),
+      group(CLUSTER_ID, 24),
+      group(DEPARTMENT_ID, 24),
+      group(UNRECOGNIZED_CAMPUS_ROOT_ID, 24),
+      group(GLOBAL_ROOT_ID, 24),
+    ]);
+    vi.mocked(getRoster).mockResolvedValue([member(1, ROLE_MEMBER)]);
+
+    const resolved = await resolveConnectScore(CONNECT_GROUP_ID);
+
+    expect(getSectionLeaders).not.toHaveBeenCalled();
+    expect(resolved!.score.regionalBonus).toBe(0);
+    expect(resolved!.score.clusterBonus).toBe(0);
+  });
+
+  it("resolves no upstream pools at all when the chain is truncated below the roots by a null ancestor read", async () => {
+    // `resolveUpwardScope` silently `break`s on a null `getGroupBasic` read,
+    // so the chain never reaches the campus/global roots at all -- here it
+    // stops right after Cluster, simulating a null read at Department.
+    // Right-anchoring from the end of THIS chain would otherwise fetch and
+    // score Region's own leaders as the Cluster pool.
+    vi.mocked(resolveUpwardScope).mockResolvedValue([
+      group(CONNECT_GROUP_ID, 25),
+      group(REGION_ID, 24),
+      group(CLUSTER_ID, 24),
+    ]);
+    vi.mocked(getRoster).mockResolvedValue([member(1, ROLE_MEMBER)]);
+
+    const resolved = await resolveConnectScore(CONNECT_GROUP_ID);
+
+    expect(getSectionLeaders).not.toHaveBeenCalled();
+    expect(resolved!.score.regionalBonus).toBe(0);
+    expect(resolved!.score.clusterBonus).toBe(0);
   });
 });
 

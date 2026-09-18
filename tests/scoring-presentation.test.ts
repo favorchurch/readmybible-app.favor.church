@@ -114,15 +114,41 @@ describe("personContributedPoints", () => {
   it("splits a fully-capped bonus pool evenly across its current holders", () => {
     const a = person(9, TOTAL_ASSIGNMENTS, { isRegionalLeader: true, isConnectMember: false });
     const b = person(10, TOTAL_ASSIGNMENTS, { isRegionalLeader: true, isConnectMember: false });
-    const pools = { eligibleBaseCount: 0, regionalLeaderCount: 2, clusterHeadCount: 0 };
+    const pools = {
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 2,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set([9, 10]),
+      clusterHeadIds: new Set<number>(),
+    };
     expect(personContributedPoints(a, pools)).toBeCloseTo(BONUS_POOL_MAX / 2, 8);
     expect(personContributedPoints(b, pools)).toBeCloseTo(BONUS_POOL_MAX / 2, 8);
   });
 
   it("is zero for someone who counts in no pool", () => {
     const bystander = person(1, TOTAL_ASSIGNMENTS, { isConnectMember: false });
-    const pools = { eligibleBaseCount: 0, regionalLeaderCount: 0, clusterHeadCount: 0 };
+    const pools = {
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 0,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set<number>(),
+      clusterHeadIds: new Set<number>(),
+    };
     expect(personContributedPoints(bystander, pools)).toBe(0);
+  });
+
+  it("is zero for someone who carries the isRegionalLeader flag but was never in the real pool the count was divided by", () => {
+    // The exact shape F3's eligibility residue named: a flag with no
+    // corresponding membership in the pool the scorer actually built.
+    const strayFlagged = person(5, TOTAL_ASSIGNMENTS, { isRegionalLeader: true, isConnectMember: false });
+    const pools = {
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 1,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set([9]), // 5 is NOT in here, even though the flag is set.
+      clusterHeadIds: new Set<number>(),
+    };
+    expect(personContributedPoints(strayFlagged, pools)).toBe(0);
   });
 });
 
@@ -156,5 +182,30 @@ describe("presentConnectRoster pool sizes (F3, issue #150 PR #185)", () => {
     expect(nineShare).toBeCloseTo(ratio9 * BONUS_POOL_MAX, 8);
     expect(score.regionalBonus).toBeCloseTo(ratio9 * BONUS_POOL_MAX, 8);
     expect(nineShare).toBeCloseTo(score.regionalBonus, 8);
+  });
+
+  it("gates a bonus share on actual pool membership, not the role flag alone, so the sum-to-total invariant holds even for a stray-flagged member", () => {
+    // Same adversarial shape as above -- a member (5) carries isRegionalLeader
+    // without ever being in the `regionalLeaders` array the scorer divided
+    // by. Round-2's fix (matching pool SIZE) alone does not save this case:
+    // personContributedPoints still granted 5 a share purely from the flag,
+    // which both inflated their own row AND broke the sum === totalPoints
+    // invariant every other test in this file relies on. Gating on
+    // `regionalLeaderIds` (real pool membership) instead closes it.
+    const strayFlaggedMember = person(5, TOTAL_ASSIGNMENTS, { isRegionalLeader: true });
+    const soleRealRegionalLeader = person(9, 10, { isConnectMember: false, isRegionalLeader: true });
+    const score = connect({
+      members: [person(1, TOTAL_ASSIGNMENTS), strayFlaggedMember],
+      regionalLeaders: [soleRealRegionalLeader],
+    });
+
+    const rows = presentConnectRoster(score);
+    const fiveShare = rows.find((row) => row.rockPersonId === 5)!.contributedPoints;
+    const sum = rows.reduce((total, row) => total + row.contributedPoints, 0);
+
+    // 5 carries the flag but was never in the real pool -- no share, even
+    // though `pools.regionalLeaderCount > 0`.
+    expect(fiveShare).toBe(0);
+    expect(sum).toBeCloseTo(score.totalPoints, 8);
   });
 });

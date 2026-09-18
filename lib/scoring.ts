@@ -113,6 +113,17 @@ export type ConnectScore = {
   eligibleBaseCount: number;
   regionalLeaderCount: number;
   clusterHeadCount: number;
+  /**
+   * The exact rockPersonIds this score's bonus math counted. A presentation
+   * layer must gate a person's bonus share on membership here, not on the
+   * `isRegionalLeader`/`isClusterHead` flag alone -- `contributions` OR-s
+   * that flag in from ANY of members/regionalLeaders/clusterHeads, so a
+   * caller that sets it on a member row without that person genuinely being
+   * in `regionalLeaders`/`clusterHeads` would otherwise still earn a share
+   * of a pool `poolBonus` never actually included them in.
+   */
+  regionalLeaderIds: ReadonlySet<number>;
+  clusterHeadIds: ReadonlySet<number>;
 };
 
 /**
@@ -222,5 +233,7 @@ export function scoreConnect(input: {
     eligibleBaseCount: eligible.length,
     regionalLeaderCount: regionalLeaderPool.length,
     clusterHeadCount: clusterHeadPool.length,
+    regionalLeaderIds: new Set(regionalLeaderPool.map((person) => person.rockPersonId)),
+    clusterHeadIds: new Set(clusterHeadPool.map((person) => person.rockPersonId)),
   };
 }
