@@ -334,6 +334,12 @@ describe("FullHome scene integration", () => {
     expect(onViewReading).toHaveBeenCalledTimes(1);
   });
 
+  it("omits the active reading CTA when no reading handler is provided", () => {
+    renderHome();
+    fireEvent.click(screen.getByText("Chapter 2 · 40% to Condo"));
+    expect(screen.queryByRole("button", { name: /Read Matthew 2/ })).toBeNull();
+  });
+
   it("renders locked access note when viewing locked 3D Campfire without people", async () => {
     const lockedScore: ConnectScore = {
       groupId: 102,
