@@ -174,6 +174,12 @@ export function fixtureSectionMemberships(): RockGroupMember[] {
   return [];
 }
 
+/** No GT24 section leaders in the fixture -- see fixtureSectionMemberships. */
+export function fixtureSectionLeaders(groupId: number): RockGroupMember[] {
+  void groupId;
+  return [];
+}
+
 export function fixtureRoster(groupId: number): RockGroupMember[] {
   const group = fixtureGroupBasic(groupId);
   if (!group) return [];
