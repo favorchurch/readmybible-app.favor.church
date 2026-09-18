@@ -539,7 +539,7 @@ export function ImmersiveHomeScene({
               type="button"
               title={member.name}
               className={`${styles.memberLabel} ${selectedMemberId === member.personId ? styles.selected : ""}`}
-              aria-label={`${member.name}${showPoints && member.displayPoints !== undefined ? `, ${member.displayPoints} points` : ""}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person.`}
+              aria-label={`${member.name}${showPoints && member.contributedPoints !== undefined ? `, ${member.contributedPoints} points` : ""}${member.isSelf ? ", you" : ""}${member.readToday ? ", read today" : ""}. Press Enter to view profile; arrow keys move this person.`}
               onClick={() => onSelectMember(member)}
               onKeyDown={event => {
                 const amount = event.shiftKey ? .8 : .35;
@@ -551,8 +551,8 @@ export function ImmersiveHomeScene({
                 event.preventDefault();
               }}
             >
-              {showPoints && member.displayPoints !== undefined && (
-                <span className={styles.memberPoints}>{member.displayPoints}</span>
+              {showPoints && member.contributedPoints !== undefined && (
+                <span className={styles.memberPoints}>{member.contributedPoints}</span>
               )}
               {names ? (
                 <span className={styles.memberName}>{member.name.split(' ')[0]}{member.isSelf ? " · You" : ""}</span>

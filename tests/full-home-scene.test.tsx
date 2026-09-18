@@ -28,8 +28,8 @@ const profile: UserProfile = {
 };
 
 const roster: RosterMemberView[] = [
-  { personId: 1, name: "Alex", avatar: defaultAvatarConfig, isSelf: true, isLeader: true, readToday: false, chapters: [], readingDates: [], displayPoints: 45 },
-  { personId: 2, name: "Jamie", avatar: defaultAvatarConfig, isSelf: false, isLeader: false, readToday: true, chapters: [1], readingDates: ["2026-10-01"], displayPoints: 12 },
+  { personId: 1, name: "Alex", avatar: defaultAvatarConfig, isSelf: true, isLeader: true, readToday: false, chapters: [], readingDates: [], contributedPoints: 45 },
+  { personId: 2, name: "Jamie", avatar: defaultAvatarConfig, isSelf: false, isLeader: false, readToday: true, chapters: [1], readingDates: ["2026-10-01"], contributedPoints: 12 },
 ];
 
 const today: TodayState = {
@@ -159,6 +159,11 @@ describe("FullHome scene integration", () => {
       stage: "Condo",
       displayPoints: 300,
       unlocked3dCampfire: true,
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 0,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set<number>(),
+      clusterHeadIds: new Set<number>(),
       contributions: [],
     };
 
@@ -339,6 +344,11 @@ describe("FullHome scene integration", () => {
       stage: "Trailer",
       displayPoints: 100,
       unlocked3dCampfire: false,
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 0,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set<number>(),
+      clusterHeadIds: new Set<number>(),
       contributions: [],
     };
 
@@ -381,6 +391,11 @@ describe("FullHome scene integration", () => {
       stage: "Condo",
       displayPoints: 300,
       unlocked3dCampfire: true,
+      eligibleBaseCount: 0,
+      regionalLeaderCount: 0,
+      clusterHeadCount: 0,
+      regionalLeaderIds: new Set<number>(),
+      clusterHeadIds: new Set<number>(),
       contributions: [],
     };
 

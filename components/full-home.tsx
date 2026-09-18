@@ -177,7 +177,7 @@ export function FullHome({
           {roster.map((member, index) => {
             const angle = index / Math.max(roster.length, 1) * Math.PI * 2;
             const radius = 168 * (1 + Math.floor(index / 14) * .22);
-            const points = member.displayPoints;
+            const points = member.contributedPoints;
             return <button type="button" className={`home-person ${selectedMemberId === member.personId ? 'selected' : ''}`} key={member.personId} style={{ '--px': `${Math.cos(angle) * radius}px`, '--pz': `${Math.sin(angle) * radius}px` } as React.CSSProperties} onClick={() => onSelectMember(member)} aria-label={`View ${member.name}'s profile`}>
               <span className="home-person-label">
                 {showPoints && points !== undefined && <span className="home-person-points">{points}</span>}
