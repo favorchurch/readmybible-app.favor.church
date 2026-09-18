@@ -20,6 +20,7 @@ import { ALLOWED_FONTS, canonicalFontName, normalizeContentToHtml, sanitizeNoteH
 export interface NotesEditorProps {
   content: string;
   onChange: (nextContent: string) => void;
+  onLimitExceeded?: () => void;
   disabled?: boolean;
   maxLength?: number;
   placeholder?: string;
@@ -29,6 +30,7 @@ export interface NotesEditorProps {
 export function NotesEditor({
   content,
   onChange,
+  onLimitExceeded,
   disabled = false,
   maxLength = 1000,
   placeholder = "Write in your personal revelations…",
@@ -61,8 +63,12 @@ export function NotesEditor({
       const rawHtml = currentEditor.isEmpty ? "" : currentEditor.getHTML();
       const sanitized = rawHtml ? sanitizeNoteHtml(rawHtml) : "";
 
-      if (sanitized.length <= maxLength) {
+      // Count visible characters, not serialized HTML length -- markup overhead
+      // (a font-styled span, a list item) must not count against what the user typed.
+      if (currentEditor.getText().length <= maxLength) {
         onChange(sanitized);
+      } else {
+        onLimitExceeded?.();
       }
     },
   });

@@ -12,7 +12,7 @@ import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, LockIcon, ScrollIcon, Spi
 import { mergeNoteContents } from "./merge-notes";
 import { NotesEditor } from "./notes-editor";
 import { getPageMeta, NOTEBOOK_PAGES, type NotebookPageId } from "./pages";
-import { normalizeContentToHtml } from "./sanitize";
+import { normalizeContentToHtml, plainTextLength } from "./sanitize";
 
 import "./notes.css";
 
@@ -55,6 +55,7 @@ function NotebookModalInner({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [noteView, setNoteView] = useState<NoteView | null>(null);
+  const [limitExceeded, setLimitExceeded] = useState(false);
 
   const queryClient = useQueryClient();
   const testMode = useTestMode(true);
@@ -67,9 +68,23 @@ function NotebookModalInner({
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Cancels a pending debounced autosave without scheduling a new one --
+  // used when new content is known to be unsavable so a stale, already-
+  // scheduled save (from content typed before this point) can't silently
+  // slip through with outdated data.
+  const cancelPendingAutosave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
+
   // Track user edits per page to guard late-fetch merge vs background revalidation
   const userTypedPagesRef = useRef<Set<string>>(new Set());
   const loadedPayloadForPageRef = useRef<Map<string, string>>(new Map());
+  // Mirrors `content` synchronously so the late-fetch merge (an async callback)
+  // can read the latest typed text without a side effect inside a setState updater.
+  const contentRef = useRef("");
 
   const isOwner = !authorPersonId || noteView?.isOwner !== false;
 
@@ -83,6 +98,7 @@ function NotebookModalInner({
       setCurrentPageId(initialPage);
       setSaveStatus("idle");
       setStatusMessage("");
+      setLimitExceeded(false);
     }
   }
 
@@ -154,6 +170,7 @@ function NotebookModalInner({
         const cachedContent = cached.note.content ?? "";
         if (!userTypedPagesRef.current.has(currentPageId)) {
           setContent(cachedContent);
+          contentRef.current = cachedContent;
           setIsShared(cached.note.isShared);
           setNoteView(cached.note);
           loadedPayloadForPageRef.current.set(currentPageId, cachedContent);
@@ -186,21 +203,37 @@ function NotebookModalInner({
             // First time fetched notes arrive for this page
             if (!userHasTypedOnPage) {
               setContent(fetchedContent);
+              contentRef.current = fetchedContent;
               setIsShared(fetchedShared);
               loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
             } else {
               // Late-fetch merge rule (Issue 183):
               // User typed before fetched notes arrived! Result must be:
               // TYPED CONTENT + FETCHED CONTENT (typed prepended, never overwritten)
+              // fetchedShared reflects the server's current record and always applies,
+              // independent of whether there was any fetched content to merge in.
+              setIsShared(fetchedShared);
               if (fetchedContent.trim().length > 0) {
-                setContent((currentTyped) => {
-                  const merged = mergeNoteContents({
-                    typedContent: currentTyped,
-                    fetchedContent,
-                  });
-                  triggerAutosave(merged, fetchedShared);
-                  return merged;
+                const merged = mergeNoteContents({
+                  typedContent: contentRef.current,
+                  fetchedContent,
                 });
+                setContent(merged);
+                contentRef.current = merged;
+                if (merged.length <= 1000) {
+                  triggerAutosave(merged, fetchedShared);
+                } else {
+                  // Autosave's own request would fail server-side validation (max 1000
+                  // chars) -- surface it immediately instead of losing the merge silently.
+                  // Also cancel any autosave already scheduled from typing before the
+                  // merge landed, or it would fire in the background with stale,
+                  // pre-merge content.
+                  cancelPendingAutosave();
+                  setSaveStatus("error");
+                  setStatusMessage(
+                    "Merged note exceeds the 1000 character limit. Remove some text to save.",
+                  );
+                }
               }
               loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
             }
@@ -209,6 +242,7 @@ function NotebookModalInner({
             // A background revalidation cannot duplicate/append the fetched payload again.
             if (!userHasTypedOnPage && prevLoadedPayload !== fetchedContent) {
               setContent(fetchedContent);
+              contentRef.current = fetchedContent;
               setIsShared(fetchedShared);
               loadedPayloadForPageRef.current.set(currentPageId, fetchedContent);
             }
@@ -227,7 +261,7 @@ function NotebookModalInner({
     return () => {
       cancelled = true;
     };
-  }, [open, currentPageId, authorPersonId, queryClient, queryKey, triggerAutosave]);
+  }, [open, currentPageId, authorPersonId, queryClient, queryKey, triggerAutosave, cancelPendingAutosave]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -239,10 +273,29 @@ function NotebookModalInner({
   }, []);
 
   function handleContentChange(nextText: string) {
-    if (nextText.length > 1000) return;
+    setLimitExceeded(false);
     userTypedPagesRef.current.add(currentPageId);
+    contentRef.current = nextText;
     setContent(nextText);
+
+    if (nextText.length > 1000) {
+      // Markup overhead (e.g. many font-styled spans or list items) can push
+      // serialized HTML past the server's limit even though the editor's own
+      // visible-text gate passed it through -- surface that instead of
+      // silently dropping the edit and getting stuck out of sync. Also cancel
+      // any autosave already scheduled from a prior, still-valid keystroke,
+      // or it would fire in the background with stale content.
+      cancelPendingAutosave();
+      setSaveStatus("error");
+      setStatusMessage("Note exceeds the 1000 character limit. Remove some text or formatting to save.");
+      return;
+    }
+
     triggerAutosave(nextText, isShared);
+  }
+
+  function handleLimitExceeded() {
+    setLimitExceeded(true);
   }
 
   function handleShareToggle(checked: boolean) {
@@ -262,17 +315,20 @@ function NotebookModalInner({
     setCurrentPageId(targetId);
     setSaveStatus("idle");
     setStatusMessage("");
+    setLimitExceeded(false);
 
     // Check if target page already has cached data in React Query
     const cached = queryClient.getQueryData<GetNoteResult>(["note", targetId, authorPersonId]);
     if (cached?.ok && cached.note) {
       const cachedContent = cached.note.content ?? "";
       setContent(cachedContent);
+      contentRef.current = cachedContent;
       setIsShared(cached.note.isShared);
       setNoteView(cached.note);
       loadedPayloadForPageRef.current.set(targetId, cachedContent);
     } else {
       setContent("");
+      contentRef.current = "";
       setIsShared(false);
       setNoteView(null);
     }
@@ -385,11 +441,18 @@ function NotebookModalInner({
                 <NotesEditor
                   content={content}
                   onChange={handleContentChange}
+                  onLimitExceeded={handleLimitExceeded}
                   maxLength={1000}
                   placeholder="Write in your personal revelations…"
                 />
                 <div className="notebook-limit-text">
-                  {content.length}/1000 characters
+                  {plainTextLength(content)}/1000 characters
+                  {limitExceeded && (
+                    <span className="notebook-limit-warning">
+                      {" "}
+                      — limit reached, remove some text or formatting to keep typing
+                    </span>
+                  )}
                 </div>
               </div>
 

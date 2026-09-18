@@ -14,12 +14,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+let noteContent = "";
+
 const getNote = vi.fn(async () => ({
   ok: true as const,
   note: {
     id: 0,
     page: "general",
-    content: "",
+    content: noteContent,
     isShared: false,
     authorPersonId: 1,
     updatedAt: "",
@@ -65,6 +67,7 @@ function renderModal(props: NotebookModalProps) {
 
 beforeEach(() => {
   search.value = "";
+  noteContent = "";
   getNote.mockClear();
   saveNote.mockClear();
 });
@@ -101,5 +104,19 @@ describe("known-bad #1: Test Mode blocks note autosave", () => {
 
     await waitFor(() => expect(saveNote).toHaveBeenCalledTimes(1), { timeout: 2000 });
     expect(await screen.findByText("Saved")).toBeTruthy();
+  });
+});
+
+describe("known-bad #2: character counter measures visible text, not serialized HTML", () => {
+  it("shows the typed character count, not the markup-inflated HTML length", async () => {
+    // A font-styled span carries ~36 chars of style-attribute overhead for 5
+    // visible characters -- the counter must report 5, not the HTML length.
+    noteContent = '<p><span style="font-family: Arial;">hello</span></p>';
+
+    renderModal({ open: true, onClose: vi.fn() });
+
+    await waitFor(() => expect(getNote).toHaveBeenCalled());
+    expect(await screen.findByText("5/1000 characters")).toBeTruthy();
+    expect(screen.queryByText(`${noteContent.length}/1000 characters`)).toBeNull();
   });
 });

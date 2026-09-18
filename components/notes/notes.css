@@ -404,6 +404,10 @@
   text-align: right;
 }
 
+.notebook-limit-warning {
+  color: #b33927;
+}
+
 
 /* Notebook Footer with Autosave status */
 .notebook-footer {

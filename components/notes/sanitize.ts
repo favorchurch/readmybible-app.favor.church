@@ -141,7 +141,13 @@ export function sanitizeNoteHtml(html: string): string {
     }
   }
 
-  // Regex fallback: remove scripts and disallowed tags
+  // Regex fallback (no DOMParser, e.g. server-side): weaker than the DOMParser
+  // path above -- it does not catch every payload (e.g. onerror on an <img>,
+  // javascript: hrefs, <object>). Safe today only because every read path
+  // routes through normalizeContentToHtml/sanitizeNoteHtml before rendering;
+  // nothing sanitizes on write (saveNote stores the client's HTML as-is).
+  // A new consumer that renders note content without going through this
+  // module would break that invariant.
   let cleaned = html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
@@ -152,6 +158,26 @@ export function sanitizeNoteHtml(html: string): string {
   cleaned = cleaned.replace(/\s+on\w+\s*=\s*[^ >]+/gi, "");
 
   return cleaned;
+}
+
+/**
+ * Counts visible characters in note HTML, ignoring markup overhead
+ * (tags, attributes) so the "N/1000" readout reflects what the user typed,
+ * not the serialized HTML byte count.
+ */
+export function plainTextLength(html: string): number {
+  if (!html) return 0;
+
+  if (typeof DOMParser !== "undefined") {
+    try {
+      const doc = new DOMParser().parseFromString(`<!doctype html><body>${html}</body>`, "text/html");
+      return (doc.body.textContent ?? "").length;
+    } catch {
+      // Fall through to regex fallback on parser failure
+    }
+  }
+
+  return html.replace(/<[^>]*>/g, "").length;
 }
 
 /**
