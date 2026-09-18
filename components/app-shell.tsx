@@ -69,7 +69,7 @@ import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
 import type { ChooseGroupResult } from "@/app/actions/chooseGroup";
-import { scoreRoster, withDisplayPoints } from "@/components/connect-score";
+import { rosterUnlocks3dCampfire } from "@/components/connect-score";
 
 export type RosterMemberView = {
   personId: number;
@@ -455,15 +455,13 @@ function AppShellInner(props: AppShellProps) {
   // never from groupStats.checkinCount -- a raw historical check-in count
   // includes rows from anyone ever attributed to this group, including a
   // person who has since become an upstream-only Regional/Cluster leader and
-  // left it. scoreConnect's unlock only counts a person currently on the
-  // roster as a member or leader with a completed assignment.
-  const connectScore = useMemo(
-    () => scoreRoster(effectiveConnectGroupId ?? 0, roster),
+  // left it. Unlock only, never points or stage: those need PR #185's
+  // Regional/Cluster/Department role resolution, which does not exist in
+  // this app yet, and computing them here would misstate them (components/
+  // connect-score.ts). Points and stage stay on their existing paths.
+  const campfireUnlocked = useMemo(
+    () => rosterUnlocks3dCampfire(effectiveConnectGroupId ?? 0, roster),
     [effectiveConnectGroupId, roster],
-  );
-  const rosterWithPoints = useMemo(
-    () => withDisplayPoints(roster, connectScore),
-    [roster, connectScore],
   );
 
   const catchUpAssignment = useMemo(() => {
@@ -785,8 +783,8 @@ function AppShellInner(props: AppShellProps) {
           streakDays={currentStreak}
           groupName={groupName}
           groupStats={groupStats}
-          roster={rosterWithPoints}
-          score={connectScore}
+          roster={roster}
+          unlocked3dCampfire={campfireUnlocked}
           profile={profile}
           onStart={openReading}
           onEditProfile={() => setProfileOpen(true)}
@@ -800,8 +798,8 @@ function AppShellInner(props: AppShellProps) {
         <ConnectScreen
           groupName={groupName}
           campusName={campusName}
-          roster={rosterWithPoints}
-          score={connectScore}
+          roster={roster}
+          unlocked3dCampfire={campfireUnlocked}
           groupStats={groupStats}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}

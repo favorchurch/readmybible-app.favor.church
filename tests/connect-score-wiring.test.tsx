@@ -1,12 +1,17 @@
 // @vitest-environment jsdom
 
 /**
- * ConnectScore is a pinned, read-only contract (lib/scoring.ts) that #153
- * consumes but never recomputes. Its own tests (tests/scoring.test.ts) prove
- * the arithmetic; this file proves the wiring -- that ConnectScreen and
- * TodayScreen, the real call sites that render FullHome, actually receive
- * and forward a score computed from the live roster, instead of falling
- * through to the raw group check-in count.
+ * The 3D Campfire unlock is a pinned, read-only contract (lib/scoring.ts)
+ * that this app consumes but never recomputes. Its own tests
+ * (tests/scoring.test.ts) prove the arithmetic; components/connect-score.ts
+ * adapts this app's roster into it (tests/connect-score.test.ts); this file
+ * proves the wiring -- that ConnectScreen and TodayScreen, the real call
+ * sites that render FullHome, actually receive and forward the unlock
+ * computed from the live roster, instead of falling through to the raw
+ * group check-in count.
+ *
+ * It also proves the adapter stays narrowed to the unlock alone: no points
+ * badge should ever come from it (that needs PR #185's per-person figure).
  */
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -16,7 +21,7 @@ vi.mock("server-only", () => ({}));
 
 import { ConnectScreen } from "@/components/screens/connect-screen";
 import { TodayScreen } from "@/components/screens/today-screen";
-import { scoreRoster, withDisplayPoints } from "@/components/connect-score";
+import { rosterUnlocks3dCampfire } from "@/components/connect-score";
 import { defaultAvatarConfig, type UserProfile } from "@/components/avatar";
 import type { RosterMemberView } from "@/components/app-shell";
 import type { TodayState } from "@/components/use-today";
@@ -49,10 +54,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("ConnectScreen wires the real ConnectScore into FullHome", () => {
+describe("ConnectScreen wires the real unlock into FullHome", () => {
   it("keeps the 3D Campfire locked when groupStats carries a check-in count but nobody on the current roster has completed a chapter", () => {
     const roster = [soleMember];
-    const score = scoreRoster(101, roster);
+    const unlocked3dCampfire = rosterUnlocks3dCampfire(101, roster);
     const groupStats: GroupStats = { checkinCount: 5, memberCount: 1, ratio: 0, readersTodayIds: [] };
 
     render(
@@ -61,7 +66,7 @@ describe("ConnectScreen wires the real ConnectScore into FullHome", () => {
         campusName={null}
         roster={roster}
         groupStats={groupStats}
-        score={score}
+        unlocked3dCampfire={unlocked3dCampfire}
         profile={profile}
         onEditProfile={vi.fn()}
         today={today}
@@ -72,18 +77,18 @@ describe("ConnectScreen wires the real ConnectScore into FullHome", () => {
     expect(screen.getByRole("button", { name: "3D Campfire (locked)" })).toBeTruthy();
   });
 
-  it("unlocks the 3D Campfire from a real completed assignment and shows the scored points badge", () => {
+  it("unlocks the 3D Campfire from a real completed assignment, and shows no points badge from this adapter", () => {
     const roster: RosterMemberView[] = [{ ...soleMember, readToday: true, chapters: [5], readingDates: ["2026-10-05"] }];
-    const score = scoreRoster(101, roster);
+    const unlocked3dCampfire = rosterUnlocks3dCampfire(101, roster);
     const groupStats: GroupStats = { checkinCount: 1, memberCount: 1, ratio: 1 / 20, readersTodayIds: [1] };
 
     render(
       <ConnectScreen
         groupName="Test Connect"
         campusName={null}
-        roster={withDisplayPoints(roster, score)}
+        roster={roster}
         groupStats={groupStats}
-        score={score}
+        unlocked3dCampfire={unlocked3dCampfire}
         profile={profile}
         onEditProfile={vi.fn()}
         today={today}
@@ -94,17 +99,17 @@ describe("ConnectScreen wires the real ConnectScore into FullHome", () => {
     expect(screen.getByRole("button", { name: "3D Campfire" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "3D Campfire (locked)" })).toBeNull();
 
-    // Scoped to the Home gathering, not ConnectScreen's own member-grid card,
-    // which renders an aria-label of the same shape for the same person.
-    const pointsBadge = document.querySelector(".home-gathering .home-person-points");
-    expect(pointsBadge?.textContent).toBe(String(score.displayPoints));
+    // A2 regression guard: this adapter must never stamp the Connect-wide
+    // total onto each person as a fake "personal" figure. Until PR #185
+    // ships a real per-person number, no badge should render at all.
+    expect(document.querySelector(".home-gathering .home-person-points")).toBeNull();
   });
 });
 
-describe("TodayScreen wires the same ConnectScore into its own Home", () => {
-  it("keeps the 3D Campfire locked there too, from the same score the roster produces", () => {
+describe("TodayScreen wires the same unlock into its own Home", () => {
+  it("keeps the 3D Campfire locked there too, from the same roster-derived unlock", () => {
     const roster = [soleMember];
-    const score = scoreRoster(101, roster);
+    const unlocked3dCampfire = rosterUnlocks3dCampfire(101, roster);
     const groupStats: GroupStats = { checkinCount: 5, memberCount: 1, ratio: 0, readersTodayIds: [] };
 
     render(
@@ -117,7 +122,7 @@ describe("TodayScreen wires the same ConnectScore into its own Home", () => {
         groupName="Test Connect"
         groupStats={groupStats}
         roster={roster}
-        score={score}
+        unlocked3dCampfire={unlocked3dCampfire}
         profile={profile}
         avatarCustomized
         onStart={vi.fn()}
@@ -129,5 +134,35 @@ describe("TodayScreen wires the same ConnectScore into its own Home", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open Home" }));
     expect(screen.getByRole("button", { name: "3D Campfire (locked)" })).toBeTruthy();
+  });
+
+  it("unlocks there too from a real completed assignment", () => {
+    const roster: RosterMemberView[] = [{ ...soleMember, readToday: true, chapters: [5], readingDates: ["2026-10-05"] }];
+    const unlocked3dCampfire = rosterUnlocks3dCampfire(101, roster);
+    const groupStats: GroupStats = { checkinCount: 1, memberCount: 1, ratio: 1 / 20, readersTodayIds: [1] };
+
+    render(
+      <TodayScreen
+        today={today}
+        chapters={[]}
+        chaptersRead={0}
+        catchUpChapter={null}
+        streakDays={0}
+        groupName="Test Connect"
+        groupStats={groupStats}
+        roster={roster}
+        unlocked3dCampfire={unlocked3dCampfire}
+        profile={profile}
+        avatarCustomized
+        onStart={vi.fn()}
+        onEditProfile={vi.fn()}
+        onViewConnect={vi.fn()}
+        onViewProgress={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Home" }));
+    expect(screen.getByRole("button", { name: "3D Campfire" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "3D Campfire (locked)" })).toBeNull();
   });
 });

@@ -67,8 +67,17 @@ export function FullHome({
   onSelectMember: (member: RosterMemberView) => void;
   onViewReading?: () => void;
   onViewPlan?: () => void;
+  // Optional and dormant until PR #185 wires a real, complete ConnectScore
+  // from resolved membership/role data; when present it wins over
+  // unlocked3dCampfire below, and it also decides the rendered home stage.
   score?: ConnectScore;
-  unlocked3dCampfire?: boolean;
+  // Required, not optional: the R1 rule ("the lock must read the contract's
+  // unlocked3dCampfire and must never fall back to a raw check-in count") is
+  // enforced by the type checker, not by a runtime default. A merge that
+  // drops this prop is a build failure here, not a silent revert to
+  // groupCheckinCount -- the exact squash-merge shape that has silently
+  // reverted a PR in this repo before.
+  unlocked3dCampfire: boolean;
 }) {
   const [people, setPeople] = useState(true);
   const [names, setNames] = useState(true);
@@ -82,7 +91,7 @@ export function FullHome({
   const supportsScene = modelFor(activeStage)?.supported ?? false;
   const isCampsite = supportsScene && mode === 'campfire';
   const eligibility = sceneEligibility(groupCheckinCount);
-  const isCampfireUnlocked = score ? score.unlocked3dCampfire : (unlocked3dCampfire !== undefined ? unlocked3dCampfire : eligibility.kind === "unlocked");
+  const isCampfireUnlocked = score ? score.unlocked3dCampfire : unlocked3dCampfire;
   const gatheringOpen = isCampfireUnlocked;
 
   const [options, setOptions] = useState(false);

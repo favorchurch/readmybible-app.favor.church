@@ -56,6 +56,7 @@ function renderHome(overrides: Partial<React.ComponentProps<typeof FullHome>> = 
       overallPct={40}
       today={today}
       roster={roster}
+      unlocked3dCampfire
       profile={profile}
       selectedMemberId={null}
       onSelectMember={onSelectMember}
@@ -135,6 +136,7 @@ describe("FullHome scene integration", () => {
         overallPct={0}
         today={today}
         roster={roster}
+        unlocked3dCampfire={false}
         profile={profile}
         selectedMemberId={null}
         onSelectMember={vi.fn()}
@@ -261,6 +263,7 @@ describe("FullHome scene integration", () => {
           overallPct={40}
           today={today}
           roster={roster}
+          unlocked3dCampfire
           profile={profile}
           selectedMemberId={null}
           onSelectMember={vi.fn()}
