@@ -17,12 +17,14 @@ import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import type { TodayState } from "@/components/use-today";
 import { coinsFor, nextStageMilestone, nextStageProgress, stageFor } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
+import type { ConnectScore } from "@/lib/scoring";
 
 export function ConnectScreen({
   groupName,
   campusName,
   roster,
   groupStats,
+  score,
   profile,
   onEditProfile,
   today,
@@ -34,6 +36,7 @@ export function ConnectScreen({
   campusName: string | null;
   roster: RosterMemberView[];
   groupStats: GroupStats | null;
+  score?: ConnectScore;
   profile: UserProfile;
   onEditProfile: () => void;
   today: TodayState;
@@ -221,6 +224,7 @@ export function ConnectScreen({
         overallPct={Math.round(ratio * 100)}
         today={today}
         roster={roster}
+        score={score}
         profile={profile}
         selectedMemberId={selectedMember?.personId ?? null}
         onSelectMember={member => { setSelectedMember(member); setProfileSheetOpen(true); }}

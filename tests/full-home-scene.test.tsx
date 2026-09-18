@@ -187,6 +187,21 @@ describe("FullHome scene integration", () => {
     expect(scene.render).toHaveBeenLastCalledWith(expect.objectContaining({ time: "Night" }));
   });
 
+  it("updates People and reset key through the View Options controls, and disables name labels once members are off", async () => {
+    renderHome();
+    fireEvent.click(screen.getByRole("button", { name: "3D Campfire" }));
+    await screen.findByTestId("immersive-home-scene");
+
+    fireEvent.click(screen.getByRole("button", { name: /People/ }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show all members" }));
+    fireEvent.click(screen.getByRole("button", { name: "↺ Reset view" }));
+
+    expect(scene.render).toHaveBeenLastCalledWith(
+      expect.objectContaining({ people: false, names: true, resetKey: 1 }),
+    );
+    expect(screen.getByRole("switch", { name: "Show name labels" }).hasAttribute("disabled")).toBe(true);
+  });
+
   it("hides controls for bare screenshot mode and provides an accessible restore mechanism via click and Escape", () => {
     renderHome();
 
@@ -211,11 +226,57 @@ describe("FullHome scene integration", () => {
     expect(screen.getByRole("heading", { name: "Adults // Marco & Denise" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Restore controls" })).toBeNull();
 
-    // Hide again and restore via Escape key
+    // Hide again and restore via Escape key. Escape is dispatched on the
+    // focused restore button (a real document descendant), not window
+    // directly, so it exercises the same bubble path a real key press would:
+    // through document, where Sheet (components/sheet.tsx) also listens for
+    // Escape on every open sheet.
     fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
     expect(screen.getByRole("button", { name: "Restore controls" })).toBeTruthy();
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("button", { name: "Restore controls" }), { key: "Escape" });
+    expect(screen.getByRole("heading", { name: "Adults // Marco & Denise" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Restore controls" })).toBeNull();
+  });
+
+  it("keeps Home open on Escape while controls are hidden, even though Sheet's own document Escape handler also fires", () => {
+    // renderHome()'s onClose is a vi.fn() no-op and FullHome's own Sheet is
+    // always mounted with a literal `open`, so neither reveals whether onClose
+    // actually fired. This wraps FullHome the way its real callers do --
+    // {homeOpen && <FullHome onClose={() => setHomeOpen(false)} .../>} -- with
+    // a real onClose that unmounts it, so a regression where Escape reaches
+    // Sheet's document listener and closes Home shows up as a failure here.
+    function HomeHost() {
+      const [open, setOpen] = React.useState(true);
+      if (!open) return <div data-testid="home-closed" />;
+      return (
+        <FullHome
+          onClose={() => setOpen(false)}
+          groupName="Adults // Marco & Denise"
+          coins={30}
+          groupCheckinCount={3}
+          stage={0}
+          progress={{ pct: 40, stage: "Condo" }}
+          milestone={{ pct: 45, stage: "Condo" }}
+          overallPct={40}
+          today={today}
+          roster={roster}
+          profile={profile}
+          selectedMemberId={null}
+          onSelectMember={vi.fn()}
+        />
+      );
+    }
+
+    render(<HomeHost />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
+    const restoreBtn = screen.getByRole("button", { name: "Restore controls" });
+    expect(restoreBtn).toBeTruthy();
+
+    fireEvent.keyDown(restoreBtn, { key: "Escape" });
+
+    expect(screen.queryByTestId("home-closed")).toBeNull();
     expect(screen.getByRole("heading", { name: "Adults // Marco & Denise" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Restore controls" })).toBeNull();
   });

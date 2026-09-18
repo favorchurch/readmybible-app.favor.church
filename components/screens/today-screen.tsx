@@ -32,6 +32,7 @@ import {
   type PlanEntry,
 } from "@/lib/plan";
 import type { GroupStats } from "@/lib/data/stats";
+import type { ConnectScore } from "@/lib/scoring";
 
 const campaignStartLabel = longDate(PLAN_START).replace(/^[^,]+,\s*/, "");
 
@@ -245,6 +246,7 @@ export function TodayScreen({
   groupName,
   groupStats,
   roster,
+  score,
   profile,
   avatarCustomized,
   onStart,
@@ -262,6 +264,7 @@ export function TodayScreen({
   groupName: string | null;
   groupStats: GroupStats | null;
   roster: RosterMemberView[];
+  score?: ConnectScore;
   profile: UserProfile;
   avatarCustomized: boolean;
   onStart: (target: PlanEntry | number) => void;
@@ -456,6 +459,7 @@ export function TodayScreen({
             overallPct={Math.round(ratio * 100)}
             today={today}
             roster={roster}
+            score={score}
             profile={profile}
             selectedMemberId={selectedMember?.personId ?? null}
             onSelectMember={(member) => {
@@ -786,6 +790,7 @@ export function TodayScreen({
           overallPct={Math.round(ratio * 100)}
           today={today}
           roster={roster}
+          score={score}
           profile={profile}
           selectedMemberId={selectedMember?.personId ?? null}
           onSelectMember={(member) => {

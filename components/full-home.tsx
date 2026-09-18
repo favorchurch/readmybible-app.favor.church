@@ -105,12 +105,20 @@ export function FullHome({
     restoreButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        // Capture phase, plus stopPropagation, so this runs and wins before
+        // Sheet's own bubble-phase document listener (sheet.tsx) sees the
+        // same Escape and calls onClose -- which would unmount all of Home
+        // instead of just restoring controls. Both listen on document/window
+        // for the same keydown, and document is visited first in capture and
+        // reused on the way back up in bubble; stopping propagation here
+        // removes it from that later bubble visit entirely.
         event.preventDefault();
+        event.stopPropagation();
         setControlsHidden(false);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
   }, [controlsHidden]);
 
   async function expand() {

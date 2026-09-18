@@ -69,6 +69,7 @@ import type { GroupStanding } from "@/lib/game";
 import type { GroupStats } from "@/lib/data/stats";
 import type { GroupMembership } from "@/lib/session";
 import type { ChooseGroupResult } from "@/app/actions/chooseGroup";
+import { scoreRoster, withDisplayPoints } from "@/components/connect-score";
 
 export type RosterMemberView = {
   personId: number;
@@ -450,6 +451,21 @@ function AppShellInner(props: AppShellProps) {
     });
   }, [testMode.active, currentSnapshot, syntheticView, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
 
+  // Derived fresh from the current roster's own membership and reading facts,
+  // never from groupStats.checkinCount -- a raw historical check-in count
+  // includes rows from anyone ever attributed to this group, including a
+  // person who has since become an upstream-only Regional/Cluster leader and
+  // left it. scoreConnect's unlock only counts a person currently on the
+  // roster as a member or leader with a completed assignment.
+  const connectScore = useMemo(
+    () => scoreRoster(effectiveConnectGroupId ?? 0, roster),
+    [effectiveConnectGroupId, roster],
+  );
+  const rosterWithPoints = useMemo(
+    () => withDisplayPoints(roster, connectScore),
+    [roster, connectScore],
+  );
+
   const catchUpAssignment = useMemo(() => {
     const pastUnfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
     return pastUnfinished[0] ?? null;
@@ -769,7 +785,8 @@ function AppShellInner(props: AppShellProps) {
           streakDays={currentStreak}
           groupName={groupName}
           groupStats={groupStats}
-          roster={roster}
+          roster={rosterWithPoints}
+          score={connectScore}
           profile={profile}
           onStart={openReading}
           onEditProfile={() => setProfileOpen(true)}
@@ -783,7 +800,8 @@ function AppShellInner(props: AppShellProps) {
         <ConnectScreen
           groupName={groupName}
           campusName={campusName}
-          roster={roster}
+          roster={rosterWithPoints}
+          score={connectScore}
           groupStats={groupStats}
           profile={profile}
           onEditProfile={() => setProfileOpen(true)}
