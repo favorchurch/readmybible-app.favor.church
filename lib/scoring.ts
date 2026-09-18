@@ -101,6 +101,29 @@ export type ConnectScore = {
   unlocked3dCampfire: boolean;
   /** Deduplicated by rockPersonId, so a dual-role person appears once. */
   contributions: PersonContribution[];
+  /**
+   * The exact pool sizes this score's math divided by. A presentation layer
+   * must read these rather than re-deriving pool size by filtering
+   * `contributions` on role flags -- `contributions` is the union of members,
+   * regionalLeaders, and clusterHeads, which only happens to agree with these
+   * counts when a caller keeps every role flag perfectly in sync with pool
+   * membership. A caller that doesn't would silently break the invariant that
+   * summing every person's presented share reproduces `totalPoints`.
+   */
+  eligibleBaseCount: number;
+  regionalLeaderCount: number;
+  clusterHeadCount: number;
+  /**
+   * The exact rockPersonIds this score's bonus math counted. A presentation
+   * layer must gate a person's bonus share on membership here, not on the
+   * `isRegionalLeader`/`isClusterHead` flag alone -- `contributions` OR-s
+   * that flag in from ANY of members/regionalLeaders/clusterHeads, so a
+   * caller that sets it on a member row without that person genuinely being
+   * in `regionalLeaders`/`clusterHeads` would otherwise still earn a share
+   * of a pool `poolBonus` never actually included them in.
+   */
+  regionalLeaderIds: ReadonlySet<number>;
+  clusterHeadIds: ReadonlySet<number>;
 };
 
 /**
@@ -184,12 +207,10 @@ export function scoreConnect(input: {
   // in, for the same reason base eligibility is derived: a resolver that drops a
   // Cluster Head into regionalLeaders would otherwise move up to 75 points, and
   // nothing downstream could tell. Membership of a pool fails closed too.
-  const regionalBonus = poolBonus(
-    dedupe(input.regionalLeaders).filter((person) => person.isRegionalLeader),
-  );
-  const clusterBonus = poolBonus(
-    dedupe(input.clusterHeads).filter((person) => person.isClusterHead),
-  );
+  const regionalLeaderPool = dedupe(input.regionalLeaders).filter((person) => person.isRegionalLeader);
+  const clusterHeadPool = dedupe(input.clusterHeads).filter((person) => person.isClusterHead);
+  const regionalBonus = poolBonus(regionalLeaderPool);
+  const clusterBonus = poolBonus(clusterHeadPool);
 
   const totalPoints = basePoints + regionalBonus + clusterBonus;
 
@@ -209,5 +230,10 @@ export function scoreConnect(input: {
         (member.isConnectMember || member.isConnectLeader) && assignmentsOf(member) > 0,
     ),
     contributions: dedupe([...members, ...input.regionalLeaders, ...input.clusterHeads]),
+    eligibleBaseCount: eligible.length,
+    regionalLeaderCount: regionalLeaderPool.length,
+    clusterHeadCount: clusterHeadPool.length,
+    regionalLeaderIds: new Set(regionalLeaderPool.map((person) => person.rockPersonId)),
+    clusterHeadIds: new Set(clusterHeadPool.map((person) => person.rockPersonId)),
   };
 }

@@ -79,6 +79,21 @@ export type RosterMemberView = {
   readToday: boolean;
   chapters: number[];
   readingDates: string[];
+  /**
+   * Derived Connect points this person has contributed (issue #150), rounded
+   * for display. Undefined for synthetic/test-mode rosters that don't resolve
+   * real Rock roles -- callers fall back to the legacy chapter count.
+   */
+  contributedPoints?: number;
+  /** True for a Regional Leader, Cluster Head, or Department Head -- collapsed to a member-facing "Leader" marker, distinct from `isLeader` (this Connect's own GT25 Leader/Assistant Leader role). */
+  isUpstreamLeader?: boolean;
+};
+
+/** An upstream-only leader with points contributed to a bonus pool for this Connect, but no seat in its roster -- the member-facing Leaders section (issue #150). */
+export type ConnectLeaderView = {
+  personId: number;
+  name: string;
+  contributedPoints: number;
 };
 
 export type AppShellProps = {
@@ -113,6 +128,8 @@ export type AppShellProps = {
   testModeAuthorized: boolean;
   isAdminScope?: boolean;
   sectionSlot: React.ReactNode | null;
+  /** Upstream-only Regional Leaders / Cluster Heads for the active Connect's Leaders section (issue #150). Omitted for synthetic/test-mode rosters. */
+  connectLeaders?: ConnectLeaderView[];
 };
 
 function toUserProfile(displayName: string, avatar: AvatarConfig, translation: Translation): UserProfile {
@@ -448,6 +465,18 @@ function AppShellInner(props: AppShellProps) {
       };
     });
   }, [testMode.active, currentSnapshot, syntheticView, props.roster, testMode.state.completionPct, today.todayLocal, awaitingSnapshot]);
+
+  // `props.connectLeaders` is the signed-in reader's OWN Connect's real
+  // upstream leaders, resolved server-side. It has no synthetic or
+  // other-group equivalent, so it must be cleared whenever `roster` above
+  // is sourced from something other than `props.roster` -- otherwise Test
+  // Mode would show a simulated/other Connect's roster next to the real
+  // leaders (by name, with real contributed points) of the group the
+  // reader actually belongs to.
+  const connectLeaders = useMemo(() => {
+    if (syntheticView || currentSnapshot || awaitingSnapshot) return [];
+    return props.connectLeaders ?? [];
+  }, [syntheticView, currentSnapshot, awaitingSnapshot, props.connectLeaders]);
 
   const catchUpAssignment = useMemo(() => {
     const pastUnfinished = unfinishedAssignmentsUpTo(today.todayLocal, chapters);
@@ -790,6 +819,7 @@ function AppShellInner(props: AppShellProps) {
           connectSwitcher={connectSwitcher}
           onViewReading={() => selectTab("today")}
           onViewPlan={() => selectTab("progress")}
+          connectLeaders={connectLeaders}
         />
       )}
       {activeTab === "rewards" && (

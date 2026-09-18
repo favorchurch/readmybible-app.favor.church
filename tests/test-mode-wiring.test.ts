@@ -35,7 +35,9 @@ const joinByCode = vi.fn(async () => ({ ok: true }));
 const chooseGroup = vi.fn(async () => ({ ok: true }));
 const saveProfile = vi.fn(async () => ({ ok: true }));
 const getOrCreateJoinCode = vi.fn(async () => ({ ok: true, code: "TEST12" }));
-const getTestGroupSnapshot = vi.fn(async () => ({ ok: false, error: "not used" }));
+const getTestGroupSnapshot = vi.fn(
+  async (): Promise<TestGroupSnapshotResult> => ({ ok: false, error: "not used" }),
+);
 const getJoinCodeForGroup = vi.fn(async () => ({ ok: true, code: null }));
 
 vi.mock("@/app/actions/checkIn", () => ({ checkIn: (input: CheckInInput) => checkIn(input) }));
@@ -62,6 +64,7 @@ vi.mock("next/navigation", () => ({
 
 import { AppShell, type AppShellProps, type RosterMemberView } from "@/components/app-shell";
 import { defaultAvatarConfig } from "@/components/avatar";
+import type { TestGroupSnapshotResult } from "@/app/actions/getTestGroupSnapshot";
 
 const roster: RosterMemberView[] = [
   {
@@ -321,6 +324,49 @@ describe("AppShell wiring: a simulated group never falls back to the real group"
     await waitFor(() => {
       expect(screen.queryByText("Rico Test")).toBeNull();
     });
+  });
+});
+
+/**
+ * Independent review finding F2 (issue #150 PR #185): `roster` swaps to the
+ * simulated group's snapshot when Test Mode selects a different real group,
+ * but `connectLeaders` (the signed-in user's OWN Connect's real upstream
+ * leaders) was passed straight through from `props` regardless -- so an
+ * authorized tester selecting another real group in the panel would see
+ * that group's roster next to THEIR OWN real Regional Leader/Cluster Head,
+ * by name and with real contributed points, misattributed as overseeing a
+ * Connect they do not.
+ */
+describe("AppShell wiring: connectLeaders never leaks across a simulated group switch", () => {
+  it("clears the real Connect's Leaders section once Test Mode resolves a different group's snapshot", async () => {
+    getTestGroupSnapshot.mockResolvedValueOnce({
+      ok: true,
+      groupName: "Some Other Group",
+      campusName: "OPEN ACCESS",
+      roster: [],
+      groupStats: { checkinCount: 0, memberCount: 0, ratio: 0, readersTodayIds: [] },
+    });
+
+    const props = baseProps();
+    props.campusGroups = [{ groupId: 999, groupName: "Some Other Group" }];
+    props.connectLeaders = [{ personId: 9001, name: "Real Regional Leader", contributedPoints: 42 }];
+    render(React.createElement(AppShell, props));
+
+    {
+      const show = screen.queryByRole("button", { name: /^show$/i });
+      if (show) fireEvent.click(show);
+    }
+    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "999" } });
+    fireEvent.click(screen.getByRole("button", { name: "Connect" }));
+
+    // Wait for the OTHER group's snapshot to actually resolve and take over
+    // the render, so this test proves something about the resolved state,
+    // not the brief awaiting-snapshot gap.
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Some Other Group" })).toBeTruthy();
+    });
+
+    expect(screen.queryByText("Real Regional Leader")).toBeNull();
   });
 });
 
